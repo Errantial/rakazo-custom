@@ -16,9 +16,14 @@ loadRootEnv();
 const urls = databaseUrls(process.env);
 await deployMigrations({
   migrationUrl: urls.migrationUrl,
-  dbPackageDir: execFileSync("pnpm", ["--filter", "@rakazo/db", "exec", "pwd"], {
-    encoding: "utf8",
-  }).trim(),
+  // `pnpm exec pwd` is Unix-only; node -p process.cwd() works everywhere.
+  dbPackageDir: execFileSync(
+    "pnpm",
+    ["--filter", "@rakazo/db", "exec", "node", "-p", "process.cwd()"],
+    {
+      encoding: "utf8",
+    },
+  ).trim(),
 });
 await migrateJobQueue(urls.migrationUrl);
 
