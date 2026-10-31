@@ -253,6 +253,10 @@ export async function assertComputerHomeWritable(
     await assertWritableLinux(root, uid, gid);
     return;
   }
+  // Windows: NTFS carries no POSIX owner, and Docker Desktop presents an NTFS bind mount to
+  // the container as the desktop user (1000:1000), so a uid/mode check on the host proves
+  // nothing and always fails. There is nothing useful to assert here.
+  if (process.platform === "win32") return;
   await assertWritableEntry(root, "", root, uid, gid);
 }
 

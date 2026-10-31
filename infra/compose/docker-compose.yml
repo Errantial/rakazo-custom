@@ -265,7 +265,22 @@ services:
         fi
         exec docker-entrypoint.sh "$$@"
       - postgres
-    command: ["postgres"]
+    # Sized for a single-developer laptop: small shared cache, modest per-sort memory,
+    # and a connection cap above the api/worker pools (DB_POOL_MAX defaults to 8 each).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - max_connections=60
+      - -c
+      - random_page_cost=1.1
     environment:
       # USER/PASSWORD/DB apply only on first volume init. Keep existing values in
       # .env, or ALTER ROLE / rename in place. Recreate the volume only after backup
