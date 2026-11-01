@@ -5,6 +5,7 @@ import {
   deliverFinishedShells,
   formatFinishedShellCommand,
   isRunningShellCommand,
+  LATE_SHELL_OUTPUT_GUIDANCE,
   observeShellCommand,
   SHELL_STILL_RUNNING_NOTICE,
 } from "./shell-command-stream.js";
@@ -295,6 +296,45 @@ describe("deliverFinishedShells", () => {
     await deliverFinishedShells((text) => followUps.push(text), pending, { toolResults: [] });
     expect(followUps).toHaveLength(1);
     expect(followUps[0]).toContain("exit code: 0");
+  });
+
+  it("tells the bot it may stay silent when output lands after its reply", async () => {
+    const delivered: Array<{ text: string; afterReply: boolean }> = [];
+    await deliverFinishedShells(
+      (text, afterReply) => delivered.push({ text, afterReply }),
+      [Promise.resolve({ stdout: "ok\n", stderr: "", code: 0 })],
+      { message: { content: [{ type: "text", text: "Started the job." }] }, toolResults: [] },
+    );
+    expect(delivered).toEqual([
+      {
+        text: `${formatFinishedShellCommand({ stdout: "ok\n", stderr: "", code: 0 })}\n\n${LATE_SHELL_OUTPUT_GUIDANCE}`,
+        afterReply: true,
+      },
+    ]);
+    expect(LATE_SHELL_OUTPUT_GUIDANCE).toContain("exactly NO_RESPONSE");
+  });
+
+  it("leaves mid-task output unchanged so the bot keeps working", async () => {
+    const delivered: Array<{ text: string; afterReply: boolean }> = [];
+    await deliverFinishedShells(
+      (text, afterReply) => delivered.push({ text, afterReply }),
+      [Promise.resolve({ stdout: "ok\n", stderr: "", code: 0 })],
+      {
+        message: {
+          content: [
+            { type: "text", text: "Checking the build." },
+            { type: "toolCall", id: "t1", name: "shell", arguments: {} },
+          ],
+        },
+        toolResults: [],
+      },
+    );
+    expect(delivered).toEqual([
+      {
+        text: formatFinishedShellCommand({ stdout: "ok\n", stderr: "", code: 0 }),
+        afterReply: false,
+      },
+    ]);
   });
 });
 

@@ -4,6 +4,7 @@ import { redactShellStreams } from "./agent-environment.js";
 import { automated } from "./automated-messages.js";
 import { shortenPlainText } from "./context-selection.js";
 import { TOOL_RESULT_TEXT_LIMIT } from "./pi-runtime-limits.js";
+import { NO_RESPONSE } from "./silent-reply.js";
 
 /**
  * Device-code logins print a code and then wait. Once that output goes quiet,
@@ -57,14 +58,29 @@ function keepHeadAndTail(text: string): string {
 }
 
 /**
+ * Added when output lands after the bot already answered. Without it, models narrated
+ * every late result ("that was just the delayed output…") and buried or skipped the
+ * user's newest question.
+ */
+export const LATE_SHELL_OUTPUT_GUIDANCE = automated(
+  `This output arrived after your last reply. The user has not said anything since. If it does not change what you told the user and needs no action, your entire reply must be exactly ${NO_RESPONSE}. Otherwise say only what changed, in one or two sentences. Do not describe the output as late, delayed, an echo or leftover.`,
+);
+
+type FinishedTurn = {
+  message?: { content?: unknown };
+  toolResults: Array<{ toolName?: string; details?: unknown }>;
+};
+
+/**
  * After the turn that first saw a still-running shell, wait for those commands
  * to exit and hand the bot the final output. The turn that received the live
  * output is skipped so the bot can relay a device code before the process ends.
+ * `afterReply` is true when the finished turn was already a reply to the user.
  */
 export async function deliverFinishedShells(
-  followUp: (text: string) => void,
+  followUp: (text: string, afterReply: boolean) => void,
   pending: Array<Promise<FinishedShellCommand>>,
-  turn: { toolResults: Array<{ toolName?: string; details?: unknown }> },
+  turn: FinishedTurn,
   signal?: AbortSignal,
 ): Promise<void> {
   if (pending.length === 0 || turnReturnedRunningShell(turn)) return;
@@ -72,7 +88,22 @@ export async function deliverFinishedShells(
   const results = await Promise.all(batch.map((completion) => finishOrAbort(completion, signal)));
   const texts = results.filter((result): result is FinishedShellCommand => result !== undefined);
   if (texts.length === 0) return;
-  followUp(texts.map((result) => formatFinishedShellCommand(result)).join("\n\n"));
+  const output = texts.map((result) => formatFinishedShellCommand(result)).join("\n\n");
+  const afterReply = turnAnsweredUser(turn);
+  followUp(afterReply ? `${output}\n\n${LATE_SHELL_OUTPUT_GUIDANCE}` : output, afterReply);
+}
+
+/** A turn with reply text and no tool calls is an answer; mid-task output still drives the task. */
+function turnAnsweredUser(turn: FinishedTurn): boolean {
+  const content = turn.message?.content;
+  if (turn.toolResults.length > 0 || !Array.isArray(content)) return false;
+  const parts = content as Array<{ type?: unknown; text?: unknown }>;
+  return (
+    !parts.some((part) => part?.type === "toolCall") &&
+    parts.some(
+      (part) => part?.type === "text" && typeof part.text === "string" && !!part.text.trim(),
+    )
+  );
 }
 
 function turnReturnedRunningShell(turn: {

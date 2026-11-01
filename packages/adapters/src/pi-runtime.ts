@@ -74,6 +74,7 @@ import { observedPiStream } from "./pi-usage.js";
 import type { RuntimeContextDecision } from "./runtime-context.js";
 import { createRuntimeContextPolicy } from "./runtime-context.js";
 import { deliverFinishedShells } from "./shell-command-stream.js";
+import { isExactNoResponse } from "./silent-reply.js";
 import {
   restoreTurnCheckpoint,
   serializeTurnCheckpoint,
@@ -452,7 +453,8 @@ export class PiAgentRuntime implements AgentRuntime {
             : async () => apiKey,
           finishTurn: async (turn, turnSignal) => {
             await deliverFinishedShells(
-              (text) => {
+              (text, afterReply) => {
+                if (afterReply) lateShellPending = true;
                 agent.followUp({
                   role: "user",
                   content: text,
@@ -569,6 +571,11 @@ export class PiAgentRuntime implements AgentRuntime {
         let toolCalls = 0;
         let toolActivityShowing = false;
         let silentToolContinuations = 0;
+        // Shell output that finished after the bot already answered. The bot's next message
+        // is held back instead of streamed, so a NO_RESPONSE ("nothing changed") never shows.
+        let lateShellPending = false;
+        let holdingLateReply = false;
+        let droppedLateReply = false;
         // A reply cut off by a dropped connection continues in the same bubble: no turn break,
         // and a continuation that starts by repeating the end of the cut text loses that repeat.
         let joinCutReply: { tail: string; held: string; requested: boolean } | undefined;
@@ -624,9 +631,13 @@ export class PiAgentRuntime implements AgentRuntime {
           if (event.type === "message_start" && event.message.role === "assistant") {
             currentMessageStreamed = "";
             if (!joinCutReply) joinDropped = "";
+            holdingLateReply = lateShellPending && !joinCutReply;
+            lateShellPending = false;
+            droppedLateReply = false;
             // A later message (after a finished shell or steering, not only a tool call)
-            // must not run its text straight on from the previous one.
-            if (streamed && !joinCutReply) queue.push({ type: "turn" });
+            // must not run its text straight on from the previous one. A held reply adds
+            // its break only if it turns out to say something.
+            if (streamed && !joinCutReply && !holdingLateReply) queue.push({ type: "turn" });
           }
           if (
             event.type === "message_update" &&
@@ -646,7 +657,7 @@ export class PiAgentRuntime implements AgentRuntime {
                   Math.min(joinCutReply.tail.length, MAX_CONTINUATION_OVERLAP) +
                   MAX_CONTINUATION_MARKER;
                 if (joinCutReply.held.length > decidable) releaseJoin();
-              } else {
+              } else if (!holdingLateReply) {
                 streamed += delta;
                 queue.push({ type: "text", text: delta });
               }
@@ -664,7 +675,13 @@ export class PiAgentRuntime implements AgentRuntime {
               toolWorkPendingFinal = true;
               silentToolContinuations = 0;
               streamedBeforePendingFinal = streamed.length;
-            } else if (toolWorkPendingFinal && !hasToolCalls && !hasToolResults) {
+            } else if (
+              toolWorkPendingFinal &&
+              !hasToolCalls &&
+              !hasToolResults &&
+              // A dropped late reply is a deliberate silence, not a missing answer.
+              !droppedLateReply
+            ) {
               const streamedFinal = streamed.slice(streamedBeforePendingFinal).trim();
               if (messageText.trim() || streamedFinal) {
                 toolWorkPendingFinal = false;
@@ -715,7 +732,19 @@ export class PiAgentRuntime implements AgentRuntime {
             const alreadyEmitted =
               !continued &&
               (streamedThisMessage.includes(text) || sincePendingFinal.endsWith(text));
-            if (textToEmit && !messageHasToolCall(event.message) && !alreadyEmitted) {
+            if (holdingLateReply) {
+              // Nothing of this message was streamed. Drop it if it only says nothing
+              // changed; otherwise show it whole, as its own turn.
+              holdingLateReply = false;
+              const held = text || streamedThisMessage;
+              if (!messageHasToolCall(event.message) && (!held.trim() || isExactNoResponse(held))) {
+                droppedLateReply = true;
+              } else if (held.trim()) {
+                if (streamed) queue.push({ type: "turn" });
+                streamed += held;
+                queue.push({ type: "text", text: held });
+              }
+            } else if (textToEmit && !messageHasToolCall(event.message) && !alreadyEmitted) {
               streamed += textToEmit;
               queue.push({ type: "text", text: textToEmit });
             } else if (text && !streamed) {
@@ -917,7 +946,12 @@ export class PiAgentRuntime implements AgentRuntime {
           }
           throw modelFailure(error, message);
         }
-        if (!budgetExceeded && terminalMessage && !messageHasToolCall(terminalMessage)) {
+        if (
+          !budgetExceeded &&
+          !droppedLateReply &&
+          terminalMessage &&
+          !messageHasToolCall(terminalMessage)
+        ) {
           const completedText = assistantText(terminalMessage);
           const terminalText =
             joinDropped && completedText.startsWith(joinDropped)
@@ -956,7 +990,10 @@ export class PiAgentRuntime implements AgentRuntime {
         } else if (!streamed.trim() && !host.pausePending) {
           streamed = "";
           const lastMessage = agent.state.messages.at(-1);
-          const fallback = lastMessage?.role === "assistant" ? assistantText(lastMessage) : "";
+          const fallback =
+            lastMessage?.role === "assistant" && !droppedLateReply
+              ? assistantText(lastMessage)
+              : "";
           if (fallback.trim()) {
             queue.push({ type: "text", text: fallback });
             streamed = fallback;
