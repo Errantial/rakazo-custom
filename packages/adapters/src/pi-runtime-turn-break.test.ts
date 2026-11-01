@@ -3,6 +3,7 @@ import { createServer } from "node:http";
 import type { AgentRuntimeEvent, AgentToolExecutionObserver } from "@rakazo/adapter-kit";
 import { expect, it } from "vitest";
 import { PiAgentRuntime } from "./pi-runtime.js";
+import { LATE_SHELL_OUTPUT_GUIDANCE } from "./shell-command-stream.js";
 
 function chunk(delta: Record<string, unknown>, finishReason: string | null = null) {
   return `data: ${JSON.stringify({
@@ -11,38 +12,61 @@ function chunk(delta: Record<string, unknown>, finishReason: string | null = nul
   })}\n\n`;
 }
 
-it("marks the reply to a finished shell as a new assistant message", async () => {
+/** Content chunks for one assistant message; the last one stops it. */
+function textReply(parts: string[]) {
+  return parts
+    .map((content, index) =>
+      chunk(
+        index === 0 ? { role: "assistant", content } : { content },
+        index === parts.length - 1 ? "stop" : null,
+      ),
+    )
+    .join("");
+}
+
+/**
+ * The bot starts a background shell, replies, then gets the finished output and
+ * answers it with `lateReply`. Returns model calls, request bodies and run events.
+ */
+async function runWithLateShell(lateReply: string[]) {
   let calls = 0;
+  const bodies: string[] = [];
   const server = createServer((request, response) => {
-    request.resume();
     // Local tools can probe any listening loopback port; only model calls are counted.
     if (request.method !== "POST" || request.url !== "/v1/chat/completions") {
+      request.resume();
       response.writeHead(404).end();
       return;
     }
-    calls += 1;
-    response.writeHead(200, { "content-type": "text/event-stream" });
-    const body =
-      calls === 1
-        ? chunk(
-            {
-              role: "assistant",
-              tool_calls: [
-                {
-                  index: 0,
-                  id: "shell-1",
-                  type: "function",
-                  function: { name: "shell", arguments: '{"command":"long-job"}' },
-                },
-              ],
-            },
-            "tool_calls",
-          )
-        : calls === 2
-          ? chunk({ role: "assistant", content: "Started" }) +
-            chunk({ content: " the job." }, "stop")
-          : chunk({ role: "assistant", content: "It finished." }, "stop");
-    response.end(`${body}data: [DONE]\n\n`);
+    let body = "";
+    request.on("data", (data) => {
+      body += data;
+    });
+    request.on("end", () => {
+      calls += 1;
+      bodies.push(body);
+      response.writeHead(200, { "content-type": "text/event-stream" });
+      const reply =
+        calls === 1
+          ? chunk(
+              {
+                role: "assistant",
+                tool_calls: [
+                  {
+                    index: 0,
+                    id: "shell-1",
+                    type: "function",
+                    function: { name: "shell", arguments: '{"command":"long-job"}' },
+                  },
+                ],
+              },
+              "tool_calls",
+            )
+          : calls === 2
+            ? textReply(["Started", " the job."])
+            : textReply(lateReply);
+      response.end(`${reply}data: [DONE]\n\n`);
+    });
   });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
@@ -91,15 +115,40 @@ it("marks the reply to a finished shell as a new assistant message", async () =>
     )) {
       events.push(event);
     }
-    expect(calls).toBe(3);
-    expect(
-      events.flatMap((event) =>
-        event.type === "text" ? [event.text] : event.type === "turn" ? ["<turn>"] : [],
-      ),
-    ).toEqual(["Started", " the job.", "<turn>", "It finished."]);
   } finally {
     server.close();
     server.closeAllConnections();
     await once(server, "close");
   }
+  const visible = events.flatMap((event) =>
+    event.type === "text" ? [event.text] : event.type === "turn" ? ["<turn>"] : [],
+  );
+  const done = events.find((event) => event.type === "done");
+  return { calls, bodies, visible, done };
+}
+
+it("marks the reply to a finished shell as a new assistant message", async () => {
+  const { calls, visible } = await runWithLateShell(["It finished."]);
+  expect(calls).toBe(3);
+  expect(visible).toEqual(["Started", " the job.", "<turn>", "It finished."]);
+});
+
+it("tells the bot it may stay silent about output that lands after its reply", async () => {
+  const { bodies } = await runWithLateShell(["NO_RESPONSE"]);
+  // JSON escapes the quotes in the guidance, so compare a quote-free part of it.
+  expect(bodies[2]).toContain("This output arrived after your last reply.");
+  expect(bodies[1]).not.toContain("This output arrived after your last reply.");
+  expect(LATE_SHELL_OUTPUT_GUIDANCE).toContain("This output arrived after your last reply.");
+});
+
+it("drops a NO_RESPONSE reply to late output without another model call", async () => {
+  const { calls, visible, done } = await runWithLateShell(["NO_", "RESPONSE"]);
+  expect(calls).toBe(3);
+  expect(visible).toEqual(["Started", " the job."]);
+  expect(done).toEqual({ type: "done", text: "Started the job." });
+});
+
+it("shows a real update about late output whole, after a turn break", async () => {
+  const { visible } = await runWithLateShell(["The build", " failed: disk full."]);
+  expect(visible).toEqual(["Started", " the job.", "<turn>", "The build failed: disk full."]);
 });
