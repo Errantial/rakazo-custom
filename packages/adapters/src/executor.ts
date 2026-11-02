@@ -25,6 +25,7 @@ import {
   messagingChannelPrivacyBlock,
   messagingDmSurfaceNote,
   nextFence,
+  PEER_REPLY_AFTER_ANSWER_NOTE,
   promptInvokesSkill,
   redactSecrets,
   renderBotDirectory,
@@ -664,19 +665,23 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           ),
         );
         const currentRunRequiresImageInput = confirmedRunImages.length > 0;
+        const peerReplyAfterAnswer = peerMessage?.answeredUserSinceRequest === true;
         const allowSilentPeerMessage = botMessageAllowsSilence(
           peerMessage?.intent,
           peerMessage?.repliesToRequest,
+          peerReplyAfterAnswer,
         );
         const allowSilentEmptyRun =
           allowSilentPeerMessage || messagingChannelRun || runAllowsSilentEmpty(run.trigger);
         const emptyResponseText = peerMessage
-          ? peerMessage.intent === "result" ||
-            peerMessage.intent === "status" ||
-            peerMessage.intent === "question" ||
-            peerMessage.repliesToRequest
-            ? `Update from ${peerMessage.fromBotName}: ${peerMessage.text}`
-            : DELEGATED_EMPTY_NOTICE
+          ? peerReplyAfterAnswer
+            ? undefined
+            : peerMessage.intent === "result" ||
+                peerMessage.intent === "status" ||
+                peerMessage.intent === "question" ||
+                peerMessage.repliesToRequest
+              ? `Update from ${peerMessage.fromBotName}: ${peerMessage.text}`
+              : DELEGATED_EMPTY_NOTICE
           : undefined;
         const recallPromise =
           threadContext.includeSemanticRecall &&
@@ -1334,7 +1339,14 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           currentTurnImages,
         );
         const taskPrompt = expandSkillReferencesInPrompt(
-          [task.prompt, attachedFilesPrompt, missingImagesInstruction].filter(Boolean).join("\n\n"),
+          [
+            task.prompt,
+            peerReplyAfterAnswer ? PEER_REPLY_AFTER_ANSWER_NOTE : undefined,
+            attachedFilesPrompt,
+            missingImagesInstruction,
+          ]
+            .filter(Boolean)
+            .join("\n\n"),
           agentSkills,
         );
         const invokedSkill = savedSkills.find((skill) =>

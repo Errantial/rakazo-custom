@@ -13,6 +13,23 @@ import { NO_RESPONSE } from "./silent-reply.js";
  */
 export const SHELL_STREAM_IDLE_MS = 1_000;
 
+// Wording that sign-in and device-code flows print, plus the codes themselves (ABCD-1234).
+const SIGN_IN_WORDS =
+  /one-time code|device code|verification code|user code|authori[sz]ation code|enter (?:the |this |your )?code|sign[- ]?in|log[- ]?in|authenticat|in (?:a |your )?(?:web )?browser|open (?:this|the following) (?:url|link|page)/i;
+const SIGN_IN_CODE = /\b[A-Z0-9]{4,}-[A-Z0-9]{4,}\b/;
+// An interactive prompt waiting on input at the end of the output.
+const WAITING_PROMPT = /(?:\[y\/n\]|\(y\/n\)|password:|passphrase[^\n]*:|continue\?)\s*$/i;
+
+/**
+ * Only output that waits on the user is returned before the command exits. Ordinary
+ * commands that print and then pause (SSH probes, builds) used to come back as
+ * "still running" after one quiet second, so their final output landed after the
+ * bot had already answered, and the bot narrated it.
+ */
+export function looksLikeSignInPrompt(output: string): boolean {
+  return SIGN_IN_WORDS.test(output) || SIGN_IN_CODE.test(output) || WAITING_PROMPT.test(output);
+}
+
 export const SHELL_STILL_RUNNING_NOTICE =
   "Still running. Tell the user any one-time code or sign-in URL in the output.";
 
@@ -151,6 +168,8 @@ export async function observeShellCommand(
   options: {
     secrets: string[];
     idleMs?: number;
+    /** Whether output so far may come back before exit. Defaults to sign-in prompts only. */
+    returnEarlyWhen?: (output: string) => boolean;
     onOutput?: (snapshot: ShellCommandSnapshot) => void;
   },
 ): Promise<{
@@ -158,6 +177,8 @@ export async function observeShellCommand(
   completion?: Promise<FinishedShellCommand>;
 }> {
   const idleMs = options.idleMs ?? SHELL_STREAM_IDLE_MS;
+  const returnEarlyWhen = options.returnEarlyWhen ?? looksLikeSignInPrompt;
+  let earlyAllowed = false;
   let stdout = "";
   let stderr = "";
   let code: number | undefined;
@@ -188,6 +209,11 @@ export async function observeShellCommand(
   const done = (async (): Promise<FinishedShellCommand> => {
     try {
       for await (const event of events) {
+        if (event.type === "stdout" || event.type === "stderr") {
+          // Scan only the new chunk plus a short overlap, so long output stays linear.
+          const previous = event.type === "stdout" ? stdout : stderr;
+          earlyAllowed ||= returnEarlyWhen(`${previous.slice(-200)}${event.data}`);
+        }
         if (event.type === "stdout") stdout += event.data;
         else if (event.type === "stderr") stderr += event.data;
         else if (event.type === "exit") {
@@ -200,7 +226,7 @@ export async function observeShellCommand(
         } catch {
           // Live output is a view. A failed update must not kill the command.
         }
-        if (stdout.length > 0 || stderr.length > 0) armIdle();
+        if (earlyAllowed && (stdout.length > 0 || stderr.length > 0)) armIdle();
       }
     } catch (error) {
       // Providers may include command environment values in errors. Never expose the raw

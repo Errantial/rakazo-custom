@@ -50,12 +50,22 @@ export function botMessageContext(blocks: readonly MessageBlock[]): BotMessageCo
   return blocks.find((block): block is BotMessageContext => block.kind === "bot_message_received");
 }
 
+/**
+ * A reply to the bot's own request may stay silent once the bot has already answered
+ * the user after asking: it then only needs a mention if it changes that answer.
+ */
 export function botMessageAllowsSilence(
   intent: BotMessageIntent | undefined,
   repliesToRequest = false,
+  answeredUserSinceRequest = false,
 ): boolean {
-  return intent === "fyi" && !repliesToRequest;
+  if (repliesToRequest) return answeredUserSinceRequest;
+  return intent === "fyi";
 }
+
+/** Replaces the wake prompt's "relay it now" when the user was already answered. */
+export const PEER_REPLY_AFTER_ANSWER_NOTE =
+  "You already replied to the user after sending this request, so do not relay this message in full. If it changes or adds to what you told the user, say only that, in one or two sentences. Otherwise your entire reply must be exactly NO_RESPONSE.";
 
 /** Resolve a target by id first, then by exact name, then case-insensitively. */
 export function resolveBotAddress<T extends BotAddress>(
