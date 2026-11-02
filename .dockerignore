@@ -29,8 +29,10 @@ verify-report
 # check-image.sh fails the publish if one still gets in.
 **/.env
 **/.env.*
-!**/.env.example
-!**/.env.*.example
+# Re-include by exact path: a "**/" exception makes Docker walk into every ignored folder,
+# including bot homes under data/, and fail on links that only resolve inside a container.
+!.env.example
+!infra/compose/.env.images.example
 **/*.pem
 **/*.key
 **/*.p12
