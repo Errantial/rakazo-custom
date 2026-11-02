@@ -6,6 +6,7 @@ import {
   formatFinishedShellCommand,
   isRunningShellCommand,
   LATE_SHELL_OUTPUT_GUIDANCE,
+  looksLikeSignInPrompt,
   observeShellCommand,
   SHELL_STILL_RUNNING_NOTICE,
 } from "./shell-command-stream.js";
@@ -88,6 +89,58 @@ describe("observeShellCommand", () => {
     expect(`${final?.stdout}${final?.stderr}`).not.toContain("super-secret-token");
   });
 
+  it("waits for exit when output pauses without a sign-in prompt", async () => {
+    const observed = await observeShellCommand(
+      (async function* () {
+        yield { type: "stdout" as const, data: "server1: ok\n" };
+        // Longer than idleMs: an SSH probe pausing between hosts.
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        yield { type: "stdout" as const, data: "framework: ok\n" };
+        yield { type: "exit" as const, code: 0 };
+      })(),
+      { secrets: [], idleMs: 20 },
+    );
+    expect(observed.completion).toBeUndefined();
+    expect(observed.result).toEqual({
+      stdout: "server1: ok\nframework: ok\n",
+      stderr: "",
+      code: 0,
+    });
+  });
+
+  it("returns early once a sign-in prompt appears in later output", async () => {
+    let releaseExit: () => void = () => undefined;
+    const exitGate = new Promise<void>((resolve) => {
+      releaseExit = resolve;
+    });
+    const observed = await observeShellCommand(
+      (async function* () {
+        yield { type: "stdout" as const, data: "Starting login...\n" };
+        yield {
+          type: "stdout" as const,
+          data: "Open this URL in your browser: https://example.com/device\n",
+        };
+        await exitGate;
+        yield { type: "exit" as const, code: 0 };
+      })(),
+      { secrets: [], idleMs: 20 },
+    );
+    expect(observed.result).toMatchObject({ code: null, running: true });
+    releaseExit();
+    await expect(observed.completion).resolves.toMatchObject({ code: 0 });
+  });
+
+  it.each([
+    ["! First copy your one-time code: ABCD-1234", true],
+    ["To sign in, use a web browser to open the page https://microsoft.com/devicelogin", true],
+    ["Enter passphrase for key '/root/.ssh/id_ed25519': ", true],
+    ["Do you want to continue? [Y/n] ", true],
+    ["uid=0(root) gid=0(root)\nFilesystem  Size  Used  Avail", false],
+    ["t3 status: origin http://100.93.77.86:3773, 683 threads", false],
+  ])("looksLikeSignInPrompt(%j) is %s", (output, expected) => {
+    expect(looksLikeSignInPrompt(output)).toBe(expected);
+  });
+
   it("redacts a secret split across chunks before returning it", async () => {
     let releaseExit: () => void = () => undefined;
     const exitGate = new Promise<void>((resolve) => {
@@ -104,6 +157,7 @@ describe("observeShellCommand", () => {
       {
         secrets: ["super-secret-token"],
         idleMs: 20,
+        returnEarlyWhen: () => true,
         onOutput: (snapshot) => {
           seen.push(snapshot.stdout);
         },
@@ -134,6 +188,7 @@ describe("observeShellCommand", () => {
       {
         secrets: ["super-secret-token"],
         idleMs: 20,
+        returnEarlyWhen: () => true,
         onOutput: (snapshot) => {
           seen.push({ stdout: snapshot.stdout, stderr: snapshot.stderr });
         },
@@ -162,7 +217,7 @@ describe("observeShellCommand", () => {
         yield { type: "stdout" as const, data: "secret-token suffix\n" };
         yield { type: "exit" as const, code: 0 };
       })(),
-      { secrets: ["super-secret-token"], idleMs: 20 },
+      { secrets: ["super-secret-token"], idleMs: 20, returnEarlyWhen: () => true },
     );
 
     expect(isRunningShellCommand(observed.result)).toBe(true);
@@ -190,6 +245,7 @@ describe("observeShellCommand", () => {
       {
         secrets: ["ABCDEFGHIJ"],
         idleMs: 20,
+        returnEarlyWhen: () => true,
         onOutput: (snapshot) => {
           seen.push(`${snapshot.stdout}${snapshot.stderr}`);
         },

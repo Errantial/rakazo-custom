@@ -30,6 +30,7 @@ vi.mock("./bot-messages.js", () => ({
     intent: "fyi",
     hop: 1,
     repliesToRequest: false,
+    answeredUserSinceRequest: false,
   })),
   returnBotMessageOutcome: vi.fn(async () => undefined),
 }));
@@ -70,6 +71,7 @@ async function runTurn(
     intent,
     hop: 1,
     repliesToRequest: false,
+    answeredUserSinceRequest: false,
   });
   const run = {
     id: "run-1",

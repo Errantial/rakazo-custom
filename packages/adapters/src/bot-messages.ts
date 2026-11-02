@@ -43,7 +43,10 @@ export async function loadBotMessageContext(
   if (!sourceMessageId) return undefined;
   const source = await prisma.message.findUnique({
     where: { id: sourceMessageId },
-    select: { blocks: true, replyTo: { select: { blocks: true } } },
+    select: {
+      blocks: true,
+      replyTo: { select: { blocks: true, threadId: true, seq: true } },
+    },
   });
   const context = botMessageContext(
     Array.isArray(source?.blocks) ? (source.blocks as MessageBlock[]) : [],
@@ -60,7 +63,36 @@ export async function loadBotMessageContext(
         block.toBotId === context.fromBotId &&
         (block.intent === undefined || block.intent === "request" || block.intent === "question"),
     );
-  return { ...context, repliesToRequest };
+  const answeredUserSinceRequest =
+    repliesToRequest && source?.replyTo
+      ? await botRepliedSince(prisma, source.replyTo.threadId, source.replyTo.seq)
+      : false;
+  return { ...context, repliesToRequest, answeredUserSinceRequest };
+}
+
+/**
+ * Whether the bot posted a written reply in the thread after `seq`. A peer's answer that
+ * lands after the bot already replied to the user only needs a mention if it changes
+ * something; relaying it in full repeated what the user had just read.
+ */
+async function botRepliedSince(
+  prisma: PrismaClient,
+  threadId: string,
+  seq: number,
+): Promise<boolean> {
+  const later = await prisma.message.findMany({
+    where: { threadId, role: "bot", seq: { gt: seq } },
+    select: { blocks: true },
+    orderBy: { seq: "asc" },
+    take: 20,
+  });
+  return later.some(
+    (message) =>
+      Array.isArray(message.blocks) &&
+      (message.blocks as MessageBlock[]).some(
+        (block) => block.kind === "text" && typeof block.text === "string" && !!block.text.trim(),
+      ),
+  );
 }
 
 export async function messageBot(

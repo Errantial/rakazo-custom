@@ -66,6 +66,14 @@ describe("bot message silence", () => {
     expect(botMessageAllowsSilence("fyi", true)).toBe(false);
     expect(botMessageAllowsSilence("fyi")).toBe(true);
   });
+
+  it("lets a reply to a request stay silent once the user was already answered", () => {
+    expect(botMessageAllowsSilence("result", true)).toBe(false);
+    expect(botMessageAllowsSilence("result", true, true)).toBe(true);
+    expect(botMessageAllowsSilence("fyi", true, true)).toBe(true);
+    // A result that is not a reply to this bot's request keeps today's behaviour.
+    expect(botMessageAllowsSilence("result", false, true)).toBe(false);
+  });
 });
 
 describe("hop bounding", () => {

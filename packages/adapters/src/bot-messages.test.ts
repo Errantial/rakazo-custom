@@ -554,13 +554,63 @@ describe("hop lookup", () => {
             ],
           },
         }),
+        findMany: vi.fn().mockResolvedValue([]),
       },
     } as unknown as PrismaClient;
 
     await expect(loadBotMessageContext(prisma, "message-source")).resolves.toMatchObject({
       repliesToRequest: expected,
+      answeredUserSinceRequest: false,
     });
   });
+
+  it.each([
+    ["a written reply", [{ blocks: [{ kind: "text", text: "All three hosts are green." }] }], true],
+    ["only tool steps or blank text", [{ blocks: [{ kind: "text", text: "  " }] }], false],
+    ["nothing", [], false],
+  ])(
+    "notes whether the bot answered the user after asking, given %s",
+    async (_label, later, expected) => {
+      const findMany = vi.fn().mockResolvedValue(later);
+      const prisma = {
+        message: {
+          findUnique: vi.fn().mockResolvedValue({
+            blocks: [
+              {
+                kind: "bot_message_received",
+                fromBotId: "requester",
+                fromBotName: "Requester",
+                text: "here are the details",
+                intent: "result",
+              },
+            ],
+            replyTo: {
+              threadId: "thread-1",
+              seq: 5,
+              blocks: [
+                {
+                  kind: "bot_message_sent",
+                  toBotId: "requester",
+                  toBotName: "Requester",
+                  text: "send details",
+                  intent: "request",
+                },
+              ],
+            },
+          }),
+          findMany,
+        },
+      } as unknown as PrismaClient;
+
+      await expect(loadBotMessageContext(prisma, "message-source")).resolves.toMatchObject({
+        repliesToRequest: true,
+        answeredUserSinceRequest: expected,
+      });
+      expect(findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { threadId: "thread-1", role: "bot", seq: { gt: 5 } } }),
+      );
+    },
+  );
 });
 
 describe("hardening", () => {
