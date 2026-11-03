@@ -1,11 +1,18 @@
-import { openAuthSessionAsync, WebBrowserResultType } from "expo-web-browser";
+import {
+  getCustomTabsSupportingBrowsersAsync,
+  openAuthSessionAsync,
+  WebBrowserResultType,
+} from "expo-web-browser";
+import { Platform } from "react-native";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { authHeaders, clearSpace, currentApiBase, fetchMobileJson } from "./api";
 import { currentSessionGeneration, replaceSessionTokenIfCurrent } from "./session";
-import { continueWithSso } from "./sso";
+import { continueWithSso, ssoBrowserAvailable } from "./sso";
 
+vi.mock("react-native", () => ({ Platform: { OS: "ios" } }));
 vi.mock("expo-web-browser", () => ({
   openAuthSessionAsync: vi.fn(),
+  getCustomTabsSupportingBrowsersAsync: vi.fn(),
   WebBrowserResultType: { CANCEL: "cancel", DISMISS: "dismiss" },
 }));
 vi.mock("./api", () => ({
@@ -134,4 +141,19 @@ it("maps an unavailable session endpoint", async () => {
     body: {},
   });
   await expect(continueWithSso()).rejects.toThrow("Could not reach the server");
+});
+
+it("hides browser sign-in only on an Android phone with no browser", async () => {
+  const none = { browserPackages: [], servicePackages: [] };
+  vi.mocked(getCustomTabsSupportingBrowsersAsync).mockResolvedValue(none);
+  Platform.OS = "android";
+  expect(await ssoBrowserAvailable()).toBe(false);
+  vi.mocked(getCustomTabsSupportingBrowsersAsync).mockResolvedValue({
+    ...none,
+    browserPackages: ["org.example.browser"],
+  });
+  expect(await ssoBrowserAvailable()).toBe(true);
+  vi.mocked(getCustomTabsSupportingBrowsersAsync).mockResolvedValue(none);
+  Platform.OS = "ios";
+  expect(await ssoBrowserAvailable()).toBe(true);
 });

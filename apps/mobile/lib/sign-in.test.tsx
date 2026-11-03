@@ -17,7 +17,7 @@ import {
 } from "./api";
 import type { NativeActionButtonProps } from "./native-controls";
 import { passkeysAvailable, signInWithPasskey } from "./passkey";
-import { continueWithSso } from "./sso";
+import { continueWithSso, ssoBrowserAvailable } from "./sso";
 
 const route = vi.hoisted(() => ({ mode: "in", waiting: false, redirect: vi.fn() }));
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
@@ -135,7 +135,10 @@ vi.mock("./api", () => ({
   signUp: vi.fn(),
 }));
 vi.mock("./incoming-share", () => ({ hasIncomingShare: () => route.waiting }));
-vi.mock("./sso", () => ({ continueWithSso: vi.fn() }));
+vi.mock("./sso", () => ({
+  continueWithSso: vi.fn(),
+  ssoBrowserAvailable: vi.fn(async () => true),
+}));
 vi.mock("./passkey", () => ({ passkeysAvailable: vi.fn(), signInWithPasskey: vi.fn() }));
 vi.mock("./user-error", () => ({ credentialIssueText: vi.fn(), errorText: vi.fn() }));
 
@@ -234,6 +237,12 @@ it.each(["in", "up"])(
     expect(host.querySelector("input")).toBeNull();
   },
 );
+
+it("hides SSO when the phone has no browser to open it", async () => {
+  vi.mocked(ssoBrowserAvailable).mockResolvedValueOnce(false);
+  await render();
+  expect(ssoButtons()).toHaveLength(0);
+});
 
 it("hides SSO when switching to password recovery", async () => {
   await render();

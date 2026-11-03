@@ -37,7 +37,7 @@ import { useI18n } from "../lib/i18n";
 import { hasIncomingShare } from "../lib/incoming-share";
 import { useMobileTokens } from "../lib/native";
 import { passkeysAvailable, signInWithPasskey } from "../lib/passkey";
-import { continueWithSso } from "../lib/sso";
+import { continueWithSso, ssoBrowserAvailable } from "../lib/sso";
 import { credentialIssueText, errorText } from "../lib/user-error";
 
 const CODE_LENGTH = 6;
@@ -60,10 +60,15 @@ export default function SignIn() {
   const [reset, setReset] = useState<PasswordResetCapabilities | null>(null);
   const [capabilityError, setCapabilityError] = useState(false);
   const [capabilityAttempt, setCapabilityAttempt] = useState(0);
+  const [ssoBrowser, setSsoBrowser] = useState(true);
   const [resetSent, setResetSent] = useState(false);
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [passkeys, setPasskeys] = useState(false);
+
+  useEffect(() => {
+    void ssoBrowserAvailable().then(setSsoBrowser);
+  }, []);
 
   useEffect(() => {
     setPasswordVisible(false);
@@ -291,7 +296,7 @@ export default function SignIn() {
                       style={{ marginTop: 16 }}
                     />
                   ) : null}
-                  {reset?.sso && !reset.passwordAuth && mode !== "forgot" ? (
+                  {ssoBrowser && reset?.sso && !reset.passwordAuth && mode !== "forgot" ? (
                     <NativeActionButton
                       label={t("Continue with {name}", { name: reset.sso.name })}
                       disabled={pending}
@@ -469,7 +474,7 @@ export default function SignIn() {
                           style={{ marginTop: 12 }}
                         />
                       ) : null}
-                      {reset.sso && mode !== "forgot" ? (
+                      {ssoBrowser && reset.sso && mode !== "forgot" ? (
                         <NativeActionButton
                           label={t("Continue with {name}", { name: reset.sso.name })}
                           prominence="quiet"

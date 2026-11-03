@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { authHeaders, clearSpace, currentApiBase, fetchMobileJson } from "./api";
 import { t } from "./i18n";
 import {
@@ -8,6 +9,18 @@ import {
 import { authErrorText, authResponseErrorText, sessionSaveErrorText } from "./user-error";
 
 let inFlight = false;
+
+/** Android phones can ship without any browser, so the auth page could not open. iOS always has one. */
+export async function ssoBrowserAvailable(): Promise<boolean> {
+  if (Platform.OS !== "android") return true;
+  try {
+    const { getCustomTabsSupportingBrowsersAsync } = await import("expo-web-browser");
+    const { browserPackages, servicePackages } = await getCustomTabsSupportingBrowsersAsync();
+    return browserPackages.length > 0 || servicePackages.length > 0;
+  } catch {
+    return true;
+  }
+}
 
 /** Better Auth Expo proxy transfers the state cookie into the native auth browser. */
 export async function continueWithSso(
