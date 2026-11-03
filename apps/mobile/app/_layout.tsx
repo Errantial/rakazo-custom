@@ -30,7 +30,7 @@ import { chatRouteHeader } from "../components/chat-route-header";
 import { CodeCopyButton } from "../components/code-copy-button";
 import { ComputerUpdateProgress } from "../components/computer-update-progress";
 import { floatingHeaderOptions, glassHeaderOptions } from "../components/glass-title";
-import { MermaidDiagram } from "../components/mermaid-diagram";
+import { LazyMermaidDiagram } from "../components/mermaid-diagram-lazy";
 import { MessageMenuHost } from "../components/message-action-menu";
 import { MessageActionSheetHost } from "../components/message-action-sheet-host";
 import { NativeSymbol } from "../components/native-symbol";
@@ -243,7 +243,7 @@ function ChatContentProviders({
     >
       <RemoteImagesContext.Provider value={loadRemoteImages}>
         <LinkFaviconsContext.Provider value={linkFavicons}>
-          <MermaidDiagramContext.Provider value={MermaidDiagram}>
+          <MermaidDiagramContext.Provider value={LazyMermaidDiagram}>
             <CodeCopyButtonContext.Provider value={CodeCopyButton}>
               {children}
             </CodeCopyButtonContext.Provider>
