@@ -3,18 +3,23 @@ import { rpc } from "./api";
 
 export const DEVICE_VOICE_KEY = "rakazo.device-voice";
 
-let available: Promise<boolean> | undefined;
+let available = false;
 
 /**
  * Whether this phone can speak at all. De-Googled phones ship without a text-to-speech
- * engine, so the voice list is empty. Checked once per session.
+ * engine, so the voice list is empty. Android may also list nothing or fail while the
+ * engine is still binding, so only a found voice is kept for the session; an empty list
+ * is asked again, and a failed query counts as available so replies never leave the device.
  */
-export function deviceVoiceAvailable(): Promise<boolean> {
-  available ??= import("expo-speech")
-    .then((Speech) => Speech.getAvailableVoicesAsync())
-    .then((voices) => voices.length > 0)
-    .catch(() => false);
-  return available;
+export async function deviceVoiceAvailable(): Promise<boolean> {
+  if (available) return true;
+  try {
+    const Speech = await import("expo-speech");
+    available = (await Speech.getAvailableVoicesAsync()).length > 0;
+    return available;
+  } catch {
+    return true;
+  }
 }
 
 // Counts explicit choices, so a default worked out meanwhile never overwrites one.

@@ -138,6 +138,17 @@ describe("push registration on Android", () => {
       expect.anything(),
     );
   });
+
+  it("retries after the registration request fails", async () => {
+    Platform.OS = "android";
+    vi.mocked(Notifications.getPermissionsAsync).mockResolvedValue({ granted: true } as never);
+    vi.mocked(Notifications.getExpoPushTokenAsync).mockClear();
+    fetch.mockResolvedValueOnce(new Response("down", { status: 503 }));
+
+    expect(await registerPushToken()).toBe("unavailable");
+    expect(await registerPushToken()).toBe("registered");
+    expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("push registration without Google services", () => {

@@ -21,14 +21,20 @@ export async function registerPushToken(): Promise<"registered" | "unavailable" 
   try {
     const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
     if (!projectId) return "unavailable";
-    const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    let token: string | undefined;
+    try {
+      token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+    } catch {
+      // Expo Go without an EAS project id, Android builds without a Firebase config and
+      // phones without Google Play services cannot mint an Expo push token.
+      mintUnavailable = true;
+      return "unavailable";
+    }
     if (!token) return "unavailable";
     await rpc("notifications/registerPush", { token });
     return "registered";
   } catch {
-    // Expo Go without an EAS project id, Android builds without a Firebase config and
-    // phones without Google Play services cannot mint an Expo push token.
-    mintUnavailable = true;
+    // A failed registration request is transient, so a later call may try again.
     return "unavailable";
   }
 }

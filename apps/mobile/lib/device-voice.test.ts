@@ -116,13 +116,26 @@ describe("device voice availability", () => {
     const { deviceVoiceAvailable, loadDeviceVoiceEnabled } = await import("./device-voice");
     expect(await deviceVoiceAvailable()).toBe(false);
     expect(await loadDeviceVoiceEnabled()).toBe(false);
-    voices.list = [{ identifier: "en-us-local" }];
-    expect(await deviceVoiceAvailable()).toBe(false);
   });
 
-  it("is on when the phone lists a voice", async () => {
+  it("asks again after an empty list and keeps a found voice", async () => {
     vi.resetModules();
+    voices.list = [];
+    const { deviceVoiceAvailable } = await import("./device-voice");
+    expect(await deviceVoiceAvailable()).toBe(false);
+    voices.list = [{ identifier: "en-us-local" }];
+    expect(await deviceVoiceAvailable()).toBe(true);
+    voices.list = [];
+    expect(await deviceVoiceAvailable()).toBe(true);
+  });
+
+  it("counts a failed query as available and asks again next time", async () => {
+    vi.resetModules();
+    const Speech = await import("expo-speech");
+    vi.mocked(Speech.getAvailableVoicesAsync).mockRejectedValueOnce(new Error("engine binding"));
     const { deviceVoiceAvailable } = await import("./device-voice");
     expect(await deviceVoiceAvailable()).toBe(true);
+    voices.list = [];
+    expect(await deviceVoiceAvailable()).toBe(false);
   });
 });
