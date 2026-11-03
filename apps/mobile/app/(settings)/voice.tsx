@@ -7,7 +7,7 @@ import {
 import { fetchFresh, writeSaved } from "@rakazo/core/query";
 import { isCancelledError } from "@tanstack/react-query";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -30,7 +30,11 @@ import {
   saveCallSoundsEnabled,
   saveWaitSoundEnabled,
 } from "../../lib/call-sounds";
-import { loadDeviceVoiceEnabled, saveDeviceVoiceEnabled } from "../../lib/device-voice";
+import {
+  deviceVoiceAvailable,
+  loadDeviceVoiceEnabled,
+  saveDeviceVoiceEnabled,
+} from "../../lib/device-voice";
 import { useI18n } from "../../lib/i18n";
 import { native, useThemedStyles } from "../../lib/native";
 import { queryClient, rpcQuery } from "../../lib/query";
@@ -109,6 +113,7 @@ export default function VoiceSettings() {
   const loadRevision = useRef(0);
   const speechModelSave = useRef<string | null>(null);
   const [deviceVoice, setDeviceVoice] = useState(false);
+  const [deviceVoiceSupported, setDeviceVoiceSupported] = useState(true);
   const [deviceVoiceReady, setDeviceVoiceReady] = useState(!deviceSettings);
   const [callSounds, setCallSounds] = useState<boolean | null>(null);
   const [waitSound, setWaitSound] = useState<boolean | null>(null);
@@ -180,6 +185,10 @@ export default function VoiceSettings() {
       })
       .finally(() => setLoading(false));
   }, [load, t]);
+
+  useEffect(() => {
+    void deviceVoiceAvailable().then(setDeviceVoiceSupported);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -465,7 +474,7 @@ export default function VoiceSettings() {
         ) : shownError ? (
           <Text style={styles.error}>{shownError}</Text>
         ) : null}
-        {deviceSettings ? (
+        {deviceSettings && deviceVoiceSupported ? (
           <View style={styles.group}>
             <Pressable
               accessibilityRole="button"

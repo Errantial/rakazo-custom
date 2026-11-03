@@ -5,7 +5,7 @@ import * as Speech from "expo-speech";
 import { Platform } from "react-native";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { captureApiRequestContext, currentApiBase, rpc } from "./api";
-import { DEVICE_VOICE_KEY } from "./device-voice";
+import { DEVICE_VOICE_KEY, deviceVoiceAvailable } from "./device-voice";
 import {
   createSpeechOwner,
   getVoicePlaybackState,
@@ -48,7 +48,7 @@ vi.mock("expo-speech", () => ({
   stop: vi.fn(),
   pause: vi.fn(),
   resume: vi.fn(),
-  getAvailableVoicesAsync: vi.fn().mockResolvedValue([]),
+  getAvailableVoicesAsync: vi.fn().mockResolvedValue([{ identifier: "en-us-local" }]),
 }));
 vi.mock("react-native", () => ({ Platform: { OS: "ios" } }));
 vi.mock("./api", () => ({
@@ -879,6 +879,9 @@ describe("on-device speech", () => {
 
   it("speaks with the platform default voice and does not select a network voice", async () => {
     vi.mocked(SecureStore.getItemAsync).mockResolvedValue("1");
+    // The one-time availability probe lists voices; speaking itself must not.
+    await deviceVoiceAvailable();
+    vi.mocked(Speech.getAvailableVoicesAsync).mockClear();
     for (const os of ["ios", "android"] as const) {
       Platform.OS = os;
       const calls: Array<Parameters<typeof Speech.speak>[1]> = [];

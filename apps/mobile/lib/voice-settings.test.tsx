@@ -31,6 +31,7 @@ vi.mock("./api", () => ({
 }));
 vi.mock("./session", () => ({ currentSessionGeneration: () => 1 }));
 vi.mock("./device-voice", () => ({
+  deviceVoiceAvailable: async () => true,
   loadDeviceVoiceEnabled: state.load,
   saveDeviceVoiceEnabled: state.save,
 }));

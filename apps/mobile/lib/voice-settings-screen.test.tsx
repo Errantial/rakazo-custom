@@ -9,6 +9,7 @@ import { saveDeviceVoiceEnabled } from "./device-voice";
 import { queryClient } from "./query";
 
 const mocks = vi.hoisted(() => ({
+  deviceAvailable: vi.fn(async () => true),
   calls: vi.fn(),
   waiting: vi.fn(),
   saveCalls: vi.fn(),
@@ -50,6 +51,7 @@ vi.mock("./api", () => ({
 }));
 vi.mock("./session", () => ({ currentSessionGeneration: () => 1 }));
 vi.mock("./device-voice", () => ({
+  deviceVoiceAvailable: mocks.deviceAvailable,
   loadDeviceVoiceEnabled: mocks.loadDevice,
   saveDeviceVoiceEnabled: vi.fn(),
 }));
@@ -107,6 +109,7 @@ let root: Root;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.clearAllMocks();
+  mocks.deviceAvailable.mockResolvedValue(true);
   queryClient.clear();
   mocks.focused = true;
   mocks.failStatus = false;
@@ -260,4 +263,10 @@ it("keeps a device-voice read error after Retry reloads the providers", async ()
   await act(async () => retry()!.click());
   expect(container.textContent).toContain("ElevenLabs");
   expect(container.textContent).toContain("device read failed");
+});
+
+it("hides 'This device' when the phone has no speech voices", async () => {
+  mocks.deviceAvailable.mockResolvedValue(false);
+  await render();
+  expect(container.textContent).not.toContain("This device");
 });

@@ -3,6 +3,20 @@ import { rpc } from "./api";
 
 export const DEVICE_VOICE_KEY = "rakazo.device-voice";
 
+let available: Promise<boolean> | undefined;
+
+/**
+ * Whether this phone can speak at all. De-Googled phones ship without a text-to-speech
+ * engine, so the voice list is empty. Checked once per session.
+ */
+export function deviceVoiceAvailable(): Promise<boolean> {
+  available ??= import("expo-speech")
+    .then((Speech) => Speech.getAvailableVoicesAsync())
+    .then((voices) => voices.length > 0)
+    .catch(() => false);
+  return available;
+}
+
 // Counts explicit choices, so a default worked out meanwhile never overwrites one.
 let choices = 0;
 let lastWrite: Promise<unknown> = Promise.resolve();
@@ -19,6 +33,7 @@ function write(on: boolean): Promise<void> {
  * replies don't wait on the server to decide.
  */
 export async function loadDeviceVoiceEnabled(): Promise<boolean> {
+  if (!(await deviceVoiceAvailable())) return false;
   const seen = choices;
   const stored = await SecureStore.getItemAsync(DEVICE_VOICE_KEY);
   if (stored) return stored === "1";

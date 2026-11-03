@@ -11,6 +11,8 @@ vi.mock("expo-secure-store", () => ({
     store.delete(key);
   }),
 }));
+const voices = vi.hoisted(() => ({ list: [{ identifier: "en-us-local" }] as unknown[] }));
+vi.mock("expo-speech", () => ({ getAvailableVoicesAsync: vi.fn(async () => voices.list) }));
 const status = vi.hoisted(() => ({
   ready: false,
   fail: false,
@@ -103,5 +105,24 @@ describe("device voice preference", () => {
     const { loadDeviceVoiceEnabled } = await import("./device-voice");
 
     await expect(loadDeviceVoiceEnabled()).rejects.toThrow("device locked");
+  });
+});
+
+describe("device voice availability", () => {
+  it("is off, and the preference ignored, when the phone has no speech voices", async () => {
+    vi.resetModules();
+    voices.list = [];
+    store.set("rakazo.device-voice", "1");
+    const { deviceVoiceAvailable, loadDeviceVoiceEnabled } = await import("./device-voice");
+    expect(await deviceVoiceAvailable()).toBe(false);
+    expect(await loadDeviceVoiceEnabled()).toBe(false);
+    voices.list = [{ identifier: "en-us-local" }];
+    expect(await deviceVoiceAvailable()).toBe(false);
+  });
+
+  it("is on when the phone lists a voice", async () => {
+    vi.resetModules();
+    const { deviceVoiceAvailable } = await import("./device-voice");
+    expect(await deviceVoiceAvailable()).toBe(true);
   });
 });
