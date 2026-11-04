@@ -10,6 +10,7 @@ import Account from "../app/(settings)/account";
 import { deleteAccount, fetchAccountSecurity, requestAccountDeletionCode } from "./api";
 import { replaceWithSignIn } from "./auth-routing";
 import { promptAccountDeletion } from "./delete-account-prompt";
+import { setDisplayMode } from "./display-mode";
 import { registerSettingsSheet } from "./settings-sheet";
 
 type Pressed = {
@@ -128,8 +129,26 @@ vi.mock("../components/native-action-button", () => ({
   }) => createElement("button", { type: "button", disabled, onClick: onPress }, label),
 }));
 vi.mock("../components/native-segmented-control", () => ({
-  NativeSegmentedControl: ({ accessibilityLabel }: { accessibilityLabel: string }) =>
-    createElement("div", { "aria-label": accessibilityLabel }),
+  NativeSegmentedControl: ({
+    accessibilityLabel,
+    options,
+    onChange,
+  }: {
+    accessibilityLabel: string;
+    options: { value: string; label: string }[];
+    onChange: (value: string) => void;
+  }) =>
+    createElement(
+      "div",
+      { "aria-label": accessibilityLabel },
+      options.map((option) =>
+        createElement(
+          "span",
+          { key: option.value, role: "radio", onClick: () => onChange(option.value) },
+          option.label,
+        ),
+      ),
+    ),
 }));
 vi.mock("../components/settings-group", () => ({
   SettingsGroup: element("div"),
@@ -236,7 +255,10 @@ vi.mock("./remote-images-preference", () => ({
   subscribeRemoteImages: () => () => undefined,
 }));
 const display = { mode: "standard" as "standard" | "eink" };
-vi.mock("./display-mode", () => ({ useDisplayMode: () => display.mode }));
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => display.mode,
+  setDisplayMode: vi.fn(),
+}));
 vi.mock("./response-streaming", () => ({
   getCachedResponseStreamingPreference: () => "on",
   setResponseStreamingPreference: vi.fn(),
@@ -299,6 +321,22 @@ it("offers no avatar style choice in account settings", async () => {
   expect(container.textContent).not.toContain("Avatars");
   expect(container.textContent).not.toContain("Robot");
   expect(container.textContent).not.toContain("Organic");
+});
+
+it("switches the display mode to e-ink from the Display control", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  container = document.createElement("div");
+  document.body.append(container);
+  root = createRoot(container);
+  await act(async () => root?.render(<Account />));
+
+  const control = container.querySelector('[aria-label="Display"]');
+  expect(control).not.toBeNull();
+  const option = Array.from(control!.querySelectorAll<HTMLElement>('[role="radio"]')).find(
+    (node) => node.textContent === "E-ink",
+  );
+  await act(async () => option?.click());
+  expect(setDisplayMode).toHaveBeenCalledWith("eink");
 });
 
 async function renderAccount() {

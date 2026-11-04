@@ -56,7 +56,7 @@ import { useApprovalSettings } from "../../lib/approval-settings";
 import { archivedChatCounts, loadArchivedChats } from "../../lib/archived-chats";
 import { replaceWithSignIn } from "../../lib/auth-routing";
 import { promptAccountDeletion } from "../../lib/delete-account-prompt";
-import { useDisplayMode } from "../../lib/display-mode";
+import { setDisplayMode, useDisplayMode } from "../../lib/display-mode";
 import { dateLocaleForUi, useI18n } from "../../lib/i18n";
 import type { LiveNotificationSettings } from "../../lib/live-notifications";
 import {
@@ -634,6 +634,19 @@ export default function Account() {
               { value: "dark", label: t("Dark") },
             ]}
             value={appearance}
+          />
+        </View>
+
+        <View accessibilityLabel={t("Display")} style={styles.section}>
+          <SettingsLabel>{t("Display")}</SettingsLabel>
+          <NativeSegmentedControl
+            accessibilityLabel={t("Display")}
+            onChange={(value) => void setDisplayMode(value)}
+            options={[
+              { value: "standard", label: t("Standard") },
+              { value: "eink", label: t("E-ink") },
+            ]}
+            value={einkDisplay ? "eink" : "standard"}
           />
         </View>
 
