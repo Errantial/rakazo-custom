@@ -1,6 +1,6 @@
 import { MenuView } from "@expo/ui/community/menu";
 import type { AccountSecurity, UsageSummary } from "@rakazo/contracts";
-import { accountDisplay, displayName } from "@rakazo/core";
+import { accountDisplay, displayName, responseStreamingEnabled } from "@rakazo/core";
 import * as Notifications from "expo-notifications";
 import type { Href } from "expo-router";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -56,6 +56,7 @@ import { useApprovalSettings } from "../../lib/approval-settings";
 import { archivedChatCounts, loadArchivedChats } from "../../lib/archived-chats";
 import { replaceWithSignIn } from "../../lib/auth-routing";
 import { promptAccountDeletion } from "../../lib/delete-account-prompt";
+import { useDisplayMode } from "../../lib/display-mode";
 import { dateLocaleForUi, useI18n } from "../../lib/i18n";
 import type { LiveNotificationSettings } from "../../lib/live-notifications";
 import {
@@ -84,7 +85,7 @@ import {
   subscribeRemoteImages,
 } from "../../lib/remote-images-preference";
 import {
-  getCachedResponseStreamingEnabled,
+  getCachedResponseStreamingPreference,
   setResponseStreamingPreference,
   subscribeResponseStreaming,
 } from "../../lib/response-streaming";
@@ -178,10 +179,14 @@ export default function Account() {
   const archivedCounts = useRef({ bots: 0, groups: 0 });
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const appearance = getCachedAppearancePreference();
-  const streamReplies = useSyncExternalStore(
-    subscribeResponseStreaming,
-    getCachedResponseStreamingEnabled,
-    () => false,
+  const einkDisplay = useDisplayMode() === "eink";
+  // The stored choice, not the e-ink override, so the switch stays truthful in standard mode.
+  const streamReplies = responseStreamingEnabled(
+    useSyncExternalStore(
+      subscribeResponseStreaming,
+      getCachedResponseStreamingPreference,
+      () => "off",
+    ),
   );
   const loadRemoteImages = useSyncExternalStore(
     subscribeRemoteImages,
@@ -749,7 +754,7 @@ export default function Account() {
             onPress={() => setAdvancedOpen((open) => !open)}
             title={t("Advanced")}
           />
-          {advancedOpen ? (
+          {advancedOpen && !einkDisplay ? (
             <SettingsSwitch
               label={t("Stream replies")}
               value={streamReplies}

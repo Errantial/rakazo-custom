@@ -162,8 +162,8 @@ vi.mock("../components/settings-group", () => ({
       },
       title,
     ),
-  SettingsSwitch: ({ title }: { title: string }) =>
-    createElement("button", { type: "button" }, title),
+  SettingsSwitch: ({ label, value }: { label: string; value: boolean }) =>
+    createElement("button", { type: "button", role: "switch", "aria-checked": value }, label),
   useStackedSettings: () => false,
 }));
 vi.mock("./api", () => ({
@@ -235,8 +235,10 @@ vi.mock("./remote-images-preference", () => ({
   setRemoteImagesPreference: vi.fn(),
   subscribeRemoteImages: () => () => undefined,
 }));
+const display = { mode: "standard" as "standard" | "eink" };
+vi.mock("./display-mode", () => ({ useDisplayMode: () => display.mode }));
 vi.mock("./response-streaming", () => ({
-  getCachedResponseStreamingEnabled: () => true,
+  getCachedResponseStreamingPreference: () => "on",
   setResponseStreamingPreference: vi.fn(),
   subscribeResponseStreaming: () => () => undefined,
 }));
@@ -272,6 +274,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   account.me = { userId: "user-1", name: "Tester", email: "tester@example.test" };
   account.rules = [];
+  display.mode = "standard";
   vi.mocked(fetchAccountSecurity).mockResolvedValue(security());
 });
 
@@ -531,4 +534,28 @@ it("shows the approval mode as the Approvals row's value, with Rules only once t
   expect(view.button("Rules")!.dataset.value).toBe("2");
   await view.press("Rules");
   expect(account.push).toHaveBeenCalledWith("/approvals");
+});
+
+async function streamSwitch(mode: "standard" | "eink") {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  display.mode = mode;
+  container = document.createElement("div");
+  document.body.append(container);
+  root = createRoot(container);
+  await act(async () => root?.render(<Account />));
+  const toggle = [...container.querySelectorAll<HTMLElement>("button")].find(
+    (button) => button.textContent === "Advanced",
+  );
+  await act(async () => toggle?.click());
+  return [...container.querySelectorAll<HTMLElement>('[role="switch"]')].find(
+    (item) => item.textContent === "Stream replies",
+  );
+}
+
+it("shows the stored stream-replies choice in standard mode", async () => {
+  expect((await streamSwitch("standard"))?.getAttribute("aria-checked")).toBe("true");
+});
+
+it("hides the stream-replies switch in e-ink", async () => {
+  expect(await streamSwitch("eink")).toBeUndefined();
 });
