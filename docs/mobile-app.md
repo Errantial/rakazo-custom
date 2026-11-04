@@ -53,7 +53,7 @@ or with the phone maker's desktop tool if it has one, such as Mudita Center for 
 
 Without Google services:
 
-- Notifications only arrive while the app is open. There is no background push.
-- Read-aloud and dictation use the phone's speech engine, so they are hidden when the phone has none.
-  Hosted voices from your model connection still work.
+- Background notifications need Google services. Without them, notifications only arrive while the app is open.
+- On-device read-aloud and dictation need the phone's speech engine. Without one, use a hosted voice
+  from your model connection.
 - Single sign-on needs a browser app, so it is hidden when there is none. Use email and password instead.
