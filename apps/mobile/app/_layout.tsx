@@ -1,11 +1,11 @@
-import type { LinkFavicons } from "@rakazo/chat-ui/native";
+import type { LinkFavicons } from "@rakazo/chat-ui/native-context";
 import {
   CodeCopyButtonContext,
   LinkFaviconsContext,
   MarkdownLinkPromptProvider,
   MermaidDiagramContext,
   RemoteImagesContext,
-} from "@rakazo/chat-ui/native";
+} from "@rakazo/chat-ui/native-context";
 import { analyticsScreen } from "@rakazo/core";
 import {
   DarkTheme,

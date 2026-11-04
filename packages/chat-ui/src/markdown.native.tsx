@@ -12,7 +12,7 @@ import Markdown, {
   MarkdownStream,
 } from "@ronradtke/react-native-markdown-display";
 import { Highlight, themes } from "prism-react-renderer";
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { createContext, memo, useCallback, useContext, useMemo, useState } from "react";
 import type {
   NativeScrollEvent,
@@ -60,6 +60,7 @@ import {
   useMarkdownLinkTrust,
 } from "./markdown-link-prompt";
 import { isMermaidFence } from "./mermaid";
+import { CodeCopyButtonContext, MermaidDiagramContext } from "./native-context";
 
 function keepMarkdownLinkToken(_url: string) {
   return true;
@@ -799,26 +800,6 @@ function TableScrollView({
   );
 }
 
-export type MermaidDiagramProps = {
-  source: string;
-  palette: ColorTokens;
-  colorScheme: ResolvedAppearance;
-  /** The code block, for the app to show while the diagram draws or when it cannot. */
-  fallback: ReactNode;
-};
-
-/**
- * Draws a ```mermaid fence. Mermaid needs a browser engine, so the app supplies the drawing
- * (a WebView); without one, a fence stays a code block.
- */
-export const MermaidDiagramContext = createContext<ComponentType<MermaidDiagramProps> | null>(null);
-
-/**
- * The app's control for copying a code block, given the code exactly as written. Without one,
- * code blocks have no copy control.
- */
-export const CodeCopyButtonContext = createContext<ComponentType<{ code: string }> | null>(null);
-
 /** Code in a sideways scroll view, with its copy control beside it so the control stays put. */
 function CodeScrollView({ code, children }: { code: string; children?: ReactNode }) {
   const CopyButton = useContext(CodeCopyButtonContext);
@@ -1512,3 +1493,5 @@ const layout = StyleSheet.create({
 export type { ChatMarkdownProps, LinkFavicons } from "./markdown";
 export { LinkFaviconsContext, RemoteImagesContext, withBlockMentions } from "./markdown";
 export { MarkdownLinkPromptProvider } from "./markdown-link-prompt";
+export type { MermaidDiagramProps } from "./native-context";
+export { CodeCopyButtonContext, MermaidDiagramContext } from "./native-context";

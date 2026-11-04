@@ -6,6 +6,7 @@
   "exports": {
     "./mermaid": "./src/mermaid.ts",
     "./native": "./src/markdown.native.tsx",
+    "./native-context": "./src/native-context.ts",
     "./web": "./src/markdown.web.tsx"
   },
   "scripts": {
