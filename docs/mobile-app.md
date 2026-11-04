@@ -45,3 +45,15 @@ working status while a bot runs.
 
 On Android, share text, images, audio, video, PDFs or files from another app to Rakazo and pick the
 bot to send them to.
+
+## Phones without Google Play
+
+Download the APK from the link above, then install it with `adb install rakazo.apk` (USB debugging on),
+or with the phone maker's desktop tool if it has one, such as Mudita Center for the Mudita Kompakt.
+
+Without Google services:
+
+- Notifications only arrive while the app is open. There is no background push.
+- Read-aloud and dictation use the phone's speech engine, so they are hidden when the phone has none.
+  Hosted voices from your model connection still work.
+- Single sign-on needs a browser app, so it is hidden when there is none. Use email and password instead.
