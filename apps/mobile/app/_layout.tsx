@@ -73,6 +73,7 @@ import {
   subscribeSessionGeneration,
 } from "../lib/session";
 import { InboxBesideContext } from "../lib/side-insets";
+import { hideSplash } from "../lib/splash";
 import {
   chooseInboxWidth,
   closesSplitPane,
@@ -308,7 +309,7 @@ function LayoutContent() {
 
   useEffect(() => {
     if (appearanceReady && ready)
-      void SplashScreen.hideAsync()
+      void hideSplash()
         .then(completeMobileStartup)
         .catch(() => undefined);
   }, [appearanceReady, ready]);
