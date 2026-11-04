@@ -244,6 +244,18 @@ it("hides SSO when the phone has no browser to open it", async () => {
   expect(ssoButtons()).toHaveLength(0);
 });
 
+it("says why there is no sign-in button on an SSO-only server without a browser", async () => {
+  vi.mocked(passwordResetCapabilities).mockResolvedValue({
+    ...capabilities,
+    passwordAuth: false,
+    sso: { name: "Example SSO", availability: "available" as const },
+  });
+  vi.mocked(ssoBrowserAvailable).mockResolvedValueOnce(false);
+  await render();
+  expect(ssoButtons()).toHaveLength(0);
+  expect(host.textContent).toContain("Signing in needs a browser app on this phone.");
+});
+
 it("hides SSO when switching to password recovery", async () => {
   await render();
   const forgot = [...host.querySelectorAll("button")].find(

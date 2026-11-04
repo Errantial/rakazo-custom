@@ -914,6 +914,7 @@ export const ZH_MESSAGES: Record<string, string> = {
   "No AI services configured.": "未配置 AI 服务。",
   "Privacy policy": "隐私政策",
   "Continue with {name}": "通过 {name} 继续",
+  "Signing in needs a browser app on this phone.": "登录需要此手机上有浏览器应用。",
   "Could not load sign-in options": "无法加载登录选项",
   "Deletion code": "删除验证码",
   "Email is not allowed to register": "该邮箱不允许注册",

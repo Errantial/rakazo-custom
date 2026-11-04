@@ -837,6 +837,8 @@ export const ES_MESSAGES: Record<string, string> = {
   "No AI services configured.": "No hay servicios de IA configurados.",
   "Privacy policy": "Política de privacidad",
   "Continue with {name}": "Continuar con {name}",
+  "Signing in needs a browser app on this phone.":
+    "Para iniciar sesión hace falta una app de navegador en este teléfono.",
   "Could not load sign-in options": "No se pudieron cargar las opciones de inicio de sesión",
   "Deletion code": "Código de eliminación",
   "Email is not allowed to register": "Este correo no está autorizado para registrarse",

@@ -883,6 +883,7 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   "No AI services configured.": "未設定 AI 服務。",
   "Privacy policy": "隱私權政策",
   "Continue with {name}": "透過 {name} 繼續",
+  "Signing in needs a browser app on this phone.": "登入需要此手機上有瀏覽器應用程式。",
   "Could not load sign-in options": "無法載入登入選項",
   "Deletion code": "刪除驗證碼",
   "Email is not allowed to register": "該電子信箱不允許註冊",

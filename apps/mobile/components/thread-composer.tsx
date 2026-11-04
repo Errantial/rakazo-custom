@@ -765,7 +765,7 @@ function MentionOptionIcon({ mention }: { mention: ComposerMention }) {
         width: 16,
         height: 16,
         borderRadius: 4,
-        backgroundColor: mention.color ?? tokens.mutedForeground,
+        backgroundColor: mention.color ? mobileBotColor(mention.color) : tokens.mutedForeground,
       }}
     />
   );

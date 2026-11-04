@@ -15,8 +15,14 @@ export async function ssoBrowserAvailable(): Promise<boolean> {
   if (Platform.OS !== "android") return true;
   try {
     const { getCustomTabsSupportingBrowsersAsync } = await import("expo-web-browser");
-    const { browserPackages, servicePackages } = await getCustomTabsSupportingBrowsersAsync();
-    return browserPackages.length > 0 || servicePackages.length > 0;
+    const { browserPackages, servicePackages, defaultBrowserPackage, preferredBrowserPackage } =
+      await getCustomTabsSupportingBrowsersAsync();
+    return Boolean(
+      browserPackages.length ||
+        servicePackages.length ||
+        defaultBrowserPackage ||
+        preferredBrowserPackage,
+    );
   } catch {
     return true;
   }

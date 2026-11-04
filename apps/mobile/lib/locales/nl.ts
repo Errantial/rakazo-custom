@@ -889,6 +889,8 @@ export const NL_MESSAGES: Record<string, string> = {
   "No AI services configured.": "Geen AI-diensten geconfigureerd.",
   "Privacy policy": "Privacybeleid",
   "Continue with {name}": "Doorgaan met {name}",
+  "Signing in needs a browser app on this phone.":
+    "Voor inloggen is een browser-app op deze telefoon nodig.",
   "Could not load sign-in options": "Aanmeldopties laden mislukt",
   "Deletion code": "Verwijderingscode",
   "Email is not allowed to register": "Dit e-mailadres mag niet worden geregistreerd",

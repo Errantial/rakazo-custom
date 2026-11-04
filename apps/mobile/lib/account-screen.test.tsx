@@ -594,6 +594,12 @@ it("shows the stored stream-replies choice in standard mode", async () => {
   expect((await advancedSwitches("standard")).stream?.getAttribute("aria-checked")).toBe("true");
 });
 
+it("hides the Appearance control in e-ink, where it changes nothing", async () => {
+  await advancedSwitches("eink");
+  expect(container?.querySelector('[aria-label="Appearance"]')).toBeNull();
+  expect(container?.querySelector('[aria-label="Display"]')).not.toBeNull();
+});
+
 it("hides the stream-replies switch in e-ink", async () => {
   const { stream, images } = await advancedSwitches("eink");
   // Advanced did expand: its other switches are still there.

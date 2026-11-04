@@ -153,6 +153,11 @@ it("hides browser sign-in only on an Android phone with no browser", async () =>
     browserPackages: ["org.example.browser"],
   });
   expect(await ssoBrowserAvailable()).toBe(true);
+  vi.mocked(getCustomTabsSupportingBrowsersAsync).mockResolvedValue({
+    ...none,
+    defaultBrowserPackage: "org.example.plain",
+  });
+  expect(await ssoBrowserAvailable()).toBe(true);
   vi.mocked(getCustomTabsSupportingBrowsersAsync).mockResolvedValue(none);
   Platform.OS = "ios";
   expect(await ssoBrowserAvailable()).toBe(true);

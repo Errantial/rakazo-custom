@@ -877,6 +877,8 @@ export const JA_MESSAGES: Record<string, string> = {
   "No AI services configured.": "AIサービスが設定されていません。",
   "Privacy policy": "プライバシーポリシー",
   "Continue with {name}": "{name}で続行",
+  "Signing in needs a browser app on this phone.":
+    "サインインにはこの端末にブラウザアプリが必要です。",
   "Could not load sign-in options": "ログイン方法を読み込めませんでした",
   "Deletion code": "削除コード",
   "Email is not allowed to register": "このメールアドレスは登録できません",

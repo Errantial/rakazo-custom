@@ -12,11 +12,7 @@ async function notificationsAllowed() {
   return existing.granted || (await Notifications.requestPermissionsAsync()).granted;
 }
 
-// Set when minting a token fails, so later launch paths in this session skip the attempt.
-let mintUnavailable = false;
-
 export async function registerPushToken(): Promise<"registered" | "unavailable" | "denied"> {
-  if (mintUnavailable) return "unavailable";
   if (!(await notificationsAllowed())) return "denied";
   try {
     const projectId = Constants.easConfig?.projectId ?? Constants.expoConfig?.extra?.eas?.projectId;
@@ -25,10 +21,8 @@ export async function registerPushToken(): Promise<"registered" | "unavailable" 
     try {
       token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
     } catch {
-      // Expo Go without an EAS project id, Android builds without a Firebase config and
-      // phones without Google Play services cannot mint an Expo push token.
-      // Only Android skips retries; iOS and other platforms keep trying after a network blip.
-      if (Platform.OS === "android") mintUnavailable = true;
+      // Expo Go without an EAS project id, builds without a Firebase config, phones without
+      // Google Play services and offline starts all fail here; a later call may succeed.
       return "unavailable";
     }
     if (!token) return "unavailable";

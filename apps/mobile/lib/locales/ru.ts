@@ -929,6 +929,8 @@ export const RU_MESSAGES: Record<string, string> = {
   "No AI services configured.": "Сервисы ИИ не настроены.",
   "Privacy policy": "Политика конфиденциальности",
   "Continue with {name}": "Продолжить с {name}",
+  "Signing in needs a browser app on this phone.":
+    "Для входа на этом телефоне нужно приложение-браузер.",
   "Could not load sign-in options": "Не удалось загрузить способы входа",
   "Deletion code": "Код удаления",
   "Email is not allowed to register": "Регистрация с этим адресом электронной почты запрещена",

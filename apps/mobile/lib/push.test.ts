@@ -164,7 +164,7 @@ describe("push token mint failure on iOS", () => {
 });
 
 describe("push registration without Google services", () => {
-  it("reports unavailable and does not mint again this session", async () => {
+  it("reports unavailable and tries again on the next call", async () => {
     Platform.OS = "android";
     vi.mocked(Notifications.getPermissionsAsync).mockResolvedValue({ granted: true } as never);
     vi.mocked(Notifications.getExpoPushTokenAsync).mockClear();
@@ -173,7 +173,7 @@ describe("push registration without Google services", () => {
     );
 
     expect(await registerPushToken()).toBe("unavailable");
-    expect(await registerPushToken()).toBe("unavailable");
-    expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledTimes(1);
+    expect(await registerPushToken()).toBe("registered");
+    expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledTimes(2);
   });
 });

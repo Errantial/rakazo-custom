@@ -623,19 +623,21 @@ export default function Account() {
           </SettingsGroup>
         ) : null}
 
-        <View accessibilityLabel={t("Appearance")} style={styles.section}>
-          <SettingsLabel>{t("Appearance")}</SettingsLabel>
-          <NativeSegmentedControl
-            accessibilityLabel={t("Appearance")}
-            onChange={(value) => void setAppearancePreference(value)}
-            options={[
-              { value: "system", label: t("System") },
-              { value: "light", label: t("Light") },
-              { value: "dark", label: t("Dark") },
-            ]}
-            value={appearance}
-          />
-        </View>
+        {einkDisplay ? null : (
+          <View accessibilityLabel={t("Appearance")} style={styles.section}>
+            <SettingsLabel>{t("Appearance")}</SettingsLabel>
+            <NativeSegmentedControl
+              accessibilityLabel={t("Appearance")}
+              onChange={(value) => void setAppearancePreference(value)}
+              options={[
+                { value: "system", label: t("System") },
+                { value: "light", label: t("Light") },
+                { value: "dark", label: t("Dark") },
+              ]}
+              value={appearance}
+            />
+          </View>
+        )}
 
         <View accessibilityLabel={t("Display")} style={styles.section}>
           <SettingsLabel>{t("Display")}</SettingsLabel>

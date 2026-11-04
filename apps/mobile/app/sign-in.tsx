@@ -60,7 +60,7 @@ export default function SignIn() {
   const [reset, setReset] = useState<PasswordResetCapabilities | null>(null);
   const [capabilityError, setCapabilityError] = useState(false);
   const [capabilityAttempt, setCapabilityAttempt] = useState(0);
-  const [ssoBrowser, setSsoBrowser] = useState(true);
+  const [ssoBrowser, setSsoBrowser] = useState<boolean | null>(null);
   const [resetSent, setResetSent] = useState(false);
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -303,6 +303,11 @@ export default function SignIn() {
                       onPress={() => void externalSignIn(continueWithSso)}
                       style={{ marginTop: 16 }}
                     />
+                  ) : null}
+                  {ssoBrowser === false && reset?.sso && !reset.passwordAuth ? (
+                    <Text style={{ color: tokens.mutedForeground, marginTop: 16 }}>
+                      {t("Signing in needs a browser app on this phone.")}
+                    </Text>
                   ) : null}
                   {error && !reset?.passwordAuth ? (
                     <Text

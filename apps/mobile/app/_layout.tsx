@@ -49,7 +49,7 @@ import { loadAppearancePreference, mobileTokens } from "../lib/appearance";
 import { replaceWithSignIn } from "../lib/auth-routing";
 import { AvatarScreenFocus } from "../lib/avatar-life";
 import { installClientUpdates, watchForegroundUpdates } from "../lib/client-update";
-import { loadDisplayMode } from "../lib/display-mode";
+import { loadDisplayMode, useDisplayMode } from "../lib/display-mode";
 import { bootstrapI18n, useI18n } from "../lib/i18n";
 import { loadLinkFavicon } from "../lib/link-favicons";
 import {
@@ -283,6 +283,7 @@ function LayoutContent() {
   }, [ready, screen]);
   const [appearanceReady, setAppearanceReady] = useState(false);
   const resolved = useResolvedAppearance();
+  const display = useDisplayMode();
   const loadRemoteImages = useSyncExternalStore(
     subscribeRemoteImages,
     getCachedRemoteImagesEnabled,
@@ -303,7 +304,7 @@ function LayoutContent() {
         notification: tokens.foreground,
       },
     };
-  }, [resolved]);
+  }, [resolved, display]);
 
   useEffect(() => {
     if (appearanceReady && ready)
