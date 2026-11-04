@@ -7,6 +7,11 @@ const appearance = vi.hoisted(() => ({
   resolved: "dark" as "dark" | "light",
 }));
 
+vi.mock("./display-mode", () => ({
+  getCachedDisplayMode: () => "standard",
+  subscribeDisplayMode: () => () => undefined,
+}));
+
 vi.mock("react-native", () => ({
   Platform: { OS: "ios" },
   PlatformColor: (name: string) => `platform:${name}`,

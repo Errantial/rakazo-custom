@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import { tokensForAppearance } from "@rakazo/ui-tokens";
 import type { ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -32,6 +33,7 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("./native", () => ({
   useResolvedAppearance: () => state.scheme,
+  useMobileTokens: () => tokensForAppearance(state.scheme),
   systemGreen: (scheme: string) => (scheme === "dark" ? "#30D158" : "#34C759"),
 }));
 vi.mock("@expo/ui/jetpack-compose", () => {

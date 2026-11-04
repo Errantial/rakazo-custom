@@ -5,6 +5,7 @@ const schemeListeners = new Set<(event: { colorScheme: "light" | "dark" | null }
 let colorScheme: "light" | "dark" | null = "dark";
 let colorSchemeOverride: "light" | "dark" | null = null;
 
+vi.mock("./device-profile", () => ({ isEinkDevice: () => false }));
 vi.mock("expo-secure-store", () => ({
   getItemAsync: vi.fn(async (key: string) => store.get(key) ?? null),
   setItemAsync: vi.fn(async (key: string, value: string) => {

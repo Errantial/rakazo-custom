@@ -6,9 +6,8 @@ import {
   TextButton,
   useNativeState,
 } from "@expo/ui/jetpack-compose";
-import { tokensForAppearance } from "@rakazo/ui-tokens";
 import { useI18n } from "../lib/i18n";
-import { useResolvedAppearance } from "../lib/native";
+import { useMobileTokens, useResolvedAppearance } from "../lib/native";
 import type { NameDialogProps } from "./name-dialog";
 
 export default function ComposeNameDialog({
@@ -21,7 +20,7 @@ export default function ComposeNameDialog({
 }: NameDialogProps) {
   const { t } = useI18n();
   const scheme = useResolvedAppearance();
-  const tokens = tokensForAppearance(scheme);
+  const tokens = useMobileTokens();
   const value = useNativeState(draft);
   const selection = useNativeState({ start: 0, end: draft.length });
   // Follow the app's monochrome accent instead of a palette generated from it.

@@ -33,6 +33,7 @@ import Svg, { Ellipse, G, Path, Rect } from "react-native-svg";
 import type { AvatarLife } from "../lib/avatar-life";
 import { useAvatarOnScreen, useLife, usePoke, useSettling } from "../lib/avatar-life";
 import { mobileBotAvatarPresentation } from "../lib/bot-avatar";
+import { mobileBotColor, useDisplayMode } from "../lib/display-mode";
 import { useI18n } from "../lib/i18n";
 import { mobileLogoAvatarActivity } from "../lib/logo-avatar-activity";
 import { useMobileTokens } from "../lib/native";
@@ -124,7 +125,10 @@ export interface BotAvatarProps {
 }
 
 /** Missing set metadata deliberately preserves every existing avatar. */
-export const BotAvatar = memo(function BotAvatar(props: BotAvatarProps) {
+export const BotAvatar = memo(function BotAvatar(rawProps: BotAvatarProps) {
+  // E-ink drops the bot's identity color for ink; the hook re-renders on display changes.
+  useDisplayMode();
+  const props = { ...rawProps, color: mobileBotColor(rawProps.color) };
   if (usesLogoAvatar(props)) {
     return <RakazoBotAvatar {...props} />;
   }

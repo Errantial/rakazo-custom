@@ -29,6 +29,12 @@ const nativeMotion = vi.hoisted(() => ({
   timings: [] as number[],
 }));
 
+vi.mock("./display-mode", () => ({
+  getCachedDisplayMode: () => "standard",
+  mobileBotColor: (color: string) => color,
+  subscribeDisplayMode: () => () => undefined,
+  useDisplayMode: () => "standard",
+}));
 vi.mock("react-native", () => ({
   View: ({
     children,

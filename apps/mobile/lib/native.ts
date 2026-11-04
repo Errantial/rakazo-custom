@@ -1,4 +1,4 @@
-import { tokensForAppearance } from "@rakazo/ui-tokens";
+import { tokensForDisplay } from "@rakazo/ui-tokens";
 import { useMemo, useSyncExternalStore } from "react";
 import type { ColorValue } from "react-native";
 import { Platform, PlatformColor } from "react-native";
@@ -10,6 +10,7 @@ import {
   subscribeAppearance,
 } from "./appearance";
 import { translucentColor } from "./color";
+import { getCachedDisplayMode, subscribeDisplayMode } from "./display-mode";
 
 function systemColor(iosName: string, fallback: string): ColorValue {
   // PlatformColor follows the OS scheme, not an explicit app Light/Dark choice.
@@ -69,13 +70,24 @@ export const native = {
 } as const;
 
 function appearanceSnapshot(): string {
-  return `${getCachedAppearancePreference()}:${resolveMobileAppearance()}`;
+  return `${getCachedAppearancePreference()}:${resolveMobileAppearance()}:${getCachedDisplayMode()}`;
+}
+
+function subscribeAppearanceAndDisplay(listener: () => void): () => void {
+  const stops = [subscribeAppearance(listener), subscribeDisplayMode(listener)];
+  return () => {
+    for (const stop of stops) stop();
+  };
 }
 
 export function useResolvedAppearance(): ResolvedAppearance {
   // Include the preference: System -> Light must replace iOS PlatformColor
   // objects even when both currently resolve to light.
-  useSyncExternalStore(subscribeAppearance, appearanceSnapshot, () => "system:dark");
+  useSyncExternalStore(
+    subscribeAppearanceAndDisplay,
+    appearanceSnapshot,
+    () => "system:dark:standard",
+  );
   return resolveMobileAppearance();
 }
 
@@ -83,10 +95,12 @@ export function useResolvedAppearance(): ResolvedAppearance {
 export function useThemedStyles<T>(factory: () => T): T {
   const resolved = useResolvedAppearance();
   const preference = getCachedAppearancePreference();
-  return useMemo(factory, [resolved, preference]);
+  const display = getCachedDisplayMode();
+  return useMemo(factory, [resolved, preference, display]);
 }
 
 /** Subscribe custom surfaces to the same appearance as native navigation. */
 export function useMobileTokens() {
-  return tokensForAppearance(useResolvedAppearance());
+  const appearance = useResolvedAppearance();
+  return tokensForDisplay(appearance, getCachedDisplayMode());
 }

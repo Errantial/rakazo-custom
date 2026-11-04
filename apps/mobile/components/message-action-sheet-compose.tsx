@@ -11,8 +11,9 @@ import {
   selectable,
   size,
 } from "@expo/ui/jetpack-compose/modifiers";
-import { tokensForAppearance } from "@rakazo/ui-tokens";
+import { tokensForDisplay } from "@rakazo/ui-tokens";
 import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useDisplayMode } from "../lib/display-mode";
 import {
   dismissMessageActionSheet,
   getMessageActionSheet,
@@ -29,8 +30,9 @@ export default function AndroidMessageActionSheetHost() {
   );
   const ref = useRef<ModalBottomSheetRef>(null);
   useEffect(mountMessageActionSheetHost, []);
+  const display = useDisplayMode();
   if (!sheet) return null;
-  const tokens = tokensForAppearance(sheet.colorScheme);
+  const tokens = tokensForDisplay(sheet.colorScheme, display);
   return (
     <Host
       useViewportSizeMeasurement

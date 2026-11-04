@@ -49,6 +49,7 @@ import { loadAppearancePreference, mobileTokens } from "../lib/appearance";
 import { replaceWithSignIn } from "../lib/auth-routing";
 import { AvatarScreenFocus } from "../lib/avatar-life";
 import { installClientUpdates, watchForegroundUpdates } from "../lib/client-update";
+import { loadDisplayMode } from "../lib/display-mode";
 import { bootstrapI18n, useI18n } from "../lib/i18n";
 import { loadLinkFavicon } from "../lib/link-favicons";
 import {
@@ -329,9 +330,10 @@ function LayoutContent() {
     void Promise.all([
       Promise.all([
         trackMobileStartup("server", loadApiBase()),
-        trackMobileStartup("appearance", loadAppearancePreference()).finally(() =>
-          setAppearanceReady(true),
-        ),
+        trackMobileStartup(
+          "appearance",
+          Promise.all([loadAppearancePreference(), loadDisplayMode()]),
+        ).finally(() => setAppearanceReady(true)),
         trackMobileStartup("streaming", loadResponseStreamingPreference()),
         trackMobileStartup("images", loadRemoteImagesPreference()),
         trackMobileStartup("inbox", loadInboxWidth()),

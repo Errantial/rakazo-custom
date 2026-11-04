@@ -20,6 +20,12 @@ const native = vi.hoisted(() => ({
   text: vi.fn(),
   row: vi.fn(),
 }));
+vi.mock("./display-mode", () => ({
+  getCachedDisplayMode: () => "standard",
+  mobileBotColor: (color: string) => color,
+  subscribeDisplayMode: () => () => undefined,
+  useDisplayMode: () => "standard",
+}));
 vi.mock("react-native", () => ({
   Platform: { OS: "android" },
   ActionSheetIOS: { showActionSheetWithOptions: vi.fn() },

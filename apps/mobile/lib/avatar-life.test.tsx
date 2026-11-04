@@ -41,6 +41,12 @@ const motion = vi.hoisted(() => ({
   cancelled: 0,
 }));
 
+vi.mock("./display-mode", () => ({
+  getCachedDisplayMode: () => "standard",
+  mobileBotColor: (color: string) => color,
+  subscribeDisplayMode: () => () => undefined,
+  useDisplayMode: () => "standard",
+}));
 vi.mock("react-native-reanimated", () => {
   const passthrough = ({ children, style }: { children?: ReactNode; style?: unknown }) =>
     createElement(

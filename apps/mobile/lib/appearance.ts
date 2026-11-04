@@ -2,12 +2,13 @@ import type { AppearancePreference, ResolvedAppearance } from "@rakazo/ui-tokens
 import {
   normalizeAppearancePreference,
   resolveAppearance,
-  tokensForAppearance,
+  tokensForDisplay,
   UI_APPEARANCE_STORAGE_KEY,
 } from "@rakazo/ui-tokens";
 import * as SecureStore from "expo-secure-store";
 import type { ColorSchemeName } from "react-native";
 import { Appearance } from "react-native";
+import { getCachedDisplayMode, subscribeDisplayMode } from "./display-mode";
 
 export type { AppearancePreference, ResolvedAppearance };
 
@@ -50,6 +51,8 @@ export function resolveMobileAppearance(
   preference: AppearancePreference = getCachedAppearancePreference(),
   scheme?: ColorSchemeName | null,
 ): ResolvedAppearance {
+  // E-ink has no dark: it forces light so native chrome (status bar, keyboard) matches.
+  if (getCachedDisplayMode() === "eink") return "light";
   return resolveAppearance(preference, systemAppearance(scheme));
 }
 
@@ -57,7 +60,7 @@ export function mobileTokens(
   preference: AppearancePreference = getCachedAppearancePreference(),
   scheme?: ColorSchemeName | null,
 ) {
-  return tokensForAppearance(resolveMobileAppearance(preference, scheme));
+  return tokensForDisplay(resolveMobileAppearance(preference, scheme), getCachedDisplayMode());
 }
 
 export function subscribeAppearance(listener: () => void): () => void {
@@ -90,8 +93,14 @@ async function persistAppearancePreference(
 // Native surfaces (alerts, action sheets, the keyboard, iOS platform colors) follow the
 // window's scheme, so an explicit app choice overrides it and System hands it back to the OS.
 function applyNativeColorScheme(preference: AppearancePreference) {
+  if (getCachedDisplayMode() === "eink") {
+    Appearance.setColorScheme("light");
+    return;
+  }
   Appearance.setColorScheme(preference === "system" ? "unspecified" : preference);
 }
+
+subscribeDisplayMode(() => applyNativeColorScheme(getCachedAppearancePreference()));
 
 Appearance.addChangeListener(() => {
   if (getCachedAppearancePreference() === "system") notify();

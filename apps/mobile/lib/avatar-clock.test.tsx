@@ -25,6 +25,12 @@ function onUI<T>(worklet: () => T): T {
 }
 
 // Shared values whose timings run on the (fake) clock, as they would on the UI thread.
+vi.mock("./display-mode", () => ({
+  getCachedDisplayMode: () => "standard",
+  mobileBotColor: (color: string) => color,
+  subscribeDisplayMode: () => () => undefined,
+  useDisplayMode: () => "standard",
+}));
 vi.mock("react-native-reanimated", () => {
   type Timing = { timing: true; to: number; duration: number };
   class Shared {

@@ -1,8 +1,7 @@
 import { Host, Switch } from "@expo/ui/jetpack-compose";
 import { alpha } from "@expo/ui/jetpack-compose/modifiers";
-import { tokensForAppearance } from "@rakazo/ui-tokens";
 import { Pressable, View } from "react-native";
-import { systemGreen, useResolvedAppearance } from "../lib/native";
+import { systemGreen, useMobileTokens, useResolvedAppearance } from "../lib/native";
 import type { NativeSwitchProps } from "../lib/native-controls";
 
 /** Loaded only when the running Android binary has the Compose host and switch. */
@@ -17,7 +16,7 @@ export default function ComposeSwitch({
   tintColor,
 }: NativeSwitchProps) {
   const scheme = useResolvedAppearance();
-  const tokens = tokensForAppearance(scheme);
+  const tokens = useMobileTokens();
   const checkedTrack = trackColor?.true ?? tintColor ?? systemGreen(scheme);
   const checkedThumb = thumbColor ?? tokens.faviconPlate;
   const uncheckedTrack = trackColor?.false ?? tokens.secondary;
