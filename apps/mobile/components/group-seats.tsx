@@ -21,7 +21,7 @@ import Svg, {
   Text as SvgText,
 } from "react-native-svg";
 import { mobileTokens } from "../lib/appearance";
-import { botEyeInk, mobileBotAvatarPresentation } from "../lib/bot-avatar";
+import { mobileBotAvatarPresentation } from "../lib/bot-avatar";
 import { legacyEyeInk, mobileBotColor } from "../lib/display-mode";
 import type { GroupSeat } from "../lib/group-seats";
 import {

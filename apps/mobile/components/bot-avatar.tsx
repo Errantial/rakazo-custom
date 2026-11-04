@@ -31,7 +31,7 @@ import Animated, {
 import Svg, { Ellipse, G, Path, Rect } from "react-native-svg";
 import type { AvatarLife } from "../lib/avatar-life";
 import { useAvatarOnScreen, useLife, usePoke, useSettling } from "../lib/avatar-life";
-import { botEyeInk, mobileBotAvatarPresentation } from "../lib/bot-avatar";
+import { mobileBotAvatarPresentation } from "../lib/bot-avatar";
 import { legacyEyeInk, mobileBotColor, useDisplayMode } from "../lib/display-mode";
 import { useI18n } from "../lib/i18n";
 import { mobileLogoAvatarActivity } from "../lib/logo-avatar-activity";
