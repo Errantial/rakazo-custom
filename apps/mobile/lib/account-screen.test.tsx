@@ -574,7 +574,7 @@ it("shows the approval mode as the Approvals row's value, with Rules only once t
   expect(account.push).toHaveBeenCalledWith("/approvals");
 });
 
-async function streamSwitch(mode: "standard" | "eink") {
+async function advancedSwitches(mode: "standard" | "eink") {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   display.mode = mode;
   container = document.createElement("div");
@@ -585,15 +585,18 @@ async function streamSwitch(mode: "standard" | "eink") {
     (button) => button.textContent === "Advanced",
   );
   await act(async () => toggle?.click());
-  return [...container.querySelectorAll<HTMLElement>('[role="switch"]')].find(
-    (item) => item.textContent === "Stream replies",
-  );
+  const switches = [...container.querySelectorAll<HTMLElement>('[role="switch"]')];
+  const named = (label: string) => switches.find((item) => item.textContent === label);
+  return { stream: named("Stream replies"), images: named("Load web images automatically") };
 }
 
 it("shows the stored stream-replies choice in standard mode", async () => {
-  expect((await streamSwitch("standard"))?.getAttribute("aria-checked")).toBe("true");
+  expect((await advancedSwitches("standard")).stream?.getAttribute("aria-checked")).toBe("true");
 });
 
 it("hides the stream-replies switch in e-ink", async () => {
-  expect(await streamSwitch("eink")).toBeUndefined();
+  const { stream, images } = await advancedSwitches("eink");
+  // Advanced did expand: its other switches are still there.
+  expect(images).toBeDefined();
+  expect(stream).toBeUndefined();
 });
