@@ -25,6 +25,7 @@ import type { MobileArtifactTarget } from "../../lib/artifact-open";
 import { useCallSession } from "../../lib/call-session";
 import { composerDraftScope } from "../../lib/composer-draft";
 import { cronLabels } from "../../lib/cron";
+import { useDisplayMode } from "../../lib/display-mode";
 import { useI18n } from "../../lib/i18n";
 import { useThemedStyles } from "../../lib/native";
 import { useInboxBot } from "../../lib/search-inbox";
@@ -241,10 +242,14 @@ export function Thread({ sessionEpoch, userId }: { sessionEpoch: number; userId:
     (message) => message.id.startsWith("progress:") && liveMessageComposing(message.blocks),
   );
   const activityLine = liveActivityLine(snap?.messages ?? []);
+  const eink = useDisplayMode() === "eink";
+  // E-ink has no identity color: your bubbles take the palette's own.
   const userBubble = useMemo(
     () =>
-      !inGroup && currentBot ? chatUserBubbleColors(currentBot.color, currentBot.id) : undefined,
-    [inGroup, currentBot?.color, currentBot?.id],
+      !inGroup && !eink && currentBot
+        ? chatUserBubbleColors(currentBot.color, currentBot.id)
+        : undefined,
+    [inGroup, eink, currentBot?.color, currentBot?.id],
   );
   const activeGroupBots = useMemo(() => {
     if (!inGroup) return [];

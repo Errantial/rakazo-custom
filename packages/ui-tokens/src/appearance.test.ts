@@ -10,8 +10,8 @@ import {
   einkBotColor,
   einkTokens,
   lightTokens,
-  normalizeDisplayMode,
   normalizeAppearancePreference,
+  normalizeDisplayMode,
   persistAppearancePreference,
   renderTokensCss,
   resolveAppearance,
@@ -440,6 +440,11 @@ describe("e-ink display", () => {
     expect(gray).toHaveLength(1);
     expect(contrast(gray[0] as string, "#FFFFFF")).toBeGreaterThanOrEqual(7);
     expect(einkBotColor).toBe("#000000");
+  });
+
+  it("fills your bubbles so they stand apart from the page and assistant bubbles", () => {
+    expect(einkTokens.chatUser).not.toBe(einkTokens.background);
+    expect(einkTokens.chatUser).not.toBe(einkTokens.muted);
   });
 
   it("keeps text readable on its surface", () => {
