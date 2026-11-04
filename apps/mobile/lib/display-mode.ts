@@ -10,6 +10,7 @@ import * as SecureStore from "expo-secure-store";
 import { useSyncExternalStore } from "react";
 import { botEyeInk } from "./bot-avatar";
 import { isEinkDevice } from "./device-profile";
+import { forgetPrefetched, readSecureValue } from "./prefetch";
 
 export type { DisplayMode };
 
@@ -28,7 +29,7 @@ export function getCachedDisplayMode(): DisplayMode {
 
 export async function loadDisplayMode(): Promise<DisplayMode> {
   try {
-    memoryMode = normalizeDisplayMode(await SecureStore.getItemAsync(UI_DISPLAY_STORAGE_KEY));
+    memoryMode = normalizeDisplayMode(await readSecureValue(SecureStore, UI_DISPLAY_STORAGE_KEY));
   } catch {
     // Keep whatever is in memory when SecureStore is unavailable.
   }
@@ -75,6 +76,7 @@ function notify() {
 
 async function persistDisplayMode(mode: DisplayMode, generation: number): Promise<void> {
   try {
+    forgetPrefetched(UI_DISPLAY_STORAGE_KEY);
     await SecureStore.setItemAsync(UI_DISPLAY_STORAGE_KEY, mode);
   } catch {
     // Keep the in-memory mode when SecureStore is unavailable.

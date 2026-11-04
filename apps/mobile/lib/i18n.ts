@@ -6,6 +6,7 @@ import { NL_MESSAGES, PEER_MESSAGE_FORMS as NL_PEER_FORMS } from "./locales/nl";
 import { RU_MESSAGES, PEER_MESSAGE_FORMS as RU_PEER_FORMS } from "./locales/ru";
 import { ZH_MESSAGES, PEER_MESSAGE_FORMS as ZH_PEER_FORMS } from "./locales/zh";
 import { ZH_TW_MESSAGES, PEER_MESSAGE_FORMS as ZH_TW_PEER_FORMS } from "./locales/zh-TW";
+import { forgetPrefetched, readSecureValue } from "./prefetch";
 import type { UiLocale } from "./ui-locale";
 import { htmlLangForLocale, resolveUiLocale, UI_LOCALE_STORAGE_KEY } from "./ui-locale";
 
@@ -94,7 +95,7 @@ export async function bootstrapI18n(): Promise<UiLocale> {
   // Lazy: nearly every module imports i18n, including ones evaluated without native modules.
   try {
     const SecureStore = await import("expo-secure-store");
-    stored = await SecureStore.getItemAsync(UI_LOCALE_STORAGE_KEY);
+    stored = await readSecureValue(SecureStore, UI_LOCALE_STORAGE_KEY);
   } catch {
     stored = null;
   }
@@ -111,6 +112,7 @@ export async function bootstrapI18n(): Promise<UiLocale> {
 export async function persistUiLocale(locale: UiLocale): Promise<void> {
   try {
     const SecureStore = await import("expo-secure-store");
+    forgetPrefetched(UI_LOCALE_STORAGE_KEY);
     await SecureStore.setItemAsync(UI_LOCALE_STORAGE_KEY, locale);
   } catch {
     // Ignore SecureStore failures; in-memory locale still applies.

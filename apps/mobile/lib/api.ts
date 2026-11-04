@@ -73,7 +73,8 @@ import {
   syncMobileAvatarSession,
 } from "./logo-avatar-activity";
 import { reportMobileError } from "./monitoring";
-import { API_BASE_STORAGE_KEY as ENDPOINT_KEY } from "./server-config";
+import { forgetPrefetched, readSecureValue } from "./prefetch";
+import { API_BASE_STORAGE_KEY as ENDPOINT_KEY, SPACE_STORAGE_KEY } from "./server-config";
 import { fetchServer, loadServerHeaders, saveServerHeaders, serverHeaders } from "./server-headers";
 import {
   clearSessionToken,
@@ -89,7 +90,7 @@ import {
 import { clearUnsentSends } from "./thread-feedback";
 import { authResponseErrorText, errorText, sessionSaveErrorText } from "./user-error";
 
-const SPACE_KEY = "rakazo.space_id";
+const SPACE_KEY = SPACE_STORAGE_KEY;
 const SPACE_ROLLBACK_KEY = "rakazo.space_rollback";
 const RPC_TIMEOUT_MS = 8_000;
 export const MAX_MOBILE_AUTH_RESPONSE_BYTES = 256 * 1024;
@@ -182,7 +183,7 @@ export function loadApiBase(): Promise<string> {
 async function readApiBase() {
   let apiBase = defaultApiBase();
   try {
-    const stored = await SecureStore.getItemAsync(ENDPOINT_KEY);
+    const stored = await readSecureValue(SecureStore, ENDPOINT_KEY);
     if (stored) {
       const parsed = normalizeApiBase(stored);
       if (parsed.ok) {
@@ -195,7 +196,7 @@ async function readApiBase() {
   await loadServerHeaders(apiBase);
   setCachedApiBase(apiBase);
   try {
-    const storedSpace = (await SecureStore.getItemAsync(SPACE_KEY)) ?? "";
+    const storedSpace = (await readSecureValue(SecureStore, SPACE_KEY)) ?? "";
     cachedSpaceId = storedSpace;
     bumpSpaceSelectionGeneration();
     // A deletion fallback must override the now-invalid saved Space even when
@@ -223,6 +224,7 @@ export async function selectSpace(id: string) {
   // an ID-only check would treat a later same-id selection as ours.
   const claimGeneration = spaceSelectionGeneration;
   try {
+    forgetPrefetched(SPACE_KEY);
     await SecureStore.setItemAsync(SPACE_KEY, id);
     // Our write may have landed stale behind a newer overlapping selection's
     // write. Re-assert the live selection best-effort so durable converges
@@ -319,6 +321,7 @@ export async function clearSpace(): Promise<boolean> {
 }
 
 async function clearStoredValue(key: string): Promise<boolean> {
+  forgetPrefetched(key);
   try {
     await SecureStore.deleteItemAsync(key);
     return true;
@@ -328,6 +331,7 @@ async function clearStoredValue(key: string): Promise<boolean> {
 }
 
 async function writeStoredValue(key: string, value: string): Promise<boolean> {
+  forgetPrefetched(key);
   try {
     await SecureStore.setItemAsync(key, value);
     return true;
@@ -396,6 +400,7 @@ async function restoreCredentials(previousToken: string, previousSpace: string) 
     cachedSpaceId = previousSpace;
     bumpSpaceSelectionGeneration();
     try {
+      forgetPrefetched(SPACE_KEY);
       await SecureStore.setItemAsync(SPACE_KEY, previousSpace);
       await clearStoredValue(SPACE_ROLLBACK_KEY);
     } catch {
@@ -471,6 +476,7 @@ export async function saveApiBase(
     if (cleared) await restoreCredentials(cleared.previousToken, cleared.previousSpace);
     return { ok: false, error: t("Could not save the server URL") };
   }
+  forgetPrefetched(ENDPOINT_KEY);
   try {
     await SecureStore.setItemAsync(ENDPOINT_KEY, parsed.url);
   } catch {
@@ -500,6 +506,7 @@ export async function resetApiBase(): Promise<EndpointResult> {
     if (!result.ok) return result.result;
     cleared = result;
   }
+  forgetPrefetched(ENDPOINT_KEY);
   try {
     await SecureStore.deleteItemAsync(ENDPOINT_KEY);
   } catch {

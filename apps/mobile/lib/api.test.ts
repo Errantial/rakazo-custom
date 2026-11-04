@@ -52,6 +52,7 @@ import {
   updateAccountName,
 } from "./api.js";
 import { resumeLiveNotifications } from "./live-notifications.js";
+import { prefetchSecureValues } from "./prefetch";
 import { threadRefreshDelayMs } from "./refresh";
 import {
   clearSessionToken,
@@ -701,6 +702,39 @@ describe("mobile API authentication", () => {
     expect(fresh).not.toBe(stale);
     release();
     await Promise.all([stale, saving, fresh]);
+    await resetApiBase();
+  });
+
+  it("loads the prefetched server and space once, and never after a write", async () => {
+    const storage = new Map<string, string>([
+      ["rakazo.api_base", "https://old.example.test"],
+      ["rakazo.space_id", "space-old"],
+    ]);
+    vi.mocked(SecureStore.getItemAsync).mockImplementation(async (key) => storage.get(key) ?? null);
+    vi.mocked(SecureStore.setItemAsync).mockImplementation(async (key, value) => {
+      storage.set(key, value);
+    });
+    vi.mocked(SecureStore.deleteItemAsync).mockImplementation(async (key) => {
+      storage.delete(key);
+    });
+
+    prefetchSecureValues(SecureStore);
+    const started = vi.mocked(SecureStore.getItemAsync).mock.calls.length;
+    await expect(loadApiBase()).resolves.toBe("https://old.example.test");
+    expect(selectedSpaceId()).toBe("space-old");
+    const keys = vi
+      .mocked(SecureStore.getItemAsync)
+      .mock.calls.slice(started)
+      .map(([key]) => key);
+    expect(keys).not.toContain("rakazo.api_base");
+    expect(keys).not.toContain("rakazo.space_id");
+
+    prefetchSecureValues(SecureStore);
+    await selectSpace("space-new");
+    await saveApiBase("https://new.example.test");
+    storage.set("rakazo.space_id", "space-newer");
+    await expect(loadApiBase()).resolves.toBe("https://new.example.test");
+    expect(selectedSpaceId()).toBe("space-newer");
     await resetApiBase();
   });
 

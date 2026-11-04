@@ -9,6 +9,7 @@ import * as SecureStore from "expo-secure-store";
 import type { ColorSchemeName } from "react-native";
 import { Appearance } from "react-native";
 import { getCachedDisplayMode, subscribeDisplayMode } from "./display-mode";
+import { forgetPrefetched, readSecureValue } from "./prefetch";
 
 export type { AppearancePreference, ResolvedAppearance };
 
@@ -26,7 +27,7 @@ export function getCachedAppearancePreference(): AppearancePreference {
 
 export async function loadAppearancePreference(): Promise<AppearancePreference> {
   try {
-    const stored = await SecureStore.getItemAsync(UI_APPEARANCE_STORAGE_KEY);
+    const stored = await readSecureValue(SecureStore, UI_APPEARANCE_STORAGE_KEY);
     memoryPreference = normalizeAppearancePreference(stored);
   } catch {
     memoryPreference = memoryPreference ?? "system";
@@ -79,6 +80,7 @@ async function persistAppearancePreference(
   generation: number,
 ): Promise<void> {
   try {
+    forgetPrefetched(UI_APPEARANCE_STORAGE_KEY);
     await SecureStore.setItemAsync(UI_APPEARANCE_STORAGE_KEY, preference);
   } catch {
     // Keep the in-memory preference when SecureStore is unavailable.

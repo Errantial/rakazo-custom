@@ -1,7 +1,9 @@
 import { parseServerHeaders } from "@rakazo/contracts";
 import * as SecureStore from "expo-secure-store";
+import { forgetPrefetched, readSecureValue } from "./prefetch";
+import { SERVER_HEADERS_STORAGE_KEY } from "./server-config";
 
-const SERVER_HEADERS_KEY = "rakazo.server_headers";
+const SERVER_HEADERS_KEY = SERVER_HEADERS_STORAGE_KEY;
 
 let saved: { apiBase: string; headers: Record<string, string> } | null = null;
 
@@ -22,7 +24,7 @@ export function serverHeadersForUrl(url: string, apiBase: string): Record<string
 export async function loadServerHeaders(apiBase: string): Promise<void> {
   let stored: string | null = null;
   try {
-    stored = await SecureStore.getItemAsync(SERVER_HEADERS_KEY);
+    stored = await readSecureValue(SecureStore, SERVER_HEADERS_KEY);
   } catch {
     // SecureStore is unavailable in some test / web hosts.
   }
@@ -45,6 +47,7 @@ export async function saveServerHeaders(
   const parsed = parseServerHeaders(headers);
   if (parsed === null) return false;
   headers = parsed;
+  forgetPrefetched(SERVER_HEADERS_KEY);
   try {
     if (Object.keys(headers).length === 0) {
       await SecureStore.deleteItemAsync(SERVER_HEADERS_KEY);
