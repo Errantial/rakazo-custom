@@ -79,6 +79,7 @@ vi.mock("expo-router", () => ({
     }, [effect]);
   },
 }));
+vi.mock("./app-foreground", () => ({ useAppForeground: () => true }));
 vi.mock("react-native", () => {
   const view = ({ children }: { children?: ReactNode }) => createElement("div", null, children);
   return {

@@ -5,6 +5,7 @@ import { hashKey, useQuery } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { captureApiRequestContext, rpc } from "./api";
+import { useAppForeground } from "./app-foreground";
 import { queryClient, rpcQuery } from "./query";
 import { createQueuedSave } from "./queued-save";
 
@@ -167,14 +168,16 @@ export function useBotRoutines(botId: string, { poll = true }: { poll?: boolean 
     { ...routinesQuery(botId), enabled: false, select: oldestFirst },
     queryClient,
   );
+  // Nothing runs while the app is backgrounded; returning reads again like a fresh focus.
+  const foreground = useAppForeground();
   useFocusEffect(
     useCallback(() => {
-      if (!botId) return;
+      if (!botId || !foreground) return;
       void loadBotRoutines(botId);
       if (!poll) return;
       const timer = setInterval(() => void loadBotRoutines(botId), ROUTINES_POLL_MS);
       return () => clearInterval(timer);
-    }, [botId, poll]),
+    }, [botId, poll, foreground]),
   );
   return {
     routines: data,

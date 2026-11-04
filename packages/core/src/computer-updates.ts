@@ -13,6 +13,8 @@ export function createComputerUpdates(client: {
   let timer: ReturnType<typeof setTimeout> | undefined;
   let generation = 0;
   let revision = 0;
+  let watching = false;
+  let foreground = true;
   const emit = () => {
     for (const listener of listeners) listener();
   };
@@ -35,7 +37,7 @@ export function createComputerUpdates(client: {
     } finally {
       if (epoch === generation) {
         clearTimeout(timer);
-        if (failure === undefined || isRetryableError(failure)) {
+        if (foreground && (failure === undefined || isRetryableError(failure))) {
           const delay = retryDelayMs(failure, state.updates.length ? 1500 : 15000);
           timer = setTimeout(() => void poll(epoch), delay);
         }
@@ -51,13 +53,23 @@ export function createComputerUpdates(client: {
       };
     },
     watch() {
+      watching = true;
       const epoch = ++generation;
-      void poll(epoch);
+      if (foreground) void poll(epoch);
       return () => {
+        watching = false;
         generation++;
         clearTimeout(timer);
         state = { updates: [], openId: null };
       };
+    },
+    /** Pauses polling while the app is backgrounded, keeping what is shown; one refresh on return. */
+    setForeground(visible: boolean) {
+      if (visible === foreground) return;
+      foreground = visible;
+      if (!watching) return;
+      clearTimeout(timer);
+      if (visible) void poll(generation);
     },
     open(id: string | null) {
       state = { ...state, openId: id };
@@ -74,7 +86,7 @@ export function createComputerUpdates(client: {
       };
       emit();
       clearTimeout(timer);
-      timer = setTimeout(() => void poll(epoch), 1500);
+      if (foreground) timer = setTimeout(() => void poll(epoch), 1500);
     },
     async dismiss(id: string) {
       const epoch = generation;

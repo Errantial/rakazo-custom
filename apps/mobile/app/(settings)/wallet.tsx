@@ -5,6 +5,7 @@ import { Alert, AppState, Linking, ScrollView, StyleSheet, View } from "react-na
 import { LoadFailure } from "../../components/load-failure";
 import { SettingsGroup, SettingsRow } from "../../components/settings-group";
 import { rpc } from "../../lib/api";
+import { useAppForeground } from "../../lib/app-foreground";
 import { useI18n } from "../../lib/i18n";
 import { useSideInsets } from "../../lib/side-insets";
 import { errorText } from "../../lib/user-error";
@@ -48,11 +49,13 @@ export default function WalletSettings() {
     }, [reload]),
   );
 
-  // Each read of an open sign-in advances it; stops once it settles or the screen closes.
+  // Each read of an open sign-in advances it; stops once it settles, the screen closes or the
+  // app is backgrounded (the read above runs on return).
   const connecting = status?.status === "connecting";
+  const foreground = useAppForeground();
   useFocusEffect(
     useCallback(() => {
-      if (!connecting) return;
+      if (!connecting || !foreground) return;
       let active = true;
       const timer = setInterval(() => {
         const started = generation.current;
@@ -66,7 +69,7 @@ export default function WalletSettings() {
         active = false;
         clearInterval(timer);
       };
-    }, [connecting]),
+    }, [connecting, foreground]),
   );
 
   async function act(action: () => Promise<PaymentWalletStatus>) {

@@ -3,6 +3,7 @@ import { mergeRoutineRunPages, routineHistoryPage } from "@rakazo/core";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
+import { useAppForeground } from "./app-foreground";
 import { queryClient, rpcQuery } from "./query";
 
 /** A shown history asks again this often, so a running routine's status settles. */
@@ -25,13 +26,15 @@ export function useRoutineRuns(routineId: string) {
     queryClient,
   );
   const { refetch } = query;
+  // Nothing runs while the app is backgrounded; returning reads again like a fresh focus.
+  const foreground = useAppForeground();
   useFocusEffect(
     useCallback(() => {
-      if (!routineId) return;
+      if (!routineId || !foreground) return;
       void refetch();
       const timer = setInterval(() => void refetch(), ROUTINE_RUNS_POLL_MS);
       return () => clearInterval(timer);
-    }, [routineId, refetch]),
+    }, [routineId, refetch, foreground]),
   );
   return {
     runs: query.data ? mergeRoutineRunPages(query.data.pages) : null,

@@ -5,6 +5,7 @@ import { usePathname } from "expo-router";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAppForeground } from "../lib/app-foreground";
 import { computerUpdates } from "../lib/computer-updates";
 import { useI18n } from "../lib/i18n";
 import { useMobileTokens } from "../lib/native";
@@ -26,6 +27,8 @@ export function ComputerUpdateProgress() {
   const [busy, setBusy] = useState(false);
   const authenticated = !["/sign-in"].includes(pathname);
   useEffect(() => (authenticated ? computerUpdates.watch() : undefined), [authenticated]);
+  const foreground = useAppForeground();
+  useEffect(() => computerUpdates.setForeground(foreground), [foreground]);
   const labels = [
     t("Getting ready"),
     t("Saving your workspace"),

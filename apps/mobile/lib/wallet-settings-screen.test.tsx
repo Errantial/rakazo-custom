@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   disconnect: vi.fn(),
   openURL: vi.fn(async () => true),
   alert: vi.fn(),
+  app: { state: "active", listeners: new Set<(state: string) => void>() },
   t: (text: string, values?: Record<string, unknown>) =>
     text.replace(/\{(\w+)\}/g, (_, key: string) => String(values?.[key] ?? "")),
 }));
@@ -65,7 +66,15 @@ vi.mock("react-native", () => {
     View,
     ScrollView: View,
     Alert: { alert: mocks.alert },
-    AppState: { addEventListener: () => ({ remove: () => undefined }) },
+    AppState: {
+      get currentState() {
+        return mocks.app.state;
+      },
+      addEventListener: (_event: string, listener: (state: string) => void) => {
+        mocks.app.listeners.add(listener);
+        return { remove: () => mocks.app.listeners.delete(listener) };
+      },
+    },
     Linking: { openURL: mocks.openURL },
     StyleSheet: { create: (styles: unknown) => styles },
   };
@@ -83,6 +92,7 @@ let root: Root;
 beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mocks.app.state = "active";
   mocks.me.mockResolvedValue({ paymentWalletProvider: { id: "link", name: "Link" } });
   mocks.status.mockResolvedValue({ status: "disconnected" });
   container = document.createElement("div");
@@ -161,4 +171,25 @@ it("shows nothing to connect when the deployment has no wallet", async () => {
   mocks.me.mockResolvedValue({ paymentWalletProvider: null });
   await render();
   expect(container.querySelectorAll("button")).toHaveLength(0);
+});
+
+it("pauses the sign-in poll in the background and reads once on return", async () => {
+  mocks.status.mockResolvedValue(connecting);
+  await render();
+  const setApp = async (state: string) => {
+    mocks.app.state = state;
+    await act(async () => {
+      for (const listener of mocks.app.listeners) listener(state);
+    });
+  };
+
+  await setApp("background");
+  const reads = mocks.status.mock.calls.length;
+  await act(async () => vi.advanceTimersByTimeAsync(30_000));
+  expect(mocks.status).toHaveBeenCalledTimes(reads);
+
+  await setApp("active");
+  expect(mocks.status).toHaveBeenCalledTimes(reads + 1);
+  await act(async () => vi.advanceTimersByTimeAsync(3_000));
+  expect(mocks.status).toHaveBeenCalledTimes(reads + 2);
 });

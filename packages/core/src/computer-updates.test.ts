@@ -106,4 +106,63 @@ describe("computer update presentation", () => {
     expect(list).toHaveBeenCalledTimes(3);
     stop();
   });
+  it("pauses polling in the background, keeps what is shown, and refreshes once on return", async () => {
+    vi.useFakeTimers();
+    const list = vi.fn(async () => [update]);
+    const store = createComputerUpdates({
+      list,
+      start: async () => update,
+      dismiss: async () => {},
+    });
+    const stop = store.watch();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(list).toHaveBeenCalledTimes(1);
+
+    store.setForeground(false);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(store.getSnapshot().updates).toEqual([update]);
+
+    store.setForeground(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(list).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(list).toHaveBeenCalledTimes(3);
+    stop();
+  });
+  it("does not poll again when a poll in flight finishes after the app was backgrounded", async () => {
+    vi.useFakeTimers();
+    let resolve!: (rows: ComputerUpdate[]) => void;
+    const list = vi.fn(
+      () =>
+        new Promise<ComputerUpdate[]>((done) => {
+          resolve = done;
+        }),
+    );
+    const store = createComputerUpdates({
+      list,
+      start: async () => update,
+      dismiss: async () => {},
+    });
+    const stop = store.watch();
+    store.setForeground(false);
+    resolve([]);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(list).toHaveBeenCalledTimes(1);
+    stop();
+  });
+  it("does not start polling on return after the watcher stopped", async () => {
+    vi.useFakeTimers();
+    const list = vi.fn(async (): Promise<ComputerUpdate[]> => []);
+    const store = createComputerUpdates({
+      list,
+      start: async () => update,
+      dismiss: async () => {},
+    });
+    store.watch()();
+    store.setForeground(false);
+    store.setForeground(true);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(list).toHaveBeenCalledTimes(1);
+  });
 });
