@@ -5,6 +5,7 @@ import {
   responseStreamingEnabled,
 } from "@rakazo/core";
 import * as SecureStore from "expo-secure-store";
+import { getCachedDisplayMode, subscribeDisplayMode } from "./display-mode";
 
 export type { ResponseStreamingPreference };
 
@@ -19,7 +20,9 @@ export function getCachedResponseStreamingPreference(): ResponseStreamingPrefere
   return memoryPreference ?? "off";
 }
 
+/** E-ink repaints on every token, so replies land once complete; the stored choice is kept. */
 export function getCachedResponseStreamingEnabled(): boolean {
+  if (getCachedDisplayMode() === "eink") return false;
   return responseStreamingEnabled(getCachedResponseStreamingPreference());
 }
 
@@ -50,7 +53,9 @@ export async function setResponseStreamingPreference(
 
 export function subscribeResponseStreaming(listener: () => void): () => void {
   listeners.add(listener);
+  const unsubscribeDisplay = subscribeDisplayMode(listener);
   return () => {
     listeners.delete(listener);
+    unsubscribeDisplay();
   };
 }
