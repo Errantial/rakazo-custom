@@ -1,5 +1,6 @@
-// Shrinks Android release builds: R8 + resource shrinking, arm64-only native
-// libs, and keep rules for classes reached by reflection or JNI.
+// Shrinks Android release builds: R8 + resource shrinking and keep rules for classes
+// reached by reflection or JNI. The sideload APK (EAS profile android-apk) is also
+// arm64-only; Play AABs already split per ABI, so dropping ABIs there only loses devices.
 const fs = require("node:fs");
 const path = require("node:path");
 const { withDangerousMod, withGradleProperties } = require("expo/config-plugins");
@@ -7,7 +8,6 @@ const { withDangerousMod, withGradleProperties } = require("expo/config-plugins"
 const GRADLE_PROPERTIES = {
   "android.enableMinifyInReleaseBuilds": "true",
   "android.enableShrinkResourcesInReleaseBuilds": "true",
-  reactNativeArchitectures: "arm64-v8a",
 };
 
 const MARKER = "# rakazo release keep rules";
@@ -19,8 +19,11 @@ const KEEP_RULES = [
 ];
 
 function applyGradleProperties(props) {
-  const rest = props.filter((p) => !(p.type === "property" && p.key in GRADLE_PROPERTIES));
-  const set = Object.entries(GRADLE_PROPERTIES).map(([key, value]) => ({
+  const wanted = { ...GRADLE_PROPERTIES };
+  if (process.env.EAS_BUILD_PROFILE === "android-apk")
+    wanted.reactNativeArchitectures = "arm64-v8a";
+  const rest = props.filter((p) => !(p.type === "property" && p.key in wanted));
+  const set = Object.entries(wanted).map(([key, value]) => ({
     type: "property",
     key,
     value,
