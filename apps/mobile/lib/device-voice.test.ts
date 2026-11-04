@@ -109,13 +109,21 @@ describe("device voice preference", () => {
 });
 
 describe("device voice availability", () => {
-  it("is off, and the preference ignored, when the phone has no speech voices", async () => {
+  it("defaults to off when unset and the phone has no speech voices", async () => {
     vi.resetModules();
     voices.list = [];
-    store.set("rakazo.device-voice", "1");
+    store.delete("rakazo.device-voice");
     const { deviceVoiceAvailable, loadDeviceVoiceEnabled } = await import("./device-voice");
     expect(await deviceVoiceAvailable()).toBe(false);
     expect(await loadDeviceVoiceEnabled()).toBe(false);
+  });
+
+  it("keeps an explicit choice even when no speech voices are listed yet", async () => {
+    vi.resetModules();
+    voices.list = [];
+    store.set("rakazo.device-voice", "1");
+    const { loadDeviceVoiceEnabled } = await import("./device-voice");
+    expect(await loadDeviceVoiceEnabled()).toBe(true);
   });
 
   it("asks again after an empty list and keeps a found voice", async () => {

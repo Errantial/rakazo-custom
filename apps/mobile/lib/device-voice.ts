@@ -38,10 +38,11 @@ function write(on: boolean): Promise<void> {
  * replies don't wait on the server to decide.
  */
 export async function loadDeviceVoiceEnabled(): Promise<boolean> {
-  if (!(await deviceVoiceAvailable())) return false;
   const seen = choices;
   const stored = await SecureStore.getItemAsync(DEVICE_VOICE_KEY);
+  // An explicit choice wins; availability only decides the default.
   if (stored) return stored === "1";
+  if (!(await deviceVoiceAvailable())) return false;
   let ready: boolean;
   try {
     ready = (await rpc("voice/status", { scope: "account" })).ready;
