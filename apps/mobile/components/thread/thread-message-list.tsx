@@ -17,6 +17,13 @@ const styles = StyleSheet.create({
 });
 const messageListPosition = { minIndexForVisible: 0 };
 const liveMessageListPosition = { ...messageListPosition, autoscrollToTopThreshold: 80 };
+// Each row is a markdown tree, so keep fewer mounted than React Native's defaults (10, 10, 50, 21).
+const liveListWindow = {
+  initialNumToRender: 6,
+  maxToRenderPerBatch: 4,
+  updateCellsBatchingPeriod: 60,
+  windowSize: 9,
+};
 function threadItemKey(item: ThreadItem<MobileMessage>) {
   return item.kind === "voiceChat" ? item.key : item.message.id;
 }
@@ -125,6 +132,7 @@ export function ThreadMessageList({
             // Follow changes to the recovery card while already at the newest content.
             maintainVisibleContentPosition={liveMessageListPosition}
             scrollEventThrottle={16}
+            {...liveListWindow}
             {...scroll.liveListHandlers}
             ListFooterComponent={loadEarlierControl}
             ListHeaderComponent={
