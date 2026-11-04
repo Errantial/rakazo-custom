@@ -3,6 +3,7 @@ import type { ChildBotBlock } from "@rakazo/core";
 import { resolvePersonaColorDef } from "@rakazo/core";
 import type { ColorTokens } from "@rakazo/ui-tokens";
 import type { ReactNode } from "react";
+import { useCallback } from "react";
 import { Text, View } from "react-native";
 import { mobileBotColor } from "../lib/display-mode";
 import { MessageMentionsContext } from "../lib/message-mentions";
@@ -71,18 +72,22 @@ export function MessageMentions({
   onOpenBot: (botId: string, name: string) => void;
   children: ReactNode;
 }) {
-  const render = (id: string) => {
-    const block = mentions.find((mention) => mention.botId === id);
-    return block ? (
-      <BotMention
-        block={block}
-        color={colorOf(id)}
-        avatarSet={avatarSetOf?.(id)}
-        tokens={tokens}
-        onOpenBot={onOpenBot}
-      />
-    ) : undefined;
-  };
+  // Memoized: a new function here re-renders every message's markdown through the context.
+  const render = useCallback(
+    (id: string) => {
+      const block = mentions.find((mention) => mention.botId === id);
+      return block ? (
+        <BotMention
+          block={block}
+          color={colorOf(id)}
+          avatarSet={avatarSetOf?.(id)}
+          tokens={tokens}
+          onOpenBot={onOpenBot}
+        />
+      ) : undefined;
+    },
+    [mentions, colorOf, avatarSetOf, tokens, onOpenBot],
+  );
   return (
     <MessageMentionsContext.Provider value={render}>{children}</MessageMentionsContext.Provider>
   );

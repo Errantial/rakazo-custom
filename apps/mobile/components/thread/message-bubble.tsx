@@ -10,7 +10,7 @@ import {
 } from "@rakazo/core";
 import { fontWeight, typeScale } from "@rakazo/ui-tokens";
 import type { ComponentProps } from "react";
-import { memo, useState } from "react";
+import { memo, useCallback, useState } from "react";
 import type { TextProps } from "react-native";
 import { Alert, Pressable, Text, View } from "react-native";
 import type { MobileBot, MobileMessage, MobileSnapshot } from "../../lib/api";
@@ -26,7 +26,7 @@ import { messagePresentationSegments } from "../../lib/message-presentation";
 import { useResolvedAppearance } from "../../lib/native";
 import { speakerColorFor } from "../../lib/thread-message-text";
 import type { UserBubble } from "../../lib/user-bubble";
-import { withUserBubble } from "../../lib/user-bubble";
+import { useUserBubbleTokens } from "../../lib/user-bubble";
 import { errorText } from "../../lib/user-error";
 import { AppConnectCard } from "../AppConnectCard";
 import { AskActions } from "../AskActions";
@@ -73,18 +73,26 @@ export const MessageBubble = memo(function MessageBubble({
   mentions,
   ...props
 }: ComponentProps<typeof MessageBubbleContent> & { mentions?: readonly ChildBotBlock[] }) {
+  const { bots, members } = props;
+  // Stable between renders, so the mention renderer built from them is too.
+  const colorOf = useCallback(
+    (id: string) =>
+      bots.find((bot) => bot.id === id)?.color ??
+      members?.find((member) => member.botId === id)?.color,
+    [bots, members],
+  );
+  const avatarSetOf = useCallback(
+    (id: string) =>
+      bots.find((bot) => bot.id === id)?.avatarSet ??
+      members?.find((member) => member.botId === id)?.avatarSet,
+    [bots, members],
+  );
   if (!mentions?.length) return <MessageBubbleBody {...props} />;
   return (
     <MessageMentions
       mentions={mentions}
-      colorOf={(id) =>
-        props.bots.find((bot) => bot.id === id)?.color ??
-        props.members?.find((member) => member.botId === id)?.color
-      }
-      avatarSetOf={(id) =>
-        props.bots.find((bot) => bot.id === id)?.avatarSet ??
-        props.members?.find((member) => member.botId === id)?.avatarSet
-      }
+      colorOf={colorOf}
+      avatarSetOf={avatarSetOf}
       tokens={mobileTokens()}
       onOpenBot={props.onOpenBot}
     >
@@ -194,7 +202,7 @@ const MessageBubbleContent = memo(function MessageBubbleContent({
   userBubble?: UserBubble;
 }) {
   const colorScheme = useResolvedAppearance();
-  const tokens = withUserBubble(mobileTokens(), userBubble);
+  const tokens = useUserBubbleTokens(mobileTokens(), userBubble);
   const { t } = useI18n();
   const [peerExpanded, setPeerExpanded] = useState(false);
   const artifactTarget: MobileArtifactTarget = groupId ? { groupId } : { botId };
@@ -709,7 +717,7 @@ function MessageTextCard({
   userBubble?: UserBubble;
 }) {
   const colorScheme = useResolvedAppearance();
-  const tokens = withUserBubble(mobileTokens(), userBubble);
+  const tokens = useUserBubbleTokens(mobileTokens(), userBubble);
   const contentText = blockText(message);
   if (!contentText) return null;
   // The menu wrapper owns surface gestures; links and code controls remain responders.
