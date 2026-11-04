@@ -1,5 +1,5 @@
 import { ChatMarkdown } from "@rakazo/chat-ui/native";
-import type { ArtifactVersion, ArtifactWithContent } from "@rakazo/contracts";
+import type { Artifact, ArtifactVersion } from "@rakazo/contracts";
 import { isAttachmentImageMimeType } from "@rakazo/contracts";
 import type { File } from "expo-file-system";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
@@ -35,7 +35,7 @@ type PreviewContent =
 type ContentState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; artifact: ArtifactWithContent; file: File; preview: PreviewContent };
+  | { status: "ready"; artifact: Artifact; file: File; preview: PreviewContent };
 
 async function computePreview(mimeType: string, file: File): Promise<PreviewContent> {
   if (mimeType === "text/html") return { kind: "html", html: await file.text() };
@@ -80,8 +80,9 @@ export default function ArtifactDetailScreen() {
     let cancelled = false;
     setContent({ status: "loading" });
     void getArtifactById(selectedVersionId)
-      .then(async (artifact) => {
-        const file = writeArtifactCacheFile(artifact.id, artifact.mimeType, artifact.contentBase64);
+      .then(async (loaded) => {
+        // The bytes live on disk from here on; the screen keeps only the metadata.
+        const { artifact, file } = writeArtifactCacheFile(loaded);
         const preview = await computePreview(artifact.mimeType, file);
         if (cancelled) return;
         setContent({ status: "ready", artifact, file, preview });

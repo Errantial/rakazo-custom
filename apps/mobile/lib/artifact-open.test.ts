@@ -295,4 +295,24 @@ describe("artifact preview caches", () => {
     void api.readMobileArtifactText(target, "art-3", "text/plain");
     await vi.waitFor(() => expect(artifactFetches()).toBe(3));
   });
+
+  it("writes a screen artifact's bytes to disk and returns it without them", async () => {
+    const api = await load();
+    const loaded = {
+      id: "art-9",
+      name: "report.pdf",
+      mimeType: "application/pdf",
+      version: 1,
+      contentBase64: "aGk=",
+    };
+    const { artifact, file } = api.writeArtifactCacheFile(loaded as never);
+    expect(artifact).toEqual({
+      id: "art-9",
+      name: "report.pdf",
+      mimeType: "application/pdf",
+      version: 1,
+    });
+    expect("contentBase64" in artifact).toBe(false);
+    expect(state.files.get(file.uri)).toBe("aGk=");
+  });
 });

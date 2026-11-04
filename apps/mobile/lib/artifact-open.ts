@@ -1,3 +1,4 @@
+import type { Artifact, ArtifactWithContent } from "@rakazo/contracts";
 import { Directory, File, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { Image } from "react-native";
@@ -13,16 +14,18 @@ import { currentSessionGeneration, loadSessionToken } from "./session";
 
 export type MobileArtifactTarget = { botId: string } | { groupId: string };
 
-/** Writes an artifact's bytes to its cache file; no network call. */
-export function writeArtifactCacheFile(
-  artifactId: string,
-  mimeType: string,
-  contentBase64: string,
-): File {
-  const file = new File(Paths.cache, artifactCacheFileName(artifactId, mimeType));
+/**
+ * Writes an artifact's bytes to its cache file; no network call. Returns the artifact without
+ * them, so a caller keeps the file rather than a second, base64 copy of up to 10 MiB.
+ */
+export function writeArtifactCacheFile({ contentBase64, ...artifact }: ArtifactWithContent): {
+  artifact: Artifact;
+  file: File;
+} {
+  const file = new File(Paths.cache, artifactCacheFileName(artifact.id, artifact.mimeType));
   file.create({ overwrite: true });
   file.write(contentBase64, { encoding: "base64" });
-  return file;
+  return { artifact, file };
 }
 
 type ArtifactScope = {
