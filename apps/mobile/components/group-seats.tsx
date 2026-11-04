@@ -22,7 +22,7 @@ import Svg, {
 } from "react-native-svg";
 import { mobileTokens } from "../lib/appearance";
 import { botEyeInk, mobileBotAvatarPresentation } from "../lib/bot-avatar";
-import { mobileBotColor } from "../lib/display-mode";
+import { legacyEyeInk, mobileBotColor } from "../lib/display-mode";
 import type { GroupSeat } from "../lib/group-seats";
 import {
   GROUP_SEAT_SIZE,
@@ -205,7 +205,7 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
     face: (
       <>
         <Path d={outline} fill={color} />
-        <G transform={`rotate(${(seed % 9) - 4})`} fill={botEyeInk(color, mobileTokens())}>
+        <G transform={`rotate(${(seed % 9) - 4})`} fill={legacyEyeInk(color, mobileTokens())}>
           <Rect x={-14} y={-12} width={7} height={24} rx={3.5} />
           <Rect x={7} y={-12} width={7} height={24} rx={3.5} />
         </G>

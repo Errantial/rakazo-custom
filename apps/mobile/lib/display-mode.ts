@@ -1,8 +1,14 @@
 import { parseBotAvatarValue } from "@rakazo/contracts";
-import type { DisplayMode } from "@rakazo/ui-tokens";
-import { einkBotColor, normalizeDisplayMode, UI_DISPLAY_STORAGE_KEY } from "@rakazo/ui-tokens";
+import type { ColorTokens, DisplayMode } from "@rakazo/ui-tokens";
+import {
+  botEyeColor,
+  einkBotColor,
+  normalizeDisplayMode,
+  UI_DISPLAY_STORAGE_KEY,
+} from "@rakazo/ui-tokens";
 import * as SecureStore from "expo-secure-store";
 import { useSyncExternalStore } from "react";
+import { botEyeInk } from "./bot-avatar";
 import { isEinkDevice } from "./device-profile";
 
 export type { DisplayMode };
@@ -56,6 +62,11 @@ export function mobileBotColor(color: string): string {
   if (parsed.kind === "color") return einkBotColor;
   if (parsed.kind === "shape") return `${einkBotColor}::shape_${parsed.shapeIndex}`;
   return color;
+}
+
+/** Legacy avatar eyes: the shared ink as ever, except on e-ink's black bodies where it must contrast. */
+export function legacyEyeInk(body: string, tokens: Pick<ColorTokens, "foreground" | "background">) {
+  return getCachedDisplayMode() === "eink" ? botEyeInk(body, tokens) : botEyeColor;
 }
 
 function notify() {

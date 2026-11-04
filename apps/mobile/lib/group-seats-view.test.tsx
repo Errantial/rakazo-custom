@@ -46,7 +46,10 @@ vi.mock("react-native-svg", () => {
 vi.mock("./appearance", () => ({
   mobileTokens: () => ({ foreground: "#141414", background: "#FFF" }),
 }));
-vi.mock("./display-mode", () => ({ mobileBotColor: (color: string) => color }));
+vi.mock("./display-mode", () => ({
+  mobileBotColor: (color: string) => color,
+  legacyEyeInk: () => "#101014",
+}));
 vi.mock("../lib/native", () => ({
   native: { systemTertiaryLabel: "tertiary", fill: "fill" },
   useResolvedAppearance: () => "light",

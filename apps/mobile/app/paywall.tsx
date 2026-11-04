@@ -39,8 +39,8 @@ import {
   purchaseCompleted,
   setPaywallShown,
 } from "../lib/billing";
-import { botEyeInk } from "../lib/bot-avatar";
 import { translucentColor } from "../lib/color";
+import { legacyEyeInk } from "../lib/display-mode";
 import { dateLocaleForUi, useI18n } from "../lib/i18n";
 import { useMobileTokens } from "../lib/native";
 import { errorText } from "../lib/user-error";
@@ -519,7 +519,7 @@ function TimelineStep({
             ios={ios}
             android={android}
             size={13}
-            color={color ? botEyeInk(color, tokens) : tokens.primaryForeground}
+            color={color ? legacyEyeInk(color, tokens) : tokens.primaryForeground}
           />
         </View>
         {connected ? <View style={[styles.stepLine, { backgroundColor: tokens.border }]} /> : null}

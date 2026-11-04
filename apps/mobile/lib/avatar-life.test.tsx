@@ -44,6 +44,7 @@ const motion = vi.hoisted(() => ({
 vi.mock("./display-mode", () => ({
   getCachedDisplayMode: () => "standard",
   mobileBotColor: (color: string) => color,
+  legacyEyeInk: () => "#101014",
   subscribeDisplayMode: () => () => undefined,
   useDisplayMode: () => "standard",
 }));

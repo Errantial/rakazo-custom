@@ -32,7 +32,7 @@ import Svg, { Ellipse, G, Path, Rect } from "react-native-svg";
 import type { AvatarLife } from "../lib/avatar-life";
 import { useAvatarOnScreen, useLife, usePoke, useSettling } from "../lib/avatar-life";
 import { botEyeInk, mobileBotAvatarPresentation } from "../lib/bot-avatar";
-import { mobileBotColor, useDisplayMode } from "../lib/display-mode";
+import { legacyEyeInk, mobileBotColor, useDisplayMode } from "../lib/display-mode";
 import { useI18n } from "../lib/i18n";
 import { mobileLogoAvatarActivity } from "../lib/logo-avatar-activity";
 import { useMobileTokens } from "../lib/native";
@@ -447,7 +447,7 @@ function OrganicAvatar({
     const height = state.hidden ? 0 : 24 * state.lid;
     return { x: x + state.x * scale, y: -height / 2 + state.y * scale, height };
   };
-  const eyeInk = botEyeInk(color, useMobileTokens());
+  const eyeInk = legacyEyeInk(color, useMobileTokens());
   const leftEyeProps = useAnimatedProps(eyeProps(-14));
   const rightEyeProps = useAnimatedProps(eyeProps(7));
   return (

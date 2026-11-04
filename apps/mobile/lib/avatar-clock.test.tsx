@@ -28,6 +28,7 @@ function onUI<T>(worklet: () => T): T {
 vi.mock("./display-mode", () => ({
   getCachedDisplayMode: () => "standard",
   mobileBotColor: (color: string) => color,
+  legacyEyeInk: () => "#101014",
   subscribeDisplayMode: () => () => undefined,
   useDisplayMode: () => "standard",
 }));

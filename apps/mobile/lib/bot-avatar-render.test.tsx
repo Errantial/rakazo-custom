@@ -323,6 +323,14 @@ describe("BotAvatar", () => {
     for (const eye of eyes) expect(contrastRatio(einkBotColor, eye ?? "")).toBeGreaterThan(3);
   });
 
+  it("keeps the shared eye ink on a legacy body that is low-contrast against it in standard mode", () => {
+    const view = render("#1D4ED8");
+    expect(Array.from(view.querySelectorAll("rect"), (eye) => eye.dataset.fill)).toEqual([
+      botEyeColor,
+      botEyeColor,
+    ]);
+  });
+
   it("keeps a picture", () => {
     const view = render("data:image/png;base64,abc");
     expect(view.querySelector("img")?.getAttribute("src")).toBe("data:image/png;base64,abc");
