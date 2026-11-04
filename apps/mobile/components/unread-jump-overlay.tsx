@@ -9,8 +9,9 @@ import type {
 } from "react-native";
 import { StyleSheet, View } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { useDisplayMode } from "../lib/display-mode";
 import { useI18n } from "../lib/i18n";
-import { useMotionAllowed, useMotionPreference } from "../lib/motion";
+import { useMotionPreference } from "../lib/motion";
 import type {
   InboxSignal,
   JumpDirection,
@@ -68,7 +69,7 @@ export function useUnreadJumpPills<Item>({
   const hasMeasuredRows = useRef(false);
   const animateEntering = hasMeasuredRows.current;
   const preference = useMotionPreference();
-  const animateScroll = useMotionAllowed();
+  const einkScroll = useDisplayMode() === "eink";
   const entering = FadeIn.duration(180).reduceMotion(preference);
   const exiting = FadeOut.duration(160).reduceMotion(preference);
   useLayoutEffect(() => {
@@ -122,7 +123,7 @@ export function useUnreadJumpPills<Item>({
     ).height;
     listRef.current?.scrollToOffset({
       // Unset keeps the list's default animation; e-ink jumps without one.
-      animated: animateScroll ? undefined : false,
+      animated: einkScroll ? false : undefined,
       offset: jumpOffset(direction, layout, {
         viewportHeight,
         contentHeight: Math.max(contentHeight, layout.y + layout.height + rowsAfter * rowHeight),

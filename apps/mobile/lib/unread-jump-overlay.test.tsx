@@ -7,13 +7,14 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigation = vi.hoisted(() => ({ context: undefined as unknown }));
+const device = vi.hoisted(() => ({ mode: "standard", motionAllowed: true }));
 
 vi.mock("./display-mode", () => ({
-  useDisplayMode: () => "standard",
-  getCachedDisplayMode: () => "standard",
+  useDisplayMode: () => device.mode,
+  getCachedDisplayMode: () => device.mode,
 }));
 vi.mock("./motion", () => ({
-  useMotionAllowed: () => true,
+  useMotionAllowed: () => device.motionAllowed,
   useMotionPreference: () => "system",
   motionPreference: () => "system",
   lifeMotionPreference: () => "never",
@@ -97,6 +98,8 @@ describe("useUnreadJumpPills", () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     root = createRoot(document.createElement("div"));
     scrollToOffset.mockReset();
+    device.mode = "standard";
+    device.motionAllowed = true;
   });
   afterEach(() => {
     act(() => root.unmount());
@@ -194,6 +197,29 @@ describe("useUnreadJumpPills", () => {
     expect(scrollToOffset.mock.lastCall?.[0].offset).toBeLessThan(400 - PILL_SPACE);
     layOut("z", 200);
     expect(scrollToOffset.mock.lastCall).toEqual([{ offset: 200 - PILL_SPACE }]);
+  });
+
+  const jumpDown = () => {
+    const keys = Array.from({ length: 30 }, (_, index) => `row-${index}`);
+    render(
+      keys,
+      keys.map((_, index) => (index === 20 ? unread : read)),
+    );
+    layOut("row-0", 0);
+    viewport(300, 3000);
+    act(() => below()?.props.children.props.onPress());
+  };
+
+  it("leaves the scroll animation to the list under OS reduced motion", () => {
+    device.motionAllowed = false;
+    jumpDown();
+    expect(scrollToOffset.mock.lastCall?.[0].animated).toBeUndefined();
+  });
+
+  it("jumps without animation on e-ink", () => {
+    device.mode = "eink";
+    jumpDown();
+    expect(scrollToOffset.mock.lastCall?.[0].animated).toBe(false);
   });
 
   it("scrolls toward an unmeasured row, then lands on it once it lays out", () => {
