@@ -18,11 +18,20 @@ const application = {
 };
 
 import { DEFAULT_API } from "./server-config";
-import { clearStartupError, readStartupError, saveStartupError } from "./startup-error";
+import {
+  clearStartupError,
+  forgetSelectedServer,
+  markExpoErrorReported,
+  readStartupError,
+  resetStartupMemo,
+  saveStartupError,
+  startExpoErrorWindow,
+} from "./startup-error";
 
 const server = new URL(DEFAULT_API).origin;
 
 beforeEach(() => {
+  resetStartupMemo();
   store.values.clear();
   store.fail = false;
 });
@@ -73,6 +82,7 @@ describe("persisted startup error", () => {
     clearStartupError(secureStorage);
     store.fail = false;
     store.values.set("rakazo.api_base", "https://second.example.com");
+    resetStartupMemo(); // a restart
     expect(readStartupError(secureStorage)).toBeUndefined();
   });
 
@@ -85,5 +95,93 @@ describe("persisted startup error", () => {
     expect(() => saveStartupError(new Error("original"), secureStorage, application)).not.toThrow();
     expect(() => clearStartupError(secureStorage)).not.toThrow();
     expect(readStartupError(secureStorage)).toBeUndefined();
+  });
+});
+
+describe("launch-path storage reads and writes", () => {
+  function counted() {
+    const reads: string[] = [];
+    const writes: string[] = [];
+    return {
+      reads,
+      writes,
+      storage: {
+        getItem: (key: string) => {
+          reads.push(key);
+          return secureStorage.getItem(key);
+        },
+        setItem: (key: string, value: string) => {
+          writes.push(key);
+          secureStorage.setItem(key, value);
+        },
+      },
+    };
+  }
+
+  it("reads the saved server and the error window once per process", () => {
+    const { reads, storage } = counted();
+    startExpoErrorWindow(storage);
+    startExpoErrorWindow(storage, `${server}/`);
+    startExpoErrorWindow(storage);
+    saveStartupError(new Error("crash"), storage, application);
+    expect(reads.filter((key) => key === "rakazo.api_base")).toHaveLength(1);
+    expect(reads.filter((key) => key === "rakazo.expo-error-window")).toHaveLength(1);
+  });
+
+  it("keeps the window current across its own writes and reads a changed server again", () => {
+    const { reads, storage } = counted();
+    const window = startExpoErrorWindow(storage);
+    markExpoErrorReported(5, storage, server);
+    expect(startExpoErrorWindow(storage)).toEqual({ ...window, reportedThrough: 5 });
+    expect(JSON.parse(store.values.get("rakazo.expo-error-window") ?? "{}")).toMatchObject({
+      reportedThrough: 5,
+    });
+    store.values.set("rakazo.api_base", "https://second.example.com");
+    saveStartupError(new Error("before"), storage, application);
+    expect(JSON.parse(store.values.get("rakazo.startup-error") ?? "{}").server).toBe(server);
+    forgetSelectedServer(storage);
+    saveStartupError(new Error("after"), storage, application);
+    expect(JSON.parse(store.values.get("rakazo.startup-error") ?? "{}").server).toBe(
+      "https://second.example.com",
+    );
+    expect(reads.filter((key) => key === "rakazo.expo-error-window")).toHaveLength(1);
+  });
+
+  it("does not write when the stored record is already empty", () => {
+    for (const stored of [undefined, ""]) {
+      resetStartupMemo();
+      store.values.clear();
+      if (stored !== undefined) store.values.set("rakazo.startup-error", stored);
+      const { writes, storage } = counted();
+      expect(readStartupError(storage)).toBeUndefined();
+      clearStartupError(storage);
+      clearStartupError(storage);
+      expect(writes).toEqual([]);
+    }
+  });
+
+  it("clears a saved record once and keeps clearing after a later save", () => {
+    const { writes, storage } = counted();
+    store.values.set(
+      "rakazo.startup-error",
+      JSON.stringify({ server, name: "Error", message: "x" }),
+    );
+    expect(readStartupError(storage)?.error.message).toBe("x");
+    clearStartupError(storage);
+    clearStartupError(storage);
+    expect(writes).toEqual(["rakazo.startup-error"]);
+    saveStartupError(new Error("again"), storage, application);
+    clearStartupError(storage);
+    expect(store.values.get("rakazo.startup-error")).toBe("");
+    expect(writes).toHaveLength(3);
+  });
+
+  it("still tries again after a failed clear", () => {
+    saveStartupError(new Error("crash"), secureStorage, application);
+    store.fail = true;
+    clearStartupError(secureStorage);
+    store.fail = false;
+    clearStartupError(secureStorage);
+    expect(store.values.get("rakazo.startup-error")).toBe("");
   });
 });

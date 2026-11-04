@@ -281,6 +281,27 @@ describe("mobile monitoring", () => {
     expect(persisted.readStartupError(secureStorage)).toBeUndefined();
   });
 
+  it("does not rewrite an empty startup record on launches without a collector", async () => {
+    installErrorUtils();
+    const writes: string[] = [];
+    const counting = {
+      getItem: secureStorage.getItem,
+      setItem: (key: string, value: string) => {
+        writes.push(key);
+        secureStorage.setItem(key, value);
+      },
+    };
+    const monitor = await import("./monitoring");
+    monitor.installMobileEarlyErrorReporting(counting, application);
+    await monitor.configureMobileMonitoring("https://app.example.com", {}, response({ dsn: null }));
+    await monitor.configureMobileMonitoring(
+      "https://app.example.com",
+      { authorization: "Bearer fake-session" },
+      response({ dsn: null }),
+    );
+    expect(writes).not.toContain("rakazo.startup-error");
+  });
+
   it("keeps the fatal path bounded when flushing fails and retains the report for retry", async () => {
     vi.useFakeTimers();
     const native = installErrorUtils();

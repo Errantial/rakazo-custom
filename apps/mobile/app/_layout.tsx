@@ -336,9 +336,6 @@ function LayoutContent() {
           "appearance",
           Promise.all([loadAppearancePreference(), loadDisplayMode()]),
         ).finally(() => setAppearanceReady(true)),
-        trackMobileStartup("streaming", loadResponseStreamingPreference()),
-        trackMobileStartup("images", loadRemoteImagesPreference()),
-        trackMobileStartup("inbox", loadInboxWidth()),
       ]).catch(() => undefined),
       trackMobileStartup("language", bootstrapI18n()).catch(() => undefined),
     ])
@@ -352,7 +349,16 @@ function LayoutContent() {
           )
           .catch(() => undefined);
       })
-      .finally(() => setReady(true));
+      .finally(() => {
+        setReady(true);
+        // Stores with defaults: they queue behind the reads the first frame waits for, so
+        // they start only now and never block startup.
+        const later = (step: "streaming" | "images" | "inbox", load: Promise<unknown>) =>
+          void trackMobileStartup(step, load).catch(() => undefined);
+        later("streaming", loadResponseStreamingPreference());
+        later("images", loadRemoteImagesPreference());
+        later("inbox", loadInboxWidth());
+      });
   }, []);
 
   return (

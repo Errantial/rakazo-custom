@@ -11,6 +11,7 @@ import type * as NativeSentry from "@sentry/react-native";
 import type { NativeApplication, StartupErrorStorage } from "./startup-error";
 import {
   clearStartupError,
+  forgetSelectedServer,
   markExpoErrorReported,
   readStartupError,
   saveStartupError,
@@ -87,6 +88,7 @@ export function resetMobileMonitoring(): void {
   replayRequest?.abort();
   pendingStartupError = undefined;
   clearStartupError(startupStorage);
+  forgetSelectedServer(startupStorage);
   connectionKey = undefined;
   configured = false;
   errors.reset();

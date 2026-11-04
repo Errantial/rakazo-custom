@@ -667,6 +667,43 @@ describe("mobile API authentication", () => {
     );
   });
 
+  it("shares one read between overlapping loadApiBase calls and reads again afterwards", async () => {
+    const reads: string[] = [];
+    vi.mocked(SecureStore.getItemAsync).mockImplementation(async (key) => {
+      reads.push(key);
+      return key === "rakazo.api_base" ? "https://app.example.test" : null;
+    });
+    const first = loadApiBase();
+    const second = loadApiBase();
+    expect(second).toBe(first);
+    await expect(first).resolves.toBe("https://app.example.test");
+    expect(reads.filter((key) => key === "rakazo.api_base")).toHaveLength(1);
+
+    await loadApiBase();
+    expect(reads.filter((key) => key === "rakazo.api_base")).toHaveLength(2);
+    await resetApiBase();
+  });
+
+  it("does not join a load that started before the server changed", async () => {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.mocked(SecureStore.getItemAsync).mockImplementation(async (key) => {
+      await gate;
+      return key === "rakazo.api_base" ? "https://old.example.test" : null;
+    });
+    vi.mocked(SecureStore.setItemAsync).mockResolvedValue(undefined);
+    vi.mocked(SecureStore.deleteItemAsync).mockResolvedValue(undefined);
+    const stale = loadApiBase();
+    const saving = saveApiBase("https://new.example.test");
+    const fresh = loadApiBase();
+    expect(fresh).not.toBe(stale);
+    release();
+    await Promise.all([stale, saving, fresh]);
+    await resetApiBase();
+  });
+
   it("starts notifications only after the inbox selects the default space", async () => {
     vi.mocked(SecureStore.getItemAsync).mockImplementation(async (key) =>
       key === "rakazo.session_token" ? "session-token" : null,

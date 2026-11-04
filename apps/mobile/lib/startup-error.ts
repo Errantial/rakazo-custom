@@ -18,6 +18,41 @@ const EXPO_LOG_KEY = "rakazo.expo-error-window";
 
 type ExpoErrorWindow = { server: string; since: number; reportedThrough: number };
 
+/**
+ * What this process already knows about the launch-path keys. Each secure read decrypts on the
+ * Keystore, so a value is read once and kept current by the writes made here. `server` is
+ * dropped when the selected server changes; `window` is null once known to be absent.
+ */
+type Known = { server?: string; window?: ExpoErrorWindow | null; errorEmpty?: boolean };
+let known = new WeakMap<StartupErrorStorage, Known>();
+
+function knownFor(storage: StartupErrorStorage): Known {
+  const entry = known.get(storage) ?? {};
+  known.set(storage, entry);
+  return entry;
+}
+
+/** Forget the cached server so the next crash record reads the stored one. */
+export function forgetSelectedServer(storage?: StartupErrorStorage): void {
+  if (storage) delete knownFor(storage).server;
+}
+
+/** For tests: start from an empty process. */
+export function resetStartupMemo(): void {
+  known = new WeakMap();
+}
+
+function expoErrorWindow(storage: StartupErrorStorage): ExpoErrorWindow | undefined {
+  const entry = knownFor(storage);
+  entry.window ??= readExpoErrorWindow(storage) ?? null;
+  return entry.window ?? undefined;
+}
+
+function writeExpoErrorWindow(storage: StartupErrorStorage, window: ExpoErrorWindow): void {
+  storage.setItem(EXPO_LOG_KEY, JSON.stringify(window));
+  knownFor(storage).window = window;
+}
+
 function readExpoErrorWindow(storage: StartupErrorStorage): ExpoErrorWindow | undefined {
   const raw = storage.getItem(EXPO_LOG_KEY);
   if (!raw || raw.length > 1_024) return;
@@ -43,13 +78,13 @@ export function startExpoErrorWindow(
     const server = base ? new URL(base).origin : selectedServer(storage);
     let existing: ExpoErrorWindow | undefined;
     try {
-      existing = readExpoErrorWindow(storage);
+      existing = expoErrorWindow(storage);
     } catch {
       // A malformed checkpoint starts a new window; older logs have no established owner.
     }
     if (existing?.server === server) return existing;
     const window = { server, since: Date.now(), reportedThrough: 0 };
-    storage.setItem(EXPO_LOG_KEY, JSON.stringify(window));
+    writeExpoErrorWindow(storage, window);
     return window;
   } catch {
     return;
@@ -63,17 +98,23 @@ export function markExpoErrorReported(
 ): void {
   if (!storage) return;
   try {
-    const window = readExpoErrorWindow(storage);
-    if (!window || window.server !== new URL(base).origin) return;
-    window.reportedThrough = Math.max(window.reportedThrough, timestamp);
-    storage.setItem(EXPO_LOG_KEY, JSON.stringify(window));
+    const current = expoErrorWindow(storage);
+    if (!current || current.server !== new URL(base).origin) return;
+    // Copy: a failed write must leave the report eligible for retry in this process too.
+    writeExpoErrorWindow(storage, {
+      ...current,
+      reportedThrough: Math.max(current.reportedThrough, timestamp),
+    });
   } catch {
     // A failed checkpoint leaves the report eligible for retry.
   }
 }
 
-function selectedServer(storage: StartupErrorStorage): string {
-  return new URL(storage.getItem(API_BASE_STORAGE_KEY) || DEFAULT_API).origin;
+/** The origin of the saved server, read from secure storage once per process. */
+export function selectedServer(storage: StartupErrorStorage): string {
+  const entry = knownFor(storage);
+  entry.server ??= new URL(storage.getItem(API_BASE_STORAGE_KEY) || DEFAULT_API).origin;
+  return entry.server;
 }
 
 /** Synchronous because React Native's fatal handler may terminate before a write promise runs. */
@@ -109,7 +150,10 @@ export function saveStartupError(
       );
       serialized = JSON.stringify(record);
     }
-    if (serialized.length <= MAX_LENGTH) storage.setItem(KEY, serialized);
+    if (serialized.length <= MAX_LENGTH) {
+      knownFor(storage).errorEmpty = false;
+      storage.setItem(KEY, serialized);
+    }
   } catch {
     // Locked storage or a missing native host must not replace the original fatal error.
   }
@@ -121,6 +165,7 @@ export function readStartupError(
   if (!storage) return;
   try {
     const raw = storage.getItem(KEY);
+    if (!raw) knownFor(storage).errorEmpty = true;
     if (!raw || raw.length > MAX_LENGTH) return;
     const value: unknown = JSON.parse(raw);
     if (!value || typeof value !== "object") return;
@@ -148,10 +193,12 @@ export function readStartupError(
   }
 }
 
+/** Skips the write, an encrypt plus a disk sync, when the record is already known to be empty. */
 export function clearStartupError(storage?: StartupErrorStorage): void {
-  if (!storage) return;
+  if (!storage || knownFor(storage).errorEmpty) return;
   try {
     storage.setItem(KEY, "");
+    knownFor(storage).errorEmpty = true;
   } catch {
     // Reporting remains optional when secure storage is unavailable.
   }

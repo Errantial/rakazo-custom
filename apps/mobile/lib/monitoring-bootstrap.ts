@@ -1,16 +1,16 @@
 import * as SecureStore from "expo-secure-store";
 import { AppState } from "react-native";
 import { configureMobileMonitoring, reportMobileError, resetMobileMonitoring } from "./monitoring";
-import { API_BASE_STORAGE_KEY, DEFAULT_API } from "./server-config";
+import { selectedServer } from "./startup-error";
 
 /** Independent of React: even an initial render failure must reach the collector. */
 export function startMobileMonitoring(): void {
   try {
     // Start anonymous reporting before importing the app graph: an import failure must not
     // prevent the configuration request itself. Both paths use the selected server.
-    const base = new URL(SecureStore.getItem(API_BASE_STORAGE_KEY) || DEFAULT_API);
-    if (base.protocol === "https:" || base.protocol === "http:")
-      void configureMobileMonitoring(base.origin, {});
+    const server = selectedServer(SecureStore);
+    if (server.startsWith("https://") || server.startsWith("http://"))
+      void configureMobileMonitoring(server, {});
   } catch {
     // Secure storage may be locked during a background launch.
   }

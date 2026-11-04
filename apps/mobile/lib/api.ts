@@ -162,7 +162,24 @@ export function currentApiBase() {
   return parsed.url;
 }
 
-export async function loadApiBase() {
+let apiBaseLoad: Promise<string> | undefined;
+
+/** A write the load may have raced with: the next load reads again instead of joining it. */
+function invalidateApiBaseLoad(): void {
+  apiBaseLoad = undefined;
+}
+
+/** Callers that overlap share one read: each costs several serial Keystore decrypts. */
+export function loadApiBase(): Promise<string> {
+  if (apiBaseLoad) return apiBaseLoad;
+  const load: Promise<string> = readApiBase().finally(() => {
+    if (apiBaseLoad === load) apiBaseLoad = undefined;
+  });
+  apiBaseLoad = load;
+  return load;
+}
+
+async function readApiBase() {
   let apiBase = defaultApiBase();
   try {
     const stored = await SecureStore.getItemAsync(ENDPOINT_KEY);
@@ -191,6 +208,7 @@ export async function loadApiBase() {
 }
 
 export async function selectSpace(id: string) {
+  invalidateApiBaseLoad();
   const requestGeneration = ++spaceSelectionRequestGeneration;
   if (!(await clearStoredValue(SPACE_ROLLBACK_KEY))) return false;
   // Rollback cleanup is the first await. A newer selection may have claimed
@@ -256,6 +274,7 @@ export function selectedSpaceId(): string | null {
  * writing the replacement selection so a cleanup failure cannot leave the new
  * id beside a stale record that recoverSpaceRollback would prefer on restart. */
 export async function adoptDeletedSpaceFallback(id: string): Promise<boolean> {
+  invalidateApiBaseLoad();
   cachedSpaceId = id;
   bumpSpaceSelectionGeneration();
   // Neutralize any same-endpoint rollback before writing SPACE_KEY. Writing the
@@ -290,6 +309,7 @@ export async function selectInitialSpace(id: string) {
 }
 
 export async function clearSpace(): Promise<boolean> {
+  invalidateApiBaseLoad();
   const spaceCleared = await clearStoredValue(SPACE_KEY);
   const rollbackCleared = await clearStoredValue(SPACE_ROLLBACK_KEY);
   if (!spaceCleared || !rollbackCleared) return false;
@@ -432,6 +452,7 @@ export async function saveApiBase(
 ): Promise<EndpointResult> {
   const parsed = normalizeApiBase(input);
   if (!parsed.ok) return parsed;
+  invalidateApiBaseLoad();
   if (parsed.url === defaultApiBase() && Object.keys(headers).length === 0) return resetApiBase();
   const previous = currentApiBase();
   const previousHeaders = serverHeaders(previous);
@@ -465,6 +486,7 @@ export async function saveApiBase(
 }
 
 export async function resetApiBase(): Promise<EndpointResult> {
+  invalidateApiBaseLoad();
   const previous = currentApiBase();
   const url = defaultApiBase();
   let cleared:
