@@ -5,14 +5,19 @@ import type { ColorTokens } from "./index.js";
 import {
   botColors,
   cssVariableName,
+  DISPLAY_MODES,
   darkTokens,
+  einkBotColor,
+  einkTokens,
   lightTokens,
+  normalizeDisplayMode,
   normalizeAppearancePreference,
   persistAppearancePreference,
   renderTokensCss,
   resolveAppearance,
   resolveAppearancePreference,
   tokensForAppearance,
+  tokensForDisplay,
   UI_APPEARANCE_STORAGE_KEY,
   webDarkOverrides,
   webDarkTokens,
@@ -396,5 +401,59 @@ describe.each([
 
   it.each(pairs)("%s on %s meets WCAG AA (4.5:1)", (text, surface) => {
     expect(contrastRatio(palette[text], palette[surface])).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+function luminance(hex: string): number {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = Number.parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function contrast(a: string, b: string): number {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+describe("e-ink display", () => {
+  it("normalizes the stored display mode, null when unset or unknown", () => {
+    expect(DISPLAY_MODES).toEqual(["standard", "eink"]);
+    expect(normalizeDisplayMode("eink")).toBe("eink");
+    expect(normalizeDisplayMode("standard")).toBe("standard");
+    expect(normalizeDisplayMode("x")).toBeNull();
+    expect(normalizeDisplayMode(null)).toBeNull();
+    expect(normalizeDisplayMode(undefined)).toBeNull();
+  });
+
+  it("returns the e-ink palette for eink in either appearance", () => {
+    expect(tokensForDisplay("dark", "eink")).toBe(einkTokens);
+    expect(tokensForDisplay("light", "eink")).toBe(einkTokens);
+    expect(tokensForDisplay("dark", "standard")).toBe(darkTokens);
+    expect(tokensForDisplay("light", "standard")).toBe(lightTokens);
+  });
+
+  it("uses only black, white and one mid gray", () => {
+    const values = new Set(Object.values(einkTokens));
+    const gray = [...values].filter((v) => v !== "#000000" && v !== "#FFFFFF");
+    expect(gray).toHaveLength(1);
+    expect(contrast(gray[0] as string, "#FFFFFF")).toBeGreaterThanOrEqual(7);
+    expect(einkBotColor).toBe("#000000");
+  });
+
+  it("keeps text readable on its surface", () => {
+    const t = einkTokens;
+    for (const [fg, bg] of [
+      [t.foreground, t.background],
+      [t.cardForeground, t.card],
+      [t.mutedForeground, t.background],
+      [t.faintForeground, t.background],
+      [t.primaryForeground, t.primary],
+      [t.chatUserForeground, t.chatUser],
+      [t.destructiveForeground, t.destructiveFill],
+    ] as const) {
+      expect(contrast(fg, bg)).toBeGreaterThanOrEqual(7);
+    }
   });
 });

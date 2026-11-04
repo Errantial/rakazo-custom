@@ -6,6 +6,12 @@ export type ResolvedAppearance = "light" | "dark";
 
 export const UI_APPEARANCE_STORAGE_KEY = "rakazo.uiAppearance";
 
+export const DISPLAY_MODES = ["standard", "eink"] as const;
+
+export type DisplayMode = (typeof DISPLAY_MODES)[number];
+
+export const UI_DISPLAY_STORAGE_KEY = "rakazo.uiDisplay";
+
 /**
  * Semantic palette shared by web, Electron, and Expo. Names follow the shadcn
  * convention so the same slot means the same thing on every surface: a `border`
@@ -152,6 +158,60 @@ export const lightTokens = {
   scrollbarHover: "#A8A8A4",
 } as const satisfies ColorTokens;
 
+const INK = "#000000";
+const PAPER = "#FFFFFF";
+/** The one mid gray: 7:1 on paper, for secondary text and scrollbars. */
+const INK_GRAY = "#595959";
+
+/**
+ * Black, white and one gray for e-ink panels, which render no color or translucency. Surfaces are
+ * paper with ink borders; status and links are ink, told apart by shape and label. The overlay is
+ * paper because translucency is unavailable; dialogs keep their ink border.
+ */
+export const einkTokens = {
+  background: PAPER,
+  dialog: PAPER,
+  foreground: INK,
+  card: PAPER,
+  cardForeground: INK,
+  popover: PAPER,
+  popoverForeground: INK,
+  glassFill: PAPER,
+  glassStroke: INK,
+  primary: INK,
+  primaryForeground: PAPER,
+  secondary: PAPER,
+  secondaryForeground: INK,
+  chatUser: PAPER,
+  chatUserForeground: INK,
+  muted: PAPER,
+  mutedForeground: INK_GRAY,
+  faintForeground: INK_GRAY,
+  accent: PAPER,
+  accentForeground: INK,
+  destructive: INK,
+  destructiveFill: INK,
+  destructiveForeground: PAPER,
+  border: INK,
+  input: INK,
+  ring: INK,
+  sidebar: PAPER,
+  sidebarForeground: INK,
+  sidebarBorder: INK,
+  sidebarAccent: PAPER,
+  sidebarAccentForeground: INK,
+  link: INK,
+  faviconPlate: PAPER,
+  success: INK,
+  warning: INK,
+  statusWorking: INK,
+  unread: INK,
+  workingDot: INK,
+  overlay: PAPER,
+  scrollbar: INK_GRAY,
+  scrollbarHover: INK,
+} as const satisfies ColorTokens;
+
 /** Web and Electron only: the primary fill's hover and disabled states. Mobile has no hover. */
 export type WebColorTokens = ColorTokens & {
   primaryHover: string;
@@ -278,6 +338,9 @@ export const MAX_FONT_SCALE = 23 / typeScale.body.fontSize;
 /** The ink of a drawn bot's eyes, the same on every body colour and in both themes. */
 export const botEyeColor = "#101014";
 
+/** Every bot identity color in e-ink mode; bots stay distinguishable by avatar and name. */
+export const einkBotColor = INK;
+
 export const botColors = [
   "#3EC5A8",
   "#F5A03C",
@@ -345,6 +408,15 @@ export function resolveAppearance(
 
 export function tokensForAppearance(appearance: ResolvedAppearance): ColorTokens {
   return appearance === "light" ? lightTokens : darkTokens;
+}
+
+export function normalizeDisplayMode(raw: unknown): DisplayMode | null {
+  return raw === "standard" || raw === "eink" ? raw : null;
+}
+
+/** E-ink wins over appearance: the panel has no dark or light, only ink on paper. */
+export function tokensForDisplay(appearance: ResolvedAppearance, mode: DisplayMode): ColorTokens {
+  return mode === "eink" ? einkTokens : tokensForAppearance(appearance);
 }
 
 /** The web and Electron palette; `tokensForAppearance` is the mobile one. */
