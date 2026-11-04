@@ -27,7 +27,8 @@ export async function registerPushToken(): Promise<"registered" | "unavailable" 
     } catch {
       // Expo Go without an EAS project id, Android builds without a Firebase config and
       // phones without Google Play services cannot mint an Expo push token.
-      mintUnavailable = true;
+      // Only Android skips retries; iOS and other platforms keep trying after a network blip.
+      if (Platform.OS === "android") mintUnavailable = true;
       return "unavailable";
     }
     if (!token) return "unavailable";

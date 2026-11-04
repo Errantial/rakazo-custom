@@ -151,6 +151,18 @@ describe("push registration on Android", () => {
   });
 });
 
+describe("push token mint failure on iOS", () => {
+  it("reports unavailable and tries the mint again on the next call", async () => {
+    permission.resolve({ granted: true });
+    vi.mocked(Notifications.getExpoPushTokenAsync).mockClear();
+    vi.mocked(Notifications.getExpoPushTokenAsync).mockRejectedValueOnce(new Error("offline"));
+
+    expect(await registerPushToken()).toBe("unavailable");
+    expect(await registerPushToken()).toBe("registered");
+    expect(Notifications.getExpoPushTokenAsync).toHaveBeenCalledTimes(2);
+  });
+});
+
 describe("push registration without Google services", () => {
   it("reports unavailable and does not mint again this session", async () => {
     Platform.OS = "android";
