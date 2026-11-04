@@ -739,6 +739,16 @@ describe("singleCodeBlockHint", () => {
     "<details>\n<summary>More</summary>\n\n```\ncode\n```\n</details>",
     "- ```\n  in a list item\n  ```",
     "```\ncode\n    ```\nmore\n```",
+    // Only a space or tab may pad a closing fence; a no-break or ideographic space is content.
+    "```\n``` ",
+    "```\n```　",
+    // A lone CR, or a line separator inside an info string, is not a line end the scan missed.
+    "```\rcode\r```",
+    "```ts \ncode\n```",
+    // A dedent ends the list item that holds an indented fence, and the fence with it.
+    "- a\n  ```\n</pre>\n",
+    "- a\n  ```\n  x\ndone\n```\nmore\n```",
+    "- a\n  ```\n  x\n- b",
   ];
 
   it.each(corpus)("never disagrees with the parser on %j", (markdown) => {
@@ -756,6 +766,8 @@ describe("singleCodeBlockHint", () => {
     expect(singleCodeBlockHint("```\nfirst\n```\n\n```\nsecond\n```")).toBe(false);
     expect(singleCodeBlockHint("````md\n```\ninner\n```\n````")).toBe(true);
     expect(singleCodeBlockHint("1. Step\n\n   ```bash\n   npm test\n   ```")).toBe(true);
+    expect(singleCodeBlockHint("```\rcode\r```")).toBe(true);
+    expect(singleCodeBlockHint("```\n``` ")).toBe(true);
   });
 
   it("leaves quoted, nested, indented and HTML-adjacent fences to the parser", () => {
