@@ -12,7 +12,7 @@ import { ArchivedChatsRow, CompactRowsContext } from "../components/inbox-rows";
 import { useThreadHeader } from "../components/thread/thread-header";
 import type { loadAllArchivedChats } from "./archived-chats";
 import { notifyArchivedChatsChanged, onArchivedChatsChanged } from "./archived-chats";
-import { useArchivedCount } from "./use-archived-count";
+import { ARCHIVED_COUNT_TTL_MS, useArchivedCount } from "./use-archived-count";
 
 type AlertButton = { text: string; onPress?: () => void };
 const mocks = vi.hoisted(() => ({
@@ -20,6 +20,9 @@ const mocks = vi.hoisted(() => ({
   alert: vi.fn(),
   removeFromSearchInbox: vi.fn(),
   loadArchived: vi.fn(),
+  // Lets a test move the inbox away from and back to focus.
+  focus: { focused: true, tick: 0 },
+  generation: 0,
   router: {
     push: vi.fn(),
     replace: vi.fn(),
@@ -89,14 +92,16 @@ vi.mock("react-native-reanimated", () => ({ default: {} }));
 vi.mock("@expo/ui/community/menu", () => ({ MenuView: () => null }));
 vi.mock("expo-router", () => ({
   // The inbox stays focused here; expo-router reruns the effect when its callback changes.
-  useFocusEffect: (effect: () => (() => void) | undefined) => useEffect(effect, [effect]),
+  useFocusEffect: (effect: () => (() => void) | undefined) =>
+    useEffect(() => (mocks.focus.focused ? effect() : undefined), [effect, mocks.focus.tick]),
   useRouter: () => mocks.router,
   useNavigation: () => ({ setOptions: vi.fn() }),
   useRoute: () => ({ key: "thread-1" }),
   useLocalSearchParams: () => ({ groupId: "group-b" }),
   Stack: { Screen: () => null },
 }));
-vi.mock("./api", () => ({ rpc: mocks.rpc }));
+vi.mock("./api", () => ({ rpc: mocks.rpc, currentApiBase: () => "https://api.example.test" }));
+vi.mock("./session", () => ({ currentSessionGeneration: () => mocks.generation }));
 vi.mock("./native", () => ({
   native: { tertiaryLabel: "tertiary" },
   useThemedStyles: (factory: () => unknown) => useMemo(factory, [factory]),
@@ -143,6 +148,8 @@ const flush = () => act(async () => undefined);
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mocks.focus.focused = true;
+  mocks.generation = 0;
   mocks.rpc.mockReset();
   mocks.alert.mockReset();
   mocks.removeFromSearchInbox.mockReset();
@@ -249,6 +256,18 @@ describe("archived count", () => {
   });
 
   beforeEach(() => load.mockReset());
+  afterEach(() => vi.useRealTimers());
+
+  /** Leaves the inbox for another screen and comes back, as chat -> back does. */
+  const refocus = async (whileAway?: () => void) => {
+    mocks.focus.focused = false;
+    mocks.focus.tick += 1;
+    await show("space-a");
+    whileAway?.();
+    mocks.focus.focused = true;
+    mocks.focus.tick += 1;
+    await show("space-a");
+  };
 
   it("counts archived bots and groups when the inbox is shown, and waits for a session", async () => {
     load.mockResolvedValue(lists(2, 1));
@@ -275,6 +294,48 @@ describe("archived count", () => {
     // An unmounted inbox stops listening.
     await act(async () => notifyArchivedChatsChanged());
     expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  it("reuses a recent count when the inbox regains focus, and reloads after a minute", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    load.mockResolvedValue(lists(2, 1));
+    await show("space-a");
+    await refocus();
+    expect(load).toHaveBeenCalledOnce();
+    expect(container.textContent).toBe("3");
+
+    vi.advanceTimersByTime(ARCHIVED_COUNT_TTL_MS);
+    await refocus();
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
+  it("reloads on focus after an archive change made while another screen was open", async () => {
+    load.mockResolvedValueOnce(lists(0, 0));
+    await show("space-a");
+    load.mockResolvedValueOnce(lists(1, 0));
+    await refocus(notifyArchivedChatsChanged);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(container.textContent).toBe("1");
+  });
+
+  it("reloads on focus after a sign-out or a space change", async () => {
+    load.mockResolvedValue(lists(1, 0));
+    await show("space-a");
+    await refocus(() => {
+      mocks.generation += 1;
+    });
+    expect(load).toHaveBeenCalledTimes(2);
+    await show("space-b");
+    expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not reuse a count that failed to load", async () => {
+    load.mockResolvedValueOnce({ ...lists(0, 0), bots: null, error: new Error("offline") });
+    await show("space-a");
+    load.mockResolvedValueOnce(lists(1, 0));
+    await refocus();
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(container.textContent).toBe("1");
   });
 
   it("keeps a list's last count when it fails, but not across spaces", async () => {

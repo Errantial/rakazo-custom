@@ -36,9 +36,16 @@ export function archivedChatCounts(
 }
 
 const changeListeners = new Set<() => void>();
+let changeVersion = 0;
+
+/** Bumps on every archive change, so a count loaded earlier can tell it is out of date. */
+export function archivedChatsVersion(): number {
+  return changeVersion;
+}
 
 /** Archiving, restoring or deleting an archived chat changes the inbox's archived count. */
 export function notifyArchivedChatsChanged() {
+  changeVersion += 1;
   for (const listener of changeListeners) listener();
 }
 
