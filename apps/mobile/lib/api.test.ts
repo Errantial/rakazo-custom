@@ -738,6 +738,45 @@ describe("mobile API authentication", () => {
     await resetApiBase();
   });
 
+  it("a space written on its own never loses to the prefetched one", async () => {
+    const storage = new Map<string, string>([["rakazo.space_id", "space-old"]]);
+    vi.mocked(SecureStore.getItemAsync).mockImplementation(async (key) => storage.get(key) ?? null);
+    vi.mocked(SecureStore.setItemAsync).mockImplementation(async (key, value) => {
+      storage.set(key, value);
+    });
+    vi.mocked(SecureStore.deleteItemAsync).mockImplementation(async (key) => {
+      storage.delete(key);
+    });
+
+    prefetchSecureValues(SecureStore);
+    await selectSpace("space-selected");
+    await loadApiBase();
+    expect(selectedSpaceId()).toBe("space-selected");
+
+    storage.set("rakazo.space_id", "space-old");
+    prefetchSecureValues(SecureStore);
+    await adoptDeletedSpaceFallback("space-fallback");
+    await loadApiBase();
+    expect(selectedSpaceId()).toBe("space-fallback");
+
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.mocked(SecureStore.getItemAsync).mockImplementation(async (key) => {
+      await gate;
+      return storage.get(key) ?? null;
+    });
+    const stale = loadApiBase();
+    const selecting = selectSpace("space-late");
+    expect(loadApiBase()).not.toBe(stale);
+    release();
+    await Promise.all([stale, selecting]);
+    storage.clear();
+    await loadApiBase();
+    await resetApiBase();
+  });
+
   it("starts notifications only after the inbox selects the default space", async () => {
     vi.mocked(SecureStore.getItemAsync).mockImplementation(async (key) =>
       key === "rakazo.session_token" ? "session-token" : null,
