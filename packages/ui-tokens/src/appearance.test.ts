@@ -404,19 +404,6 @@ describe.each([
   });
 });
 
-function luminance(hex: string): number {
-  const [r, g, b] = [1, 3, 5].map((i) => {
-    const c = Number.parseInt(hex.slice(i, i + 2), 16) / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  }) as [number, number, number];
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function contrast(a: string, b: string): number {
-  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x) as [number, number];
-  return (hi + 0.05) / (lo + 0.05);
-}
-
 describe("e-ink display", () => {
   it("normalizes the stored display mode, null when unset or unknown", () => {
     expect(DISPLAY_MODES).toEqual(["standard", "eink"]);
@@ -438,7 +425,7 @@ describe("e-ink display", () => {
     const values = new Set(Object.values(einkTokens));
     const gray = [...values].filter((v) => v !== "#000000" && v !== "#FFFFFF");
     expect(gray).toHaveLength(1);
-    expect(contrast(gray[0] as string, "#FFFFFF")).toBeGreaterThanOrEqual(7);
+    expect(contrastRatio(gray[0] as string, "#FFFFFF")).toBeGreaterThanOrEqual(7);
     expect(einkBotColor).toBe("#000000");
   });
 
@@ -458,7 +445,7 @@ describe("e-ink display", () => {
       [t.chatUserForeground, t.chatUser],
       [t.destructiveForeground, t.destructiveFill],
     ] as const) {
-      expect(contrast(fg, bg)).toBeGreaterThanOrEqual(7);
+      expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(7);
     }
   });
 });
