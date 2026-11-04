@@ -804,6 +804,11 @@ function Home({ embedded, onSelectSpace, onShareSelect }: InboxPaneProps & { emb
                 viewabilityConfig={AVATAR_VIEWABILITY}
                 data={showLoadFailure ? [] : listData}
                 keyExtractor={inboxItemKey}
+                // Fewer mounted rows than React Native's defaults (10, 10, 50, 21) for slow phones.
+                initialNumToRender={8}
+                maxToRenderPerBatch={6}
+                updateCellsBatchingPeriod={60}
+                windowSize={9}
                 keyboardDismissMode="interactive"
                 keyboardShouldPersistTaps="handled"
                 indicatorStyle={appearance === "dark" ? "white" : "black"}
