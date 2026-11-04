@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   t: (text: string, values?: Record<string, unknown>) =>
     text.replace(/\{(\w+)\}/g, (_, key: string) => String(values?.[key] ?? "")),
 }));
+vi.mock("./display-mode", () => ({ useDisplayMode: () => "standard" }));
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("./native-controls", () => ({ iosAtLeast: () => false }));
 vi.mock("./appearance", () => ({ mobileTokens: () => ({ primary: "#000", destructive: "#f00" }) }));

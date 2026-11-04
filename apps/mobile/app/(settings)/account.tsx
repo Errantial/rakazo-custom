@@ -6,7 +6,6 @@ import type { Href } from "expo-router";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
-  ActivityIndicator,
   Alert,
   AppState,
   KeyboardAvoidingView,
@@ -22,6 +21,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppMark } from "../../components/app-mark";
 import { ApprovalModeRow, ApprovalRulesRow } from "../../components/approval-settings-rows";
+import { MotionSpinner } from "../../components/motion-spinner";
 import { NameDialog } from "../../components/name-dialog";
 import { NativeActionButton } from "../../components/native-action-button";
 import { NativeSegmentedControl } from "../../components/native-segmented-control";
@@ -838,9 +838,7 @@ export default function Account() {
             disabled={pending}
             onPress={requestDeletion}
             title={t("Delete account")}
-            trailing={
-              pending ? <ActivityIndicator color={mobileTokens().destructive} /> : undefined
-            }
+            trailing={pending ? <MotionSpinner color={mobileTokens().destructive} /> : undefined}
           />
           {!deleteOpen && deleteError ? (
             <Text accessibilityRole="alert" style={styles.error}>

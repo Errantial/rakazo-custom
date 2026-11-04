@@ -21,6 +21,7 @@ const state = vi.hoisted(() => ({
   focused: true,
   appStateChange: null as null | ((state: string) => void),
 }));
+vi.mock("./display-mode", () => ({ useDisplayMode: () => "standard" }));
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("expo-router", () => ({
   useRouter: () => ({ push: state.push, setParams: vi.fn() }),

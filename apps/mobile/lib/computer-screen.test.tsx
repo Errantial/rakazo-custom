@@ -32,6 +32,7 @@ const picker = vi.hoisted(() => ({
     | undefined,
 }));
 
+vi.mock("./display-mode", () => ({ useDisplayMode: () => "standard" }));
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("react-native", () => {
   function MockView(props: {

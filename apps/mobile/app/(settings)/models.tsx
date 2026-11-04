@@ -10,12 +10,13 @@ import { isCancelledError, useQuery } from "@tanstack/react-query";
 import type { Href } from "expo-router";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text } from "react-native";
+import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LoadFailure } from "../../components/load-failure";
 import { ModelProviders } from "../../components/model-providers";
 import type { ConnectableProvider, ModelConnectIntent } from "../../components/model-role-settings";
 import { ModelRoleSettings } from "../../components/model-role-settings";
+import { MotionSpinner } from "../../components/motion-spinner";
 import type { MobileModel, MobileModelCredential } from "../../lib/api";
 // Connections belong to the account, so renaming and removing them go to the selected Space.
 import { rpc } from "../../lib/api";
@@ -224,7 +225,7 @@ export default function Models() {
   if (!me && !loadError) {
     return (
       <SafeAreaView edges={["bottom"]} style={[styles.screen, styles.centered]}>
-        <ActivityIndicator color={native.secondaryLabel} />
+        <MotionSpinner color={native.secondaryLabel} />
       </SafeAreaView>
     );
   }

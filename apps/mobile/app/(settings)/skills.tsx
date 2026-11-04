@@ -5,16 +5,9 @@ import type {
 } from "@rakazo/contracts";
 import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MotionSpinner } from "../../components/motion-spinner";
 import { NativeActionButton } from "../../components/native-action-button";
 import { PluginIcon } from "../../components/plugin-icon";
 import { Chevron } from "../../components/row-accessories";
@@ -245,7 +238,7 @@ export default function SkillsScreen() {
           </View>
         ) : null}
         {state === "loading" ? (
-          <ActivityIndicator color={native.secondaryLabel} accessibilityLabel={t("Loading…")} />
+          <MotionSpinner color={native.secondaryLabel} accessibilityLabel={t("Loading…")} />
         ) : null}
         <View testID="skill-packs" style={styles.list}>
           {packs.map((entry) => (

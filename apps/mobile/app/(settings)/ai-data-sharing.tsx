@@ -1,7 +1,8 @@
 import type { AiConsentStatus } from "@rakazo/contracts";
 import { AI_DATA_DISCLOSURES, AI_PRIVACY_URL } from "@rakazo/contracts";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet } from "react-native";
+import { Alert, Linking, ScrollView, StyleSheet } from "react-native";
+import { MotionSpinner } from "../../components/motion-spinner";
 import {
   SettingsFooter,
   SettingsGroup,
@@ -96,7 +97,7 @@ export default function AiDataSharing() {
       contentContainerStyle={[styles.container, stacked && styles.compactContainer]}
       contentInsetAdjustmentBehavior="automatic"
     >
-      {placeholder === "loading" && <ActivityIndicator />}
+      {placeholder === "loading" && <MotionSpinner />}
       {placeholder === "failed" && (
         <SettingsFooter>{t("Could not load permissions.")}</SettingsFooter>
       )}

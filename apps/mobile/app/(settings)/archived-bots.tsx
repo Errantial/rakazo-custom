@@ -1,7 +1,8 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { ArchivedBotList } from "../../components/archived-bot-list";
+import { MotionSpinner } from "../../components/motion-spinner";
 import { NativeActionButton } from "../../components/native-action-button";
 import type { MobileBot, MobileGroup } from "../../lib/api";
 import { captureApiRequestContext, rpc, selectSpace } from "../../lib/api";
@@ -200,7 +201,7 @@ export default function ArchivedBots() {
           (bots ? (
             <Text style={{ color: tokens.mutedForeground }}>{t("No archived chats")}</Text>
           ) : (
-            <ActivityIndicator color={tokens.foreground} />
+            <MotionSpinner color={tokens.foreground} />
           ))}
       </ScrollView>
     );

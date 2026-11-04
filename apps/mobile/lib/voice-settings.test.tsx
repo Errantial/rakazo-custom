@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
   held: null as Promise<void> | null,
 }));
 const t = (text: string) => text;
+vi.mock("./display-mode", () => ({ useDisplayMode: () => "standard" }));
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("expo-router", () => ({
   useFocusEffect: (callback: () => void) => useEffect(callback, [callback]),

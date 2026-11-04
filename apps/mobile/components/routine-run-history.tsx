@@ -2,11 +2,11 @@ import type { RoutineRun } from "@rakazo/contracts";
 import { formatRoutineRunAt } from "@rakazo/core";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator } from "react-native";
 import { activityStatusLabel } from "../lib/activity";
 import { dateLocaleForUi, useI18n } from "../lib/i18n";
 import { native } from "../lib/native";
 import { routineRunDestination, useRoutineRuns } from "../lib/routine-runs";
+import { MotionSpinner } from "./motion-spinner";
 import { NativeActionButton } from "./native-action-button";
 import { RunErrorSheet, useRunError } from "./run-error-sheet";
 import { SettingsGroup, SettingsRow } from "./settings-group";
@@ -23,7 +23,7 @@ export function RoutineRunHistory({
   const history = useRoutineRuns(routineId);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   if (!history.runs) {
-    if (!history.failed) return <ActivityIndicator color={native.secondaryLabel} />;
+    if (!history.failed) return <MotionSpinner color={native.secondaryLabel} />;
     return (
       <>
         <SettingsGroup label={t("Run history")}>

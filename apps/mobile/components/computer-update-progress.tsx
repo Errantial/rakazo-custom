@@ -3,12 +3,13 @@ import { COMPUTER_UPDATE_STAGES } from "@rakazo/contracts";
 import { computerUpdateNeedsAttention, computerUpdateStages } from "@rakazo/core";
 import { usePathname } from "expo-router";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { computerUpdates } from "../lib/computer-updates";
 import { useI18n } from "../lib/i18n";
 import { useMobileTokens } from "../lib/native";
 import { GlassSurface } from "./glass-surface";
+import { MotionSpinner } from "./motion-spinner";
 import { NativeActionButton } from "./native-action-button";
 import { NativeSymbol } from "./native-symbol";
 
@@ -66,7 +67,7 @@ export function ComputerUpdateProgress() {
               ]}
             >
               {!computerUpdateNeedsAttention(update) ? (
-                <ActivityIndicator color={tokens.foreground} />
+                <MotionSpinner color={tokens.foreground} />
               ) : null}
               <View>
                 <Text style={{ color: tokens.foreground }}>{title(update)}</Text>
@@ -101,7 +102,7 @@ export function ComputerUpdateProgress() {
                 return (
                   <View key={stage} style={styles.step}>
                     {index === current ? (
-                      <ActivityIndicator color={tokens.foreground} />
+                      <MotionSpinner color={tokens.foreground} />
                     ) : (
                       <NativeSymbol
                         ios={index < current ? "checkmark.circle.fill" : "circle"}

@@ -34,7 +34,6 @@ import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   AccessibilityInfo,
-  ActivityIndicator,
   Alert,
   Keyboard,
   Linking,
@@ -48,6 +47,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { HeaderRowsEditor } from "../../components/header-rows-editor";
 import { MenuPickerMenu } from "../../components/menu-picker";
+import { MotionSpinner } from "../../components/motion-spinner";
 import { NativeActionButton } from "../../components/native-action-button";
 import { NativeSwitch } from "../../components/native-switch";
 import { Checkmark } from "../../components/row-accessories";
@@ -1089,7 +1089,7 @@ export default function ModelConnection() {
   if (loading && catalog.length === 0) {
     return (
       <SafeAreaView edges={["bottom"]} style={[styles.screen, styles.centered]}>
-        <ActivityIndicator color={native.secondaryLabel} />
+        <MotionSpinner color={native.secondaryLabel} />
       </SafeAreaView>
     );
   }

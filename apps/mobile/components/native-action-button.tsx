@@ -26,7 +26,7 @@ export function NativeActionButton({
 }: NativeActionButtonProps) {
   const tokens = useMobileTokens();
   const inactive = disabled || busy;
-  // E-ink keeps the label and relies on the dimmed, disabled state instead of a spinner.
+  // E-ink swaps the spinner for a trailing ellipsis on the label.
   const eink = useDisplayMode() === "eink";
   const stretches = actionFills(prominence, fill);
   const small = size === "compact";
@@ -117,7 +117,7 @@ export function NativeActionButton({
                         : "600",
               }}
             >
-              {label}
+              {busy && eink ? `${label}…` : label}
             </Text>
           ) : null}
         </>

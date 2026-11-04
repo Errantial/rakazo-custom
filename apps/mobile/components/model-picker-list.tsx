@@ -6,7 +6,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { ViewToken } from "react-native";
 import {
   AccessibilityInfo,
-  ActivityIndicator,
   Platform,
   SectionList,
   StyleSheet,
@@ -19,6 +18,7 @@ import { useFloatingHeaderInset } from "../lib/floating-header";
 import { useI18n } from "../lib/i18n";
 import { native, useThemedStyles } from "../lib/native";
 import { useSideInsets } from "../lib/side-insets";
+import { MotionSpinner } from "./motion-spinner";
 import { Checkmark } from "./row-accessories";
 import { SettingsLabel, SettingsRow } from "./settings-group";
 import { TextOnlyMark } from "./text-only-mark";
@@ -236,7 +236,7 @@ export function ModelPickerList({
         error || noMatches ? (
           <Text style={styles.empty}>{error ?? noMatchesMessage}</Text>
         ) : (
-          <ActivityIndicator color={native.secondaryLabel} />
+          <MotionSpinner color={native.secondaryLabel} />
         )
       }
       renderItem={({ item, index, section }) => {

@@ -4,17 +4,10 @@ import { displayName, loadPeerHistory, peerConversations } from "@rakazo/core";
 import { typeScale } from "@rakazo/ui-tokens";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { glassHeaderOptions } from "../components/glass-title";
 import { InlineImageAttachment } from "../components/inline-image-attachment";
+import { MotionSpinner } from "../components/motion-spinner";
 import { NativeActionButton } from "../components/native-action-button";
 import { SheetCloseButton } from "../components/sheet-close-button";
 import { rpc } from "../lib/api";
@@ -121,7 +114,7 @@ export default function PeerChat() {
       >
         {state.kind === "loading" ? (
           <View style={styles.center}>
-            <ActivityIndicator color={tokens.mutedForeground} />
+            <MotionSpinner color={tokens.mutedForeground} />
           </View>
         ) : state.kind === "failed" ? (
           <View style={styles.center}>

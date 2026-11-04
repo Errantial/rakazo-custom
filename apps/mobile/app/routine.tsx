@@ -1,6 +1,7 @@
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { glassHeaderOptions } from "../components/glass-title";
+import { MotionSpinner } from "../components/motion-spinner";
 import { NativeActionButton } from "../components/native-action-button";
 import { RoutineRunHistory } from "../components/routine-run-history";
 import { useI18n } from "../lib/i18n";
@@ -49,7 +50,7 @@ export default function RoutineDetail() {
       contentInsetAdjustmentBehavior="automatic"
     >
       <Stack.Screen options={glassHeaderOptions(routine?.name ?? t("Routine"))} />
-      {loading ? <ActivityIndicator color={tokens.mutedForeground} /> : null}
+      {loading ? <MotionSpinner color={tokens.mutedForeground} /> : null}
       {error ? <Text style={{ color: tokens.destructive, fontSize: 15 }}>{error}</Text> : null}
       {routine ? (
         <>

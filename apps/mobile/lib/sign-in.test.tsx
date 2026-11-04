@@ -23,6 +23,7 @@ const route = vi.hoisted(() => ({ mode: "in", waiting: false, redirect: vi.fn() 
 const router = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn() }));
 const server = vi.hoisted(() => ({ base: "https://example.invalid", refocus: () => {} }));
 
+vi.mock("./display-mode", () => ({ useDisplayMode: () => "standard" }));
 vi.mock("expo-router", () => ({
   Redirect: ({ href }: { href: string }) => {
     route.redirect(href);

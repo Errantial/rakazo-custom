@@ -5,16 +5,8 @@ import type { File } from "expo-file-system";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { MotionSpinner } from "../components/motion-spinner";
 import { NativeSymbol } from "../components/native-symbol";
 import { SandboxedHtmlPreview } from "../components/sandboxed-html-preview";
 import { formatActivityRelativeTime } from "../lib/activity";
@@ -252,7 +244,7 @@ export default function ArtifactDetailScreen() {
       <View style={styles.body}>
         {content.status === "loading" ? (
           <View style={styles.centered}>
-            <ActivityIndicator color={native.secondaryLabel} />
+            <MotionSpinner color={native.secondaryLabel} />
           </View>
         ) : content.status === "error" ? (
           <View style={styles.centered}>

@@ -8,17 +8,10 @@ import { fetchFresh, writeSaved } from "@rakazo/core/query";
 import { isCancelledError } from "@tanstack/react-query";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LoadFailure } from "../../components/load-failure";
+import { MotionSpinner } from "../../components/motion-spinner";
 import { NativeActionButton } from "../../components/native-action-button";
 import { NativeSwitch } from "../../components/native-switch";
 import { Checkmark } from "../../components/row-accessories";
@@ -461,7 +454,7 @@ export default function VoiceSettings() {
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
       >
-        {loading || !deviceVoiceReady ? <ActivityIndicator color={native.secondaryLabel} /> : null}
+        {loading || !deviceVoiceReady ? <MotionSpinner color={native.secondaryLabel} /> : null}
         {failure && !status ? (
           <LoadFailure
             message={failure}

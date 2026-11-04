@@ -31,7 +31,6 @@ import type { NativeStackNavigationOptions } from "expo-router";
 import { useFocusEffect, useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   AppState,
   Linking,
@@ -46,6 +45,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ConnectorIcon } from "../../components/connector-icon";
 import { MenuPicker } from "../../components/menu-picker";
+import { MotionSpinner } from "../../components/motion-spinner";
 import { NativeActionButton } from "../../components/native-action-button";
 import { NativeSymbol } from "../../components/native-symbol";
 import { PluginIcon } from "../../components/plugin-icon";
@@ -649,7 +649,7 @@ export default function Integrations() {
   function renderPlugins() {
     if (pluginsState === "loading") {
       return catalogReady ? (
-        <ActivityIndicator color={native.secondaryLabel} accessibilityLabel={t("Loading…")} />
+        <MotionSpinner color={native.secondaryLabel} accessibilityLabel={t("Loading…")} />
       ) : null;
     }
     const failed =
@@ -1135,7 +1135,7 @@ export default function Integrations() {
           {toolsOpen ? (
             <View style={styles.toolsBody}>
               {toolsLoading ? (
-                <ActivityIndicator
+                <MotionSpinner
                   color={native.secondaryLabel}
                   accessibilityLabel={t("Loading tools…")}
                 />

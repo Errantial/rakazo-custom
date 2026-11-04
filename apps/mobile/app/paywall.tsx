@@ -11,7 +11,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import type { ComponentProps, ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   AppState,
   BackHandler,
@@ -25,6 +24,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BotAvatar } from "../components/bot-avatar";
 import { GlassIconButton } from "../components/glass-icon-button";
+import { MotionSpinner } from "../components/motion-spinner";
 import { NativeActionButton } from "../components/native-action-button";
 import { NativeSymbol } from "../components/native-symbol";
 import { FORM_COLUMN_WIDTH } from "../lib/adaptive-layout";
@@ -196,7 +196,7 @@ export default function Paywall() {
               <NativeActionButton label={t("Try again")} prominence="secondary" onPress={load} />
             </View>
           ) : (
-            <ActivityIndicator color={tokens.mutedForeground} accessibilityLabel={t("Loading…")} />
+            <MotionSpinner color={tokens.mutedForeground} accessibilityLabel={t("Loading…")} />
           )}
         </View>
       </View>

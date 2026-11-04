@@ -1,7 +1,8 @@
 import type { Routine } from "@rakazo/contracts";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
+import { MotionSpinner } from "../components/motion-spinner";
 import { NativeActionButton } from "../components/native-action-button";
 import { RoutineList } from "../components/routine-list";
 import { useI18n } from "../lib/i18n";
@@ -88,7 +89,7 @@ export default function Routines() {
           />
         </>
       ) : (
-        <ActivityIndicator color={native.secondaryLabel} />
+        <MotionSpinner color={native.secondaryLabel} />
       )}
     </View>
   );

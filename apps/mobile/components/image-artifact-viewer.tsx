@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import type { SharedValue } from "react-native-reanimated";
 import Animated, {
@@ -21,6 +21,7 @@ import { fitImageSize } from "../lib/inline-image";
 import { iosAtLeast } from "../lib/native-controls";
 import { errorText } from "../lib/user-error";
 import { GlassIconButton } from "./glass-icon-button";
+import { MotionSpinner } from "./motion-spinner";
 
 export type ImageArtifactPreviewTarget = {
   artifactId: string;
@@ -339,10 +340,7 @@ export function ImageArtifactViewer({
         ) : state.status === "error" ? (
           <Text style={[styles.message, { color: tokens.mutedForeground }]}>{state.message}</Text>
         ) : (
-          <ActivityIndicator
-            color={tokens.mutedForeground}
-            accessibilityLabel={t("Loading image…")}
-          />
+          <MotionSpinner color={tokens.mutedForeground} accessibilityLabel={t("Loading image…")} />
         )}
       </View>
     </Animated.View>

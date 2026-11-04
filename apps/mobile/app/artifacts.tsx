@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { LayoutChangeEvent } from "react-native";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
@@ -15,6 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BotAvatar } from "../components/bot-avatar";
+import { MotionSpinner } from "../components/motion-spinner";
 import { NativeSymbol } from "../components/native-symbol";
 import { formatActivityRelativeTime } from "../lib/activity";
 import type { MobileBot } from "../lib/api";
@@ -295,7 +295,7 @@ export default function ArtifactsScreen() {
               {loadError ? (
                 <Text style={styles.empty}>{loadError}</Text>
               ) : (
-                <ActivityIndicator color={native.secondaryLabel} />
+                <MotionSpinner color={native.secondaryLabel} />
               )}
             </View>
           ) : queryActive && filtered?.length === 0 && nextCursor && searchPageFailed ? (
@@ -315,7 +315,7 @@ export default function ArtifactsScreen() {
             nextCursor &&
             (loadingMore || autoFetchedCursorRef.current !== nextCursor) ? (
             <View style={styles.centered}>
-              <ActivityIndicator color={native.secondaryLabel} />
+              <MotionSpinner color={native.secondaryLabel} />
             </View>
           ) : (
             <Text style={styles.empty}>
@@ -326,7 +326,7 @@ export default function ArtifactsScreen() {
         ListFooterComponent={
           loadingMore ? (
             <View style={styles.footer}>
-              <ActivityIndicator color={native.secondaryLabel} />
+              <MotionSpinner color={native.secondaryLabel} />
             </View>
           ) : null
         }

@@ -16,6 +16,7 @@ const { rpc, back, scrollToEnd, scrollProps } = vi.hoisted(() => ({
   },
 }));
 
+vi.mock("./display-mode", () => ({ useDisplayMode: () => "standard" }));
 vi.mock("../components/native-action-button", () => ({
   NativeActionButton: ({ label, onPress }: { label: string; onPress: () => void }) =>
     createElement("button", { type: "button", onClick: onPress }, label),

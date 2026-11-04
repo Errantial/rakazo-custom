@@ -3,7 +3,6 @@ import { Redirect, useFocusEffect, useLocalSearchParams, useRouter } from "expo-
 import { useCallback, useEffect, useState } from "react";
 import {
   AccessibilityInfo,
-  ActivityIndicator,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -15,6 +14,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { MotionSpinner } from "../components/motion-spinner";
 import { NativeActionButton } from "../components/native-action-button";
 import { FORM_COLUMN_WIDTH } from "../lib/adaptive-layout";
 import type { PasswordResetCapabilities } from "../lib/api";
@@ -131,7 +131,7 @@ export default function SignIn() {
           padding: 24,
         }}
       >
-        <ActivityIndicator color={tokens.mutedForeground} accessibilityLabel={t("Loading…")} />
+        <MotionSpinner color={tokens.mutedForeground} accessibilityLabel={t("Loading…")} />
       </View>
     );
   }
@@ -290,7 +290,7 @@ export default function SignIn() {
                       />
                     </View>
                   ) : !reset ? (
-                    <ActivityIndicator
+                    <MotionSpinner
                       color={tokens.mutedForeground}
                       accessibilityLabel={t("Loading…")}
                       style={{ marginTop: 16 }}

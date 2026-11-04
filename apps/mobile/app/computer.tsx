@@ -12,7 +12,6 @@ import { useLocalSearchParams, useNavigation } from "expo-router";
 import type { RefObject } from "react";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   AppState,
   Modal,
   Pressable,
@@ -32,6 +31,7 @@ import { ComputerKeyboardBar } from "../components/computer-keyboard-bar";
 import { ComputerMaintenanceActions } from "../components/computer-maintenance-actions";
 import { ComputerModePicker } from "../components/computer-mode-picker";
 import { GlassIconButton } from "../components/glass-icon-button";
+import { MotionSpinner } from "../components/motion-spinner";
 import { NativeActionButton } from "../components/native-action-button";
 import { currentApiBase, rpc } from "../lib/api";
 import { useAppForeground } from "../lib/app-foreground";
@@ -530,7 +530,7 @@ export default function Computer() {
               padding: 16,
             }}
           >
-            {bootPending ? <ActivityIndicator size="large" color={tokens.mutedForeground} /> : null}
+            {bootPending ? <MotionSpinner size="large" color={tokens.mutedForeground} /> : null}
             <Text style={{ color: tokens.mutedForeground, textAlign: "center" }}>
               {placeholder}
             </Text>
