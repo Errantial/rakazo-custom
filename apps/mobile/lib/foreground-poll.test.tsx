@@ -23,8 +23,16 @@ vi.mock("react-native", () => ({
   },
 }));
 
-function Harness({ run, enabled }: { run: () => Promise<unknown>; enabled: boolean }) {
-  useForegroundPoll(run, 1_000, enabled);
+function Harness({
+  run,
+  enabled,
+  intervalMs = 1_000,
+}: {
+  run: () => Promise<unknown>;
+  enabled: boolean;
+  intervalMs?: number;
+}) {
+  useForegroundPoll(run, intervalMs, enabled);
   return null;
 }
 
@@ -157,5 +165,23 @@ describe("useForegroundPoll", () => {
       await vi.advanceTimersByTimeAsync(5_000);
     });
     expect(run).toHaveBeenCalledOnce();
+  });
+
+  it("follows a live interval change", async () => {
+    const run = vi.fn(async () => undefined);
+    act(() => root.render(<Harness enabled run={run} intervalMs={1_000} />));
+    await act(async () => {});
+    act(() => root.render(<Harness enabled run={run} intervalMs={2_000} />));
+    await act(async () => {});
+    const started = run.mock.calls.length;
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_999);
+    });
+    expect(run).toHaveBeenCalledTimes(started);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(run).toHaveBeenCalledTimes(started + 1);
   });
 });

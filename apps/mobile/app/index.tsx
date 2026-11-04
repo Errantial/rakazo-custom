@@ -56,6 +56,7 @@ import { AvatarViewportScope, createAvatarViewport } from "../lib/avatar-life";
 import { isPaywallShown } from "../lib/billing";
 import type { CreateAction } from "../lib/create-chooser";
 import { createInboxBot } from "../lib/create-inbox-bot";
+import { useDisplayMode } from "../lib/display-mode";
 import { useHeaderHeightIfAny } from "../lib/floating-header";
 import { useForegroundPoll } from "../lib/foreground-poll";
 import { t, useI18n } from "../lib/i18n";
@@ -80,7 +81,7 @@ import { iosAtLeast } from "../lib/native-controls";
 import type { OrganizeTarget } from "../lib/organize-target";
 import { findOrganizeTarget } from "../lib/organize-target";
 import { offerPasskeyOnce } from "../lib/passkey";
-import { ACTIVITY_POLL_INTERVAL_MS, INBOX_POLL_INTERVAL_MS } from "../lib/poll-cadence";
+import { ACTIVITY_POLL_INTERVAL_MS, inboxPollIntervalMs } from "../lib/poll-cadence";
 import { registerPushToken } from "../lib/push";
 import { loadSavedInbox, saveInbox } from "../lib/saved-chats";
 import {
@@ -149,6 +150,7 @@ function Home({ embedded, onSelectSpace, onShareSelect }: InboxPaneProps & { emb
   const styles = useThemedStyles(createHomeStyles);
   const { t, locale } = useI18n();
   const isFocused = useIsFocused();
+  const displayMode = useDisplayMode();
   const day = useInboxDay();
   const [bots, setBots] = useState<MobileBot[]>([]);
   const [groups, setGroups] = useState<MobileGroup[]>([]);
@@ -336,7 +338,11 @@ function Home({ embedded, onSelectSpace, onShareSelect }: InboxPaneProps & { emb
 
   // The embedded pane is visible beside the chat, so it keeps polling even when
   // the chat route owns focus.
-  useForegroundPoll(loadBots, INBOX_POLL_INTERVAL_MS, hasSession && (embedded || isFocused));
+  useForegroundPoll(
+    loadBots,
+    inboxPollIntervalMs(displayMode),
+    hasSession && (embedded || isFocused),
+  );
 
   const archivedCount = useArchivedCount(me?.spaceId, hasSession);
   const {
