@@ -1,3 +1,4 @@
+import { singleCodeBlockHint } from "@rakazo/chat-ui/code-fences";
 import { markdownCodeBlocks } from "@rakazo/chat-ui/native";
 import type { BotAvatarSet, LoginFieldInput, MessageReaction } from "@rakazo/contracts";
 import { canReactToThreadMessage, MESSAGE_REACTIONS } from "@rakazo/contracts";
@@ -193,9 +194,14 @@ export const MessageRow = memo(function MessageRow({
     const react = (reaction: MessageReaction) => actions.react(message, reaction);
     const markUnread = () => actions.markUnread(message);
     // VoiceOver reads the bubble as one element and can't reach a code block's copy button.
-    const codeBlocks = message.role === "user" ? [] : markdownCodeBlocks(blockText(message));
+    // A line scan decides the entry; the parser only runs when the scan can't tell, and on copy.
+    const replyText = message.role === "user" ? "" : blockText(message);
+    const includeCopyCode =
+      message.role !== "user" &&
+      (singleCodeBlockHint(replyText) ?? markdownCodeBlocks(replyText).length === 1);
     const copyCode = () => {
-      if (codeBlocks[0]) void Clipboard.setStringAsync(codeBlocks[0]).catch(() => undefined);
+      const [code] = markdownCodeBlocks(replyText);
+      if (code) void Clipboard.setStringAsync(code).catch(() => undefined);
     };
     const menuActions = [
       ...(!readOnly ? [{ name: "reply", text: t("Reply"), onPress: reply }] : []),
@@ -224,9 +230,7 @@ export const MessageRow = memo(function MessageRow({
       ...(includeSpeak ? [{ name: "speak", text: t("Speak message"), onPress: speakMessage }] : []),
       ...(includeSelect ? [{ name: "select", text: t("Select text"), onPress: select }] : []),
       { name: "copy", text: t("Copy"), onPress: copy },
-      ...(codeBlocks.length === 1
-        ? [{ name: "copyCode", text: t("Copy code"), onPress: copyCode }]
-        : []),
+      ...(includeCopyCode ? [{ name: "copyCode", text: t("Copy code"), onPress: copyCode }] : []),
     ];
     const menu = buildMessageContextMenu({
       labels: {

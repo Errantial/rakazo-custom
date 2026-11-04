@@ -52,8 +52,14 @@ import { MessageRow } from "../components/thread/message-row";
 
 type RowProps = ComponentProps<typeof MessageRow>;
 
-function messageMenu(role: "bot" | "user", blocks: string[], markedUnread = false) {
-  const text = blocks.map((code) => `\`\`\`\n${code}\n\`\`\``).join("\n\n");
+function messageMenu(
+  role: "bot" | "user",
+  blocks: string[],
+  markedUnread = false,
+  // Markdown the line scan cannot read, standing for `blocks`.
+  source?: string,
+) {
+  const text = source ?? blocks.map((code) => `\`\`\`\n${code}\n\`\`\``).join("\n\n");
   mocks.markdownCodeBlocks.mockReturnValue(blocks);
   mocks.actionProps = undefined;
   const props = {
@@ -108,10 +114,21 @@ describe("MessageRow code copy accessibility action", () => {
   it("offers Copy code for a bot reply with one block and dispatches its exact text", () => {
     const code = "const a = 1;\n\n  return a;";
     const menu = messageMenu("bot", [code]);
-    expect(mocks.markdownCodeBlocks).toHaveBeenCalledWith(menu.text);
+    // The entry comes from a line scan; the parser runs when the code is copied.
+    expect(mocks.markdownCodeBlocks).not.toHaveBeenCalled();
     expect(menu.accessibilityActions).toContainEqual({ name: "copyCode", label: "Copy code" });
     menu.run("copyCode");
+    expect(mocks.markdownCodeBlocks).toHaveBeenCalledWith(menu.text);
     expect(mocks.setStringAsync).toHaveBeenCalledExactlyOnceWith(code);
+  });
+
+  it("asks the parser when the scan cannot count a quoted fence", () => {
+    const quoted = "> ```\n> only\n> ```";
+    const one = messageMenu("bot", ["only"], false, quoted);
+    expect(mocks.markdownCodeBlocks).toHaveBeenCalledWith(quoted);
+    expect(one.accessibilityActions).toContainEqual({ name: "copyCode", label: "Copy code" });
+    const two = messageMenu("bot", ["a", "b"], false, quoted);
+    expect(two.accessibilityActions.some((action) => action.name === "copyCode")).toBe(false);
   });
 
   it.each([

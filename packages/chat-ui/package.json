@@ -4,6 +4,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
+    "./code-fences": "./src/code-fences.ts",
     "./mermaid": "./src/mermaid.ts",
     "./native": "./src/markdown.native.tsx",
     "./native-context": "./src/native-context.ts",

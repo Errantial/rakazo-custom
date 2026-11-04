@@ -207,6 +207,7 @@ import { act, createElement } from "react";
 import { createRoot } from "react-dom/client";
 import type { TextProps } from "react-native";
 import { Platform, Pressable, StyleSheet } from "react-native";
+import { singleCodeBlockHint } from "./code-fences";
 import type { LinkFavicons, MermaidDiagramProps } from "./markdown.native";
 import {
   ChatMarkdown,
@@ -712,6 +713,61 @@ describe("native markdown code copy", () => {
     const html = renderToStaticMarkup(<ChatMarkdown>{"```\nnpm test\n```"}</ChatMarkdown>);
     expect(html).not.toContain("<copy-probe");
     expect(html).toContain("npm test");
+  });
+});
+
+describe("singleCodeBlockHint", () => {
+  const corpus = [
+    "",
+    "plain text, `inline` and ```inline too```",
+    "```ts\nconst a = 1;\n```",
+    "Intro\n\n```\nfirst\n```\n\nthen\n\n```\nsecond\n```",
+    "~~~\ntilde\n~~~",
+    "```\nnever closed",
+    "```\n\n  \n```",
+    "```\n```",
+    "````md\n```\ninner\n```\n````",
+    "```ts\none\n```\n```ts\ntwo\n```",
+    "1. Step\n\n   ```bash\n   npm test\n   ```\n2. Done",
+    "- item\n  - nested",
+    "Windows\r\n```\r\ncode\r\n```",
+    "```mermaid\ngraph LR\n  A --> B\n```",
+    "```js\nconst fence = `\n```\n```",
+    "> ```\n> quoted\n> ```",
+    "- item\n\n      indented in a list",
+    "    indented code",
+    "<details>\n<summary>More</summary>\n\n```\ncode\n```\n</details>",
+    "- ```\n  in a list item\n  ```",
+    "```\ncode\n    ```\nmore\n```",
+  ];
+
+  it.each(corpus)("never disagrees with the parser on %j", (markdown) => {
+    const hint = singleCodeBlockHint(markdown);
+    if (hint !== undefined) expect(hint).toBe(markdownCodeBlocks(markdown).length === 1);
+  });
+
+  it("answers without the parser for plain fences and none", () => {
+    expect(singleCodeBlockHint("")).toBe(false);
+    expect(singleCodeBlockHint("Run `npm test` first, or ```inline```.")).toBe(false);
+    expect(singleCodeBlockHint("```ts\nconst a = 1;\n```")).toBe(true);
+    expect(singleCodeBlockHint("Intro\r\n\r\n~~~\ncode\n~~~")).toBe(true);
+    expect(singleCodeBlockHint("```\nnever closed")).toBe(true);
+    expect(singleCodeBlockHint("```\n\n \n```")).toBe(false);
+    expect(singleCodeBlockHint("```\nfirst\n```\n\n```\nsecond\n```")).toBe(false);
+    expect(singleCodeBlockHint("````md\n```\ninner\n```\n````")).toBe(true);
+    expect(singleCodeBlockHint("1. Step\n\n   ```bash\n   npm test\n   ```")).toBe(true);
+  });
+
+  it("leaves quoted, nested, indented and HTML-adjacent fences to the parser", () => {
+    for (const markdown of [
+      "> ```\n> quoted\n> ```",
+      "- ```\n  code\n  ```",
+      "- item\n\n      indented",
+      "    indented code",
+      "<details>\n\n```\ncode\n```\n</details>",
+    ]) {
+      expect(singleCodeBlockHint(markdown)).toBeUndefined();
+    }
   });
 });
 
