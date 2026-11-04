@@ -53,3 +53,24 @@ export function createKeyedPromiseCache<T>(load: (key: string) => Promise<T>) {
     },
   };
 }
+
+/**
+ * Runs at most `max` tasks at once, starting waiting ones in arrival order. A slot is freed
+ * when its task settles, however it ends, so a failure never blocks the queue.
+ */
+export function createLimiter(max: number) {
+  let running = 0;
+  const waiting: Array<() => void> = [];
+  return async function limit<T>(task: () => Promise<T>): Promise<T> {
+    if (running >= max) await new Promise<void>((resolve) => waiting.push(resolve));
+    else running += 1;
+    try {
+      return await task();
+    } finally {
+      // Hand the slot straight to the next waiter; otherwise it is free.
+      const next = waiting.shift();
+      if (next) next();
+      else running -= 1;
+    }
+  };
+}

@@ -8,7 +8,7 @@ import { artifactCacheFileName, artifactShareFileName } from "./artifact-file";
 import { ARTIFACT_DOWNLOAD_TIMEOUT_MS } from "./artifacts";
 import { t } from "./i18n";
 import type { ImageSize } from "./inline-image";
-import { createKeyedPromiseCache } from "./inline-image";
+import { createKeyedPromiseCache, createLimiter } from "./inline-image";
 import { currentSessionGeneration, loadSessionToken } from "./session";
 
 export type MobileArtifactTarget = { botId: string } | { groupId: string };
@@ -92,11 +92,16 @@ function requestKey(target: MobileArtifactTarget, artifactId: string, mimeType: 
   ]);
 }
 
+// Inline images start downloading as their rows mount; two at a time keeps a photo-heavy chat
+// from starving the thread's own requests on a slow link.
+const limitImageDownloads = createLimiter(2);
+
 async function cacheMobileArtifact(
   target: MobileArtifactTarget,
   artifactId: string,
   mimeType: string,
   cachedScope?: ArtifactScope,
+  limitDownload = false,
 ): Promise<File> {
   const scope = cachedScope ?? (await artifactScope());
   assertCurrent(scope);
@@ -122,11 +127,16 @@ async function cacheMobileArtifact(
       // A corrupt sidecar is a cache miss.
     }
   }
-  const artifact = await rpc(
-    "artifacts/get",
-    { ...target, artifactId },
-    { timeoutMs: ARTIFACT_DOWNLOAD_TIMEOUT_MS, requestContext: scope.context },
-  );
+  const download = () => {
+    // The session may have changed while this download waited for a slot.
+    assertCurrent(scope);
+    return rpc(
+      "artifacts/get",
+      { ...target, artifactId },
+      { timeoutMs: ARTIFACT_DOWNLOAD_TIMEOUT_MS, requestContext: scope.context },
+    );
+  };
+  const artifact = await (limitDownload ? limitImageDownloads(download) : download());
   assertCurrent(scope);
   // Invalidate first so an interrupted overwrite cannot leave valid metadata for wrong bytes.
   if (metadata.exists) metadata.delete();
@@ -173,6 +183,7 @@ const imageArtifactUris = createKeyedPromiseCache<string>(async (key) => {
     request.artifactId,
     request.mimeType,
     request.scope,
+    true,
   );
   return file.uri;
 });

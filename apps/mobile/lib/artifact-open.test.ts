@@ -257,4 +257,42 @@ describe("artifact preview caches", () => {
     await api.imageArtifactUri(target, "art-2", "image/png");
     expect(artifactFetches()).toBe(3);
   });
+
+  it("downloads at most two inline images at once and frees a slot after a failure", async () => {
+    const api = await load();
+    const pending: Array<{
+      resolve: (value: { contentBase64: string }) => void;
+      reject: (error: Error) => void;
+    }> = [];
+    state.rpc.mockImplementation(async (proc: string) =>
+      proc === "me"
+        ? { userId: state.userId }
+        : new Promise((resolve, reject) => pending.push({ resolve, reject })),
+    );
+    const loads = ["art-1", "art-2", "art-3"].map((id) =>
+      api.imageArtifactUri(target, id, "image/png"),
+    );
+    const failed = expect(loads[0]).rejects.toThrow("offline");
+    await vi.waitFor(() => expect(artifactFetches()).toBe(2));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(artifactFetches()).toBe(2);
+
+    pending[0]?.reject(new Error("offline"));
+    await failed;
+    await vi.waitFor(() => expect(artifactFetches()).toBe(3));
+    pending[1]?.resolve({ contentBase64: "aGk=" });
+    pending[2]?.resolve({ contentBase64: "aGk=" });
+    await Promise.all(loads.slice(1));
+  });
+
+  it("does not queue a tapped attachment behind inline images", async () => {
+    const api = await load();
+    state.rpc.mockImplementation(async (proc: string) =>
+      proc === "me" ? { userId: state.userId } : new Promise(() => {}),
+    );
+    for (const id of ["art-1", "art-2"]) void api.imageArtifactUri(target, id, "image/png");
+    await vi.waitFor(() => expect(artifactFetches()).toBe(2));
+    void api.readMobileArtifactText(target, "art-3", "text/plain");
+    await vi.waitFor(() => expect(artifactFetches()).toBe(3));
+  });
 });

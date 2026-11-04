@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { createKeyedPromiseCache, fitImageSize, isInlineImageMimeType } from "./inline-image.js";
+import { describe, expect, it, vi } from "vitest";
+import {
+  createKeyedPromiseCache,
+  createLimiter,
+  fitImageSize,
+  isInlineImageMimeType,
+} from "./inline-image.js";
 
 describe("fitImageSize", () => {
   it("scales a large image down to the box while keeping its ratio", () => {
@@ -93,5 +98,63 @@ describe("createKeyedPromiseCache", () => {
     expect(cache.get("one")).toBe(fresh);
     await expect(fresh).resolves.toBe("fresh");
     expect(calls).toBe(2);
+  });
+});
+
+describe("createLimiter", () => {
+  const deferred = () => {
+    let settle!: { resolve: () => void; reject: (error: Error) => void };
+    const promise = new Promise<void>((resolve, reject) => {
+      settle = { resolve, reject };
+    });
+    return { promise, ...settle };
+  };
+
+  it("runs two tasks at once and starts the third when one finishes", async () => {
+    const limit = createLimiter(2);
+    const tasks = [deferred(), deferred(), deferred()];
+    const started: number[] = [];
+    const results = tasks.map((task, index) =>
+      limit(() => {
+        started.push(index);
+        return task.promise;
+      }),
+    );
+    await Promise.resolve();
+    expect(started).toEqual([0, 1]);
+
+    tasks[0]?.resolve();
+    await results[0];
+    await Promise.resolve();
+    expect(started).toEqual([0, 1, 2]);
+
+    tasks[1]?.resolve();
+    tasks[2]?.resolve();
+    await Promise.all(results);
+  });
+
+  it("frees the slot after a rejection", async () => {
+    const limit = createLimiter(1);
+    const first = deferred();
+    const failed = limit(() => first.promise);
+    const second = vi.fn(async () => "done");
+    const next = limit(second);
+    await Promise.resolve();
+    expect(second).not.toHaveBeenCalled();
+
+    first.reject(new Error("timeout"));
+    await expect(failed).rejects.toThrow("timeout");
+    await expect(next).resolves.toBe("done");
+    await expect(limit(async () => "again")).resolves.toBe("again");
+  });
+
+  it("frees the slot when a task throws synchronously", async () => {
+    const limit = createLimiter(1);
+    await expect(
+      limit(() => {
+        throw new Error("boom");
+      }),
+    ).rejects.toThrow("boom");
+    await expect(limit(async () => "ok")).resolves.toBe("ok");
   });
 });
