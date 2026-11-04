@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  KEEP_RULES,
-  applyGradleProperties,
   appendKeepRules,
+  applyGradleProperties,
+  KEEP_RULES,
 } from "./with-android-release-optimizations.js";
 
 describe("applyGradleProperties", () => {

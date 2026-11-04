@@ -10,5 +10,7 @@ export function isEinkDevice(
   constants: DeviceConstants = Platform.constants as DeviceConstants,
 ): boolean {
   if (Platform.OS !== "android") return false;
-  return EINK_PATTERN.test(constants.Manufacturer ?? "") || EINK_PATTERN.test(constants.Brand ?? "");
+  return (
+    EINK_PATTERN.test(constants.Manufacturer ?? "") || EINK_PATTERN.test(constants.Brand ?? "")
+  );
 }
