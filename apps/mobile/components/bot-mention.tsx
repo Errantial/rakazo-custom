@@ -4,6 +4,7 @@ import { resolvePersonaColorDef } from "@rakazo/core";
 import type { ColorTokens } from "@rakazo/ui-tokens";
 import type { ReactNode } from "react";
 import { Text, View } from "react-native";
+import { mobileBotColor } from "../lib/display-mode";
 import { MessageMentionsContext } from "../lib/message-mentions";
 import { BotAvatar } from "./bot-avatar";
 import { NativeSymbol } from "./native-symbol";
@@ -30,7 +31,9 @@ export function BotMention({
       accessibilityRole={live ? "link" : undefined}
       onPress={live ? () => onOpenBot(block.botId, block.name) : undefined}
       style={{
-        color: live ? resolvePersonaColorDef(block.botId, color).light : tokens.foreground,
+        color: live
+          ? resolvePersonaColorDef(block.botId, mobileBotColor(color)).light
+          : tokens.foreground,
         fontWeight: "500",
       }}
     >

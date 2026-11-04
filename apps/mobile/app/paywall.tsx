@@ -6,7 +6,7 @@ import {
   MODEL_CREDIT_AMOUNTS,
   ModelCreditAmountSchema,
 } from "@rakazo/contracts";
-import { botColors, botEyeColor, typeScale } from "@rakazo/ui-tokens";
+import { botColors, typeScale } from "@rakazo/ui-tokens";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import type { ComponentProps, ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -39,6 +39,7 @@ import {
   purchaseCompleted,
   setPaywallShown,
 } from "../lib/billing";
+import { botEyeInk } from "../lib/bot-avatar";
 import { translucentColor } from "../lib/color";
 import { dateLocaleForUi, useI18n } from "../lib/i18n";
 import { useMobileTokens } from "../lib/native";
@@ -518,7 +519,7 @@ function TimelineStep({
             ios={ios}
             android={android}
             size={13}
-            color={color ? botEyeColor : tokens.primaryForeground}
+            color={color ? botEyeInk(color, tokens) : tokens.primaryForeground}
           />
         </View>
         {connected ? <View style={[styles.stepLine, { backgroundColor: tokens.border }]} /> : null}

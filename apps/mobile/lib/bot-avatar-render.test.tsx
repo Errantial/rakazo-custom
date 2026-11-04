@@ -2,6 +2,7 @@
 
 import {
   avatarIdentitySeed,
+  contrastRatio,
   LOGO_BODY_PATH,
   logoAvatarFrame,
   logoAvatarTraits,
@@ -10,7 +11,7 @@ import {
   shippedBotAvatarShapePath,
 } from "@rakazo/core";
 import type { ColorTokens } from "@rakazo/ui-tokens";
-import { botEyeColor, tokensForAppearance } from "@rakazo/ui-tokens";
+import { botEyeColor, einkBotColor, einkTokens, tokensForAppearance } from "@rakazo/ui-tokens";
 import type { ReactNode } from "react";
 import { act, createElement, useRef } from "react";
 import type { Root } from "react-dom/client";
@@ -29,12 +30,10 @@ const nativeMotion = vi.hoisted(() => ({
   timings: [] as number[],
 }));
 
-vi.mock("./display-mode", () => ({
-  getCachedDisplayMode: () => "standard",
-  mobileBotColor: (color: string) => color,
-  subscribeDisplayMode: () => () => undefined,
-  useDisplayMode: () => "standard",
-}));
+// The real display-mode store, with the device profile standing in for an e-ink phone.
+const device = vi.hoisted(() => ({ eink: false }));
+vi.mock("expo-secure-store", () => ({ getItemAsync: vi.fn(), setItemAsync: vi.fn() }));
+vi.mock("./device-profile", () => ({ isEinkDevice: () => device.eink }));
 vi.mock("react-native", () => ({
   View: ({
     children,
@@ -205,6 +204,7 @@ describe("BotAvatar", () => {
     nativeMotion.timings.length = 0;
     mobileLogoAvatarActivity.clear();
     mobileTokens.current = undefined;
+    device.eink = false;
   });
 
   function render(
@@ -304,6 +304,23 @@ describe("BotAvatar", () => {
     ]);
     expect(view.querySelector("img")).toBeNull();
     expect(view.querySelector("ellipse")).toBeNull();
+  });
+
+  it.each([
+    ["organic", "#3EC5A8", "rect"],
+    ["shape", "#8B5CF6::shape_3", "ellipse"],
+  ])("draws a %s bot in ink with eyes that contrast in e-ink", (_kind, color, eyeTag) => {
+    device.eink = true;
+    mobileTokens.current = einkTokens;
+    const view = render(color);
+    const body = view.querySelector("path")?.dataset.fill;
+    const eyes = Array.from(
+      view.querySelectorAll(eyeTag),
+      (eye) => eye.getAttribute("data-fill") ?? eye.parentElement?.getAttribute("data-fill"),
+    );
+    expect(body).toBe(einkBotColor);
+    expect(eyes).toHaveLength(2);
+    for (const eye of eyes) expect(contrastRatio(einkBotColor, eye ?? "")).toBeGreaterThan(3);
   });
 
   it("keeps a picture", () => {

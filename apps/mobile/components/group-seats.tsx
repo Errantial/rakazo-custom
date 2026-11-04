@@ -4,7 +4,6 @@ import {
   SHIPPED_BOT_AVATAR_CENTER,
   SHIPPED_BOT_AVATAR_VIEWBOX,
 } from "@rakazo/core";
-import { botEyeColor } from "@rakazo/ui-tokens";
 import type { ReactNode } from "react";
 import { memo, useId } from "react";
 import type { ColorValue } from "react-native";
@@ -21,7 +20,9 @@ import Svg, {
   Rect,
   Text as SvgText,
 } from "react-native-svg";
-import { mobileBotAvatarPresentation } from "../lib/bot-avatar";
+import { mobileTokens } from "../lib/appearance";
+import { botEyeInk, mobileBotAvatarPresentation } from "../lib/bot-avatar";
+import { mobileBotColor } from "../lib/display-mode";
 import type { GroupSeat } from "../lib/group-seats";
 import {
   GROUP_SEAT_SIZE,
@@ -148,7 +149,8 @@ function markArt(
 
 /** A still face in the member's shape: the same drawing as their avatar at rest. */
 function seatArt(member: SeatMember, size: number, key: string): SeatArt {
-  const parsed = mobileBotAvatarPresentation(member.color);
+  const memberColor = mobileBotColor(member.color);
+  const parsed = mobileBotAvatarPresentation(memberColor);
   const r = size / 2;
   if (parsed.kind === "image" && parsed.imageUrl) {
     // Drawn in points, so the photo keeps its full resolution.
@@ -194,7 +196,7 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
       ),
     };
   }
-  const color = parsed.kind === "color" ? parsed.color : member.color;
+  const color = parsed.kind === "color" ? parsed.color : memberColor;
   const seed = avatarIdentitySeed(member.botId ?? member.name ?? color);
   const outline = organicAvatarPath(seed);
   return {
@@ -203,7 +205,7 @@ function seatArt(member: SeatMember, size: number, key: string): SeatArt {
     face: (
       <>
         <Path d={outline} fill={color} />
-        <G transform={`rotate(${(seed % 9) - 4})`} fill={botEyeColor}>
+        <G transform={`rotate(${(seed % 9) - 4})`} fill={botEyeInk(color, mobileTokens())}>
           <Rect x={-14} y={-12} width={7} height={24} rx={3.5} />
           <Rect x={7} y={-12} width={7} height={24} rx={3.5} />
         </G>

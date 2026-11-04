@@ -20,6 +20,7 @@ const input = vi.hoisted(() => ({
   select: (_event: { nativeEvent: { selection: { start: number; end: number } } }) => {},
 }));
 const mentionApi = vi.hoisted(() => ({ rpc: vi.fn(), capture: vi.fn(), generation: 1 }));
+vi.mock("./display-mode", () => ({ mobileBotColor: (color: string) => color }));
 vi.mock("./api", () => ({
   rpc: mentionApi.rpc,
   captureApiRequestContext: mentionApi.capture,

@@ -1,6 +1,8 @@
 import type { ParsedBotAvatar } from "@rakazo/contracts";
 import { parseBotAvatarValue } from "@rakazo/contracts";
-import { resolvePersonaColorDef, shippedBotAvatarShapePath } from "@rakazo/core";
+import { contrastRatio, resolvePersonaColorDef, shippedBotAvatarShapePath } from "@rakazo/core";
+import type { ColorTokens } from "@rakazo/ui-tokens";
+import { botEyeColor } from "@rakazo/ui-tokens";
 
 export type MobileBotAvatarPresentation =
   | Exclude<ParsedBotAvatar, { kind: "shape" }>
@@ -15,4 +17,12 @@ export function mobileBotAvatarPresentation(color: string): MobileBotAvatarPrese
     shapePath: shippedBotAvatarShapePath(parsed.shapeIndex),
     eyeColor: resolvePersonaColorDef("preview", parsed.color).eyeColor,
   };
+}
+
+/** Eye color for a body: the shared dark ink when it reads, else the better of ink and paper. */
+export function botEyeInk(body: string, tokens: Pick<ColorTokens, "foreground" | "background">) {
+  if (contrastRatio(body, botEyeColor) >= 3.5) return botEyeColor;
+  return contrastRatio(body, tokens.foreground) >= contrastRatio(body, tokens.background)
+    ? tokens.foreground
+    : tokens.background;
 }

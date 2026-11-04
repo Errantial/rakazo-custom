@@ -1,7 +1,6 @@
 import type { AvatarMotionMode, AvatarPoke, LogoAvatarActivity } from "@rakazo/core";
 import {
   avatarPokeFrame,
-  contrastRatio,
   LOGO_BODY_PATH,
   LOGO_LEFT_HAND_PATH,
   LOGO_RIGHT_HAND_PATH,
@@ -10,7 +9,6 @@ import {
   logoAvatarPaint,
   logoAvatarTraits,
 } from "@rakazo/core";
-import { botEyeColor } from "@rakazo/ui-tokens";
 import type { ReactNode } from "react";
 import { useEffect, useId, useMemo } from "react";
 import { Pressable } from "react-native";
@@ -35,6 +33,7 @@ import Svg, {
   Stop,
 } from "react-native-svg";
 import { useAvatarOnScreen, usePoke } from "../lib/avatar-life";
+import { botEyeInk } from "../lib/bot-avatar";
 import { useLogoAvatarClock } from "../lib/logo-avatar-clock";
 import { useMobileTokens } from "../lib/native";
 
@@ -88,13 +87,7 @@ export function LogoAvatar({
       frame.value.bodyY + 84 * (1 - frame.value.bodyScale),
     ],
   }));
-  const eyeInk =
-    contrastRatio(traits.color, botEyeColor) >= 3.5
-      ? botEyeColor
-      : contrastRatio(traits.color, tokens.foreground) >=
-          contrastRatio(traits.color, tokens.background)
-        ? tokens.foreground
-        : tokens.background;
+  const eyeInk = botEyeInk(traits.color, tokens);
   const leftEye = useAnimatedProps(() => ({
     cx: 40.5 + frame.value.eyeX,
     cy: 49 + frame.value.eyeY,

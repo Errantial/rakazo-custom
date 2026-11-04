@@ -19,6 +19,7 @@ import { mobileTokens } from "../../lib/appearance";
 import type { MobileArtifactTarget } from "../../lib/artifact-open";
 import { openMobileArtifact } from "../../lib/artifact-open";
 import { plainAskTitle } from "../../lib/ask-title";
+import { mobileBotColor } from "../../lib/display-mode";
 import { t, useI18n } from "../../lib/i18n";
 import { isInlineImageBlock } from "../../lib/inline-image";
 import { messagePresentationSegments } from "../../lib/message-presentation";
@@ -276,7 +277,8 @@ const MessageBubbleContent = memo(function MessageBubbleContent({
     const peerBotId = sent ? peerMessage.toBotId : peerMessage.fromBotId;
     const peerBot = bots.find((bot) => bot.id === peerBotId);
     const peerMember = members?.find((member) => member.botId === peerBotId);
-    const peerColor = peerBot?.color ?? peerMember?.color ?? tokens.mutedForeground;
+    const peerBotColor = peerBot?.color ?? peerMember?.color;
+    const peerColor = peerBotColor ? mobileBotColor(peerBotColor) : tokens.mutedForeground;
     return (
       <PeerReceiptLine
         peerBotId={peerBotId}

@@ -21,7 +21,6 @@ import {
   SHIPPED_BOT_AVATAR_VIEWBOX,
   usesLogoAvatar,
 } from "@rakazo/core";
-import { botEyeColor } from "@rakazo/ui-tokens";
 import { memo, useSyncExternalStore } from "react";
 import { Image, Pressable, View } from "react-native";
 import Animated, {
@@ -32,7 +31,7 @@ import Animated, {
 import Svg, { Ellipse, G, Path, Rect } from "react-native-svg";
 import type { AvatarLife } from "../lib/avatar-life";
 import { useAvatarOnScreen, useLife, usePoke, useSettling } from "../lib/avatar-life";
-import { mobileBotAvatarPresentation } from "../lib/bot-avatar";
+import { botEyeInk, mobileBotAvatarPresentation } from "../lib/bot-avatar";
 import { mobileBotColor, useDisplayMode } from "../lib/display-mode";
 import { useI18n } from "../lib/i18n";
 import { mobileLogoAvatarActivity } from "../lib/logo-avatar-activity";
@@ -448,6 +447,7 @@ function OrganicAvatar({
     const height = state.hidden ? 0 : 24 * state.lid;
     return { x: x + state.x * scale, y: -height / 2 + state.y * scale, height };
   };
+  const eyeInk = botEyeInk(color, useMobileTokens());
   const leftEyeProps = useAnimatedProps(eyeProps(-14));
   const rightEyeProps = useAnimatedProps(eyeProps(7));
   return (
@@ -455,8 +455,8 @@ function OrganicAvatar({
       <Svg width={size} height={size} viewBox="-60 -60 120 120">
         <Path d={organicAvatarPath(seed)} fill={color} />
         <G transform={`rotate(${(seed % 9) - 4})`}>
-          <AnimatedRect animatedProps={leftEyeProps} width={7} rx={3.5} fill={botEyeColor} />
-          <AnimatedRect animatedProps={rightEyeProps} width={7} rx={3.5} fill={botEyeColor} />
+          <AnimatedRect animatedProps={leftEyeProps} width={7} rx={3.5} fill={eyeInk} />
+          <AnimatedRect animatedProps={rightEyeProps} width={7} rx={3.5} fill={eyeInk} />
         </G>
       </Svg>
     </Animated.View>

@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from "react";
 import { Pressable, StyleSheet, Text } from "react-native";
 import { mobileTokens } from "../lib/appearance";
+import { mobileBotColor } from "../lib/display-mode";
 import { useI18n } from "../lib/i18n";
 import { useThemedStyles } from "../lib/native";
 import { iosAtLeast } from "../lib/native-controls";
@@ -31,7 +32,9 @@ export function VoicePlayerBar({
   const playback = useSyncExternalStore(subscribeVoicePlayback, getVoicePlaybackState);
   if (playback.status === "idle") return null;
 
-  const speakerColor = playback.speaker?.color ?? tokens.foreground;
+  const speakerColor = playback.speaker?.color
+    ? mobileBotColor(playback.speaker.color)
+    : tokens.foreground;
   const paused = playback.status === "paused";
 
   return (

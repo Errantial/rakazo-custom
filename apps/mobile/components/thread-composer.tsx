@@ -37,6 +37,7 @@ import {
 } from "react-native";
 import type { ComposerDraftScope } from "../lib/composer-draft";
 import { readComposerDraft, writeComposerDraft } from "../lib/composer-draft";
+import { mobileBotColor } from "../lib/display-mode";
 import { useI18n } from "../lib/i18n";
 import { useMobileTokens, useResolvedAppearance } from "../lib/native";
 import type { ComposerSnapshot } from "../lib/thread-feedback";
@@ -109,7 +110,7 @@ export function ThreadComposer({
     backgroundColor: tokens.muted,
     color:
       mention.kind === "bot" && mention.color
-        ? resolvePersonaColorDef(mention.id, mention.color).light
+        ? resolvePersonaColorDef(mention.id, mobileBotColor(mention.color)).light
         : undefined,
   });
   const { fontScale } = useWindowDimensions();
