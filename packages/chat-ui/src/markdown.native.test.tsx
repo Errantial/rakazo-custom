@@ -749,6 +749,10 @@ describe("singleCodeBlockHint", () => {
     "- a\n  ```\n</pre>\n",
     "- a\n  ```\n  x\ndone\n```\nmore\n```",
     "- a\n  ```\n  x\n- b",
+    // Four columns past a list or quote marker are indented code, which the scan does not read.
+    "1.     code",
+    "-     code",
+    ">     code",
   ];
 
   it.each(corpus)("never disagrees with the parser on %j", (markdown) => {

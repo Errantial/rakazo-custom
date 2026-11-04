@@ -2,7 +2,9 @@
 const FENCE_LINE = /^([ \t>]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)*)(`{3,}|~{3,})(.*)$/s;
 const PLAIN_PREFIX = /^ {0,3}$/;
 const MARKER_RUN = /^(?:`+|~+)$/;
-const INDENTED = /^(?: {4}|\t)/;
+// A line start before its text: indent, quote marks and list markers.
+const LINE_PREFIX = /^[ \t>]*(?:(?:[-*+]|\d{1,9}[.)])[ \t]+)*/;
+const CODE_INDENT = / {4}|\t/;
 // Markdown trims only these; String.trim also strips no-break and ideographic spaces.
 const EDGE_BLANKS = /^[ \t]+|[ \t]+$/g;
 const HTML_BLOCK = /^ {0,3}<[A-Za-z/!?]/;
@@ -44,7 +46,8 @@ export function singleCodeBlockHint(markdown: string): boolean | undefined {
       };
       continue;
     }
-    if (INDENTED.test(line) && line.trim()) unsure = true;
+    // Four columns past the quote or list marker make indented code, as in `1.     code`.
+    if (CODE_INDENT.test(LINE_PREFIX.exec(line)?.[0] ?? "") && line.trim()) unsure = true;
     if (HTML_BLOCK.test(line)) html = true;
   }
   if (open?.filled) blocks += 1;
