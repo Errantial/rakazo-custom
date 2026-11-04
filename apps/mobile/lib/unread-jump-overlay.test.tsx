@@ -8,6 +8,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const navigation = vi.hoisted(() => ({ context: undefined as unknown }));
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("expo-router/react-navigation", () => {
   navigation.context = createContext<number | undefined>(undefined);
   return {

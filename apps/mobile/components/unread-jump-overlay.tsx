@@ -8,8 +8,9 @@ import type {
   NativeSyntheticEvent,
 } from "react-native";
 import { StyleSheet, View } from "react-native";
-import Animated, { FadeIn, FadeOut, ReduceMotion } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 import { useI18n } from "../lib/i18n";
+import { useMotionPreference } from "../lib/motion";
 import type {
   InboxSignal,
   JumpDirection,
@@ -26,8 +27,6 @@ import {
 } from "../lib/offscreen-unreads";
 import { UNREAD_JUMP_PILL_HEIGHT, UnreadJumpPill } from "./unread-jump-pill";
 
-const entering = FadeIn.duration(180).reduceMotion(ReduceMotion.System);
-const exiting = FadeOut.duration(160).reduceMotion(ReduceMotion.System);
 /** How long a jump waits for the rows and content size around its target to settle again. */
 const JUMP_SETTLE_MS = 600;
 const JUMP_SETTLE_CAP_MS = 2000;
@@ -68,6 +67,9 @@ export function useUnreadJumpPills<Item>({
   const [range, setRange] = useState<VisibleRange>();
   const hasMeasuredRows = useRef(false);
   const animateEntering = hasMeasuredRows.current;
+  const preference = useMotionPreference();
+  const entering = FadeIn.duration(180).reduceMotion(preference);
+  const exiting = FadeOut.duration(160).reduceMotion(preference);
   useLayoutEffect(() => {
     if (range) hasMeasuredRows.current = true;
   }, [range]);

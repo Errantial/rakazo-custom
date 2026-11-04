@@ -11,10 +11,10 @@ import type {
 } from "react-native";
 import { Platform } from "react-native";
 import { KeyboardController } from "react-native-keyboard-controller";
-import { useReducedMotion } from "react-native-reanimated";
 import type { MobileMessage } from "./api";
 import { helperHeaderOffset, helperOpenTarget } from "./helper-header-offset";
 import { KeyboardScrollBack } from "./keyboard-scroll-back";
+import { useMotionAllowed } from "./motion";
 import type { ThreadHistory } from "./thread-history";
 import type { ThreadRowKey, ThreadScrollAction, ThreadScrollState } from "./thread-scroll";
 import { ThreadScrollBehavior } from "./thread-scroll";
@@ -66,7 +66,7 @@ export function useThreadListScroll({
   const pinnedScrollBack = useRef(new KeyboardScrollBack({ inverted: false }));
   const scrollIdleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const nativeMomentumActive = useRef(false);
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = !useMotionAllowed();
   const [state, setState] = useState<ThreadScrollState>(() => behavior.current.state());
   const publish = useCallback((next: ThreadScrollState) => {
     setState((previous) => reconcileThreadScrollState(previous, next));

@@ -6,6 +6,16 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { CHAT_TITLE_FADE_MS, ChatTitleLabel } from "../components/chat-title-label";
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("react-native-reanimated", () => ({
   default: {
     Text: ({

@@ -28,6 +28,16 @@ const mocks = vi.hoisted(() => ({
   },
 }));
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("react-native", () => {
   const flatten = (style: unknown): CSSProperties =>
     Object.assign({}, ...[style].flat(Number.POSITIVE_INFINITY).filter(Boolean));

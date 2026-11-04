@@ -6,7 +6,6 @@ import { createContext, memo, useContext, useEffect, useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 import Animated, {
   Easing,
-  ReduceMotion,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -18,6 +17,7 @@ import { formatThreadTime } from "../lib/inbox";
 import type { PinnedChat } from "../lib/inbox-spaces";
 import type { InboxChatKind, InboxRowAction } from "../lib/inbox-swipe";
 import { INBOX_ROW_ACTIONS, inboxRowActionList } from "../lib/inbox-swipe";
+import { motionPreference } from "../lib/motion";
 import { native, useThemedStyles } from "../lib/native";
 import { previewSnippet } from "../lib/preview";
 import { androidRipple } from "../lib/ripple";
@@ -149,7 +149,7 @@ export function SectionChevron({ collapsed }: { collapsed: boolean }) {
     rotation.value = withTiming(collapsed ? 0 : 90, {
       duration: 220,
       easing: Easing.out(Easing.cubic),
-      reduceMotion: ReduceMotion.System,
+      reduceMotion: motionPreference(),
     });
   }, [collapsed, rotation]);
   const style = useAnimatedStyle(() => ({ transform: [{ rotate: `${rotation.value}deg` }] }));

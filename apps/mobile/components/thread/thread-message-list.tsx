@@ -3,11 +3,12 @@ import { threadWindowMessages } from "@rakazo/core";
 import type { ReactElement, ReactNode } from "react";
 import { useMemo } from "react";
 import type { ListRenderItem } from "react-native";
-import { ActivityIndicator, FlatList, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { FlatList, Platform, ScrollView, StyleSheet, View } from "react-native";
 import type { MobileMessage } from "../../lib/api";
 import { mobileTokens } from "../../lib/appearance";
 import type { ThreadListScroll } from "../../lib/thread-list-scroll";
 import type { useThreadPaging } from "../../lib/thread-paging";
+import { MotionSpinner } from "../motion-spinner";
 import { ThreadScrollSurface } from "../thread-scroll-surface";
 import { JumpToLatestButton } from "./thread-list-controls";
 
@@ -102,7 +103,7 @@ export function ThreadMessageList({
             {pinnedNewerCursor === null ? (
               workingFooter
             ) : loadingNewer ? (
-              <ActivityIndicator color={tokens.mutedForeground} style={{ marginVertical: 12 }} />
+              <MotionSpinner color={tokens.mutedForeground} style={{ marginVertical: 12 }} />
             ) : null}
           </ScrollView>
         </ThreadScrollSurface>

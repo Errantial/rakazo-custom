@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { PressableProps } from "react-native";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { mobileTokens } from "../lib/appearance";
 import type { MobileArtifactTarget } from "../lib/artifact-open";
 import { audioArtifactUri, openMobileArtifact } from "../lib/artifact-open";
@@ -11,6 +11,7 @@ import {
 import { useI18n } from "../lib/i18n";
 import { errorText } from "../lib/user-error";
 import { GlassIconButton } from "./glass-icon-button";
+import { MotionSpinner } from "./motion-spinner";
 
 export function AudioAttachment({
   target,
@@ -73,7 +74,7 @@ export function AudioAttachment({
       </Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         {state.loading ? (
-          <ActivityIndicator color={labelColor ?? tokens.mutedForeground} />
+          <MotionSpinner color={labelColor ?? tokens.mutedForeground} />
         ) : (
           <GlassIconButton
             accessibilityLabel={state.playing ? t("Pause") : t("Play")}

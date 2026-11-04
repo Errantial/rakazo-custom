@@ -277,9 +277,11 @@ function LegacyBotAvatar({
   const parsed = mobileBotAvatarPresentation(color);
   const onScreen = useAvatarOnScreen();
   const reducedMotion = useReducedMotion();
+  // E-ink shows the rest pose and never moves.
+  const mode: AvatarMotionMode = useDisplayMode() === "eink" ? "static" : motion;
   const settling = useSettling(state);
   const clock = avatarClock({
-    mode: motion,
+    mode,
     onScreen,
     hasEyes: parsed.kind !== "image",
     size,
@@ -287,7 +289,7 @@ function LegacyBotAvatar({
     settling,
     reducedMotion,
   });
-  const life = useLife(state, clock, size, motion);
+  const life = useLife(state, clock, size, mode);
   const poke = usePoke(life, pokeable && clock === "running");
   const bodyStyle = useBodyStyle(life, size);
   const fillColor = parsed.kind === "shape" || parsed.kind === "color" ? parsed.color : color;

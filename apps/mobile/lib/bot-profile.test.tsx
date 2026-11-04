@@ -39,6 +39,16 @@ const {
   requestContext: vi.fn(),
 }));
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("./api", () => ({
   rpc,

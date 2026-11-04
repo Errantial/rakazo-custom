@@ -1,8 +1,9 @@
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { mobileTokens } from "../../lib/appearance";
 import { useI18n } from "../../lib/i18n";
 import type { ActivityMarkBot } from "../activity-mark";
 import { ActivityMark } from "../activity-mark";
+import { MotionSpinner } from "../motion-spinner";
 import { ScrollToBottomButton } from "../scroll-to-bottom-button";
 
 /** The bots still working on a reply, under the newest message. */
@@ -49,7 +50,7 @@ export function LoadEarlierButton({ loading, onPress }: { loading: boolean; onPr
       }}
     >
       {loading ? (
-        <ActivityIndicator color={tokens.mutedForeground} accessibilityLabel={t("Loading…")} />
+        <MotionSpinner color={tokens.mutedForeground} accessibilityLabel={t("Loading…")} />
       ) : null}
       <Text style={{ color: tokens.mutedForeground, fontSize: 13 }}>
         {t("Load earlier messages")}

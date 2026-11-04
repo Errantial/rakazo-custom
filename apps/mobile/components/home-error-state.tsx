@@ -1,7 +1,8 @@
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useI18n } from "../lib/i18n";
 import { native, useResolvedAppearance, useThemedStyles } from "../lib/native";
 import type { LoadFailureKind } from "../lib/user-error";
+import { MotionSpinner } from "./motion-spinner";
 import { NativeActionButton } from "./native-action-button";
 import { NativeSymbol } from "./native-symbol";
 
@@ -50,7 +51,7 @@ export function HomeErrorState({
       {detail ? <Text style={styles.detail}>{detail}</Text> : null}
       {loading ? (
         <View style={styles.action}>
-          <ActivityIndicator color={native.secondaryLabel} />
+          <MotionSpinner color={native.secondaryLabel} />
         </View>
       ) : kind === "session" ? (
         <View style={styles.action}>

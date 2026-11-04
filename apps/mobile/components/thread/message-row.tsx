@@ -7,7 +7,7 @@ import * as Clipboard from "expo-clipboard";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GestureResponderEvent, LayoutChangeEvent } from "react-native";
 import { Platform, View } from "react-native";
-import Animated, { useReducedMotion, ZoomIn } from "react-native-reanimated";
+import Animated, { ZoomIn } from "react-native-reanimated";
 import type { MobileBot, MobileMessage, MobileSnapshot } from "../../lib/api";
 import { blockText, copyableMobileMessageText, selectableMobileMessageText } from "../../lib/api";
 import type { MobileArtifactTarget } from "../../lib/artifact-open";
@@ -17,6 +17,7 @@ import { presentMessageActionSheet } from "../../lib/message-action-sheet";
 import { buildMessageContextMenu, messageMenuReaction } from "../../lib/message-context-menu";
 import { messageHasInlineControls, quotableMessageSegments } from "../../lib/message-presentation";
 import { messageRowLayout } from "../../lib/message-row-layout";
+import { useMotionAllowed } from "../../lib/motion";
 import { useMobileTokens, useResolvedAppearance } from "../../lib/native";
 import { selectableTextFromMarkdown } from "../../lib/selectable-text";
 import { ThreadReadOnlyContext } from "../../lib/thread-read-only";
@@ -154,7 +155,7 @@ export const MessageRow = memo(function MessageRow({
   );
   const [optimisticLike, setOptimisticLike] = useState(false);
   const likeInFlight = useRef(false);
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = !useMotionAllowed();
   const hasLike = messageReactions?.has("👍") ?? false;
   useEffect(() => {
     if (hasLike) setOptimisticLike(false);

@@ -12,7 +12,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ViewToken } from "react-native";
 import {
-  ActivityIndicator,
   Alert,
   AppState,
   FlatList,
@@ -30,6 +29,7 @@ import { ActivitySection } from "../components/inbox-activity";
 import { InboxHeader } from "../components/inbox-header";
 import { InboxListFooter, SWIPE_ROWS, useInboxRenderItem } from "../components/inbox-render-item";
 import { CompactRowsContext, SelectedChatContext } from "../components/inbox-rows";
+import { MotionSpinner } from "../components/motion-spinner";
 import { PickChatPane } from "../components/pick-chat-pane";
 import { useUnreadJumpPills } from "../components/unread-jump-overlay";
 import { fetchSpaceActivity } from "../lib/activity";
@@ -769,7 +769,7 @@ function Home({ embedded, onSelectSpace, onShareSelect }: InboxPaneProps & { emb
   if (!ready) {
     return (
       <View style={[styles.screen, styles.centered]}>
-        <ActivityIndicator color={native.secondaryLabel} />
+        <MotionSpinner color={native.secondaryLabel} />
       </View>
     );
   }

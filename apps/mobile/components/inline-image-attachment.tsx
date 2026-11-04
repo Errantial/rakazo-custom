@@ -1,20 +1,13 @@
 import { useEffect, useState } from "react";
 import type { PressableProps } from "react-native";
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { Image, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { mobileTokens } from "../lib/appearance";
 import type { MobileArtifactTarget } from "../lib/artifact-open";
 import { imageArtifactPreview } from "../lib/artifact-open";
 import { useI18n } from "../lib/i18n";
 import type { ImageSize } from "../lib/inline-image";
 import { fitImageSize } from "../lib/inline-image";
+import { MotionSpinner } from "./motion-spinner";
 
 const MAX_INLINE_HEIGHT = 360;
 
@@ -89,10 +82,7 @@ export function InlineImageAttachment({
       <View style={[styles.placeholder, { backgroundColor: tokens.muted }]}>
         <Text style={[styles.label, { color: labelColor }]}>🖼 {name}</Text>
         {state.status === "loading" ? (
-          <ActivityIndicator
-            color={tokens.mutedForeground}
-            accessibilityLabel={t("Loading image…")}
-          />
+          <MotionSpinner color={tokens.mutedForeground} accessibilityLabel={t("Loading image…")} />
         ) : (
           <Text style={[styles.hint, { color: tokens.mutedForeground }]}>{t("Tap to open")}</Text>
         )}

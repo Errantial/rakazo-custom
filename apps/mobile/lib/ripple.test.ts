@@ -2,14 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const platform = vi.hoisted(() => ({ OS: "android" }));
 const theme = vi.hoisted(() => ({ label: "#123456" }));
+const display = vi.hoisted(() => ({ mode: "standard" }));
 
 vi.mock("react-native", () => ({ Platform: platform }));
 vi.mock("./native", () => ({ native: theme }));
+vi.mock("./display-mode", () => ({ getCachedDisplayMode: () => display.mode }));
 
 import { androidRipple, withAlpha } from "./ripple";
 
 beforeEach(() => {
   platform.OS = "android";
+  display.mode = "standard";
   theme.label = "#123456";
 });
 
@@ -23,6 +26,14 @@ describe("android ripple", () => {
 
   it("leaves iOS feedback unchanged", () => {
     platform.OS = "ios";
+    expect(androidRipple()).toBeUndefined();
+    expect(androidRipple("#fff")).toBeUndefined();
+  });
+});
+
+describe("android ripple in e-ink", () => {
+  it("draws no ripple", () => {
+    display.mode = "eink";
     expect(androidRipple()).toBeUndefined();
     expect(androidRipple("#fff")).toBeUndefined();
   });

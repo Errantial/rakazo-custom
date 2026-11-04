@@ -1,5 +1,6 @@
 import type { ColorValue } from "react-native";
 import { Platform } from "react-native";
+import { getCachedDisplayMode } from "./display-mode";
 import { native } from "./native";
 
 /** Apply a state-layer alpha to supported literal colors; preserve native colors. */
@@ -23,5 +24,7 @@ export function withAlpha(color: ColorValue, alpha: number): ColorValue {
 
 /** A view's own rounded clip only applies to foreground ripples on Android. */
 export function androidRipple(color: ColorValue = withAlpha(native.label, 0.12)) {
-  return Platform.OS === "android" ? { color, foreground: true } : undefined;
+  return Platform.OS === "android" && getCachedDisplayMode() !== "eink"
+    ? { color, foreground: true }
+    : undefined;
 }

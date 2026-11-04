@@ -28,6 +28,16 @@ const { push, back, params, rpcCalls, saved } = vi.hoisted(() => ({
   },
 }));
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("./session", () => ({ currentSessionGeneration: () => 1 }));
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
 vi.mock("./api", () => ({

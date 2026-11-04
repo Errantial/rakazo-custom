@@ -6,13 +6,13 @@ import { useRouter } from "expo-router";
 import type { ComponentProps } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { useReducedMotion } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { rpc } from "../lib/api";
 import { startCallBackground, stopCallBackground } from "../lib/call-background";
 import type { CallPhase } from "../lib/call-session";
 import { endCall, toggleMute, toggleTranscript, useCallSession } from "../lib/call-session";
 import { useI18n } from "../lib/i18n";
+import { useMotionAllowed } from "../lib/motion";
 import { useMobileTokens } from "../lib/native";
 import { setVoiceBackgroundPlayback } from "../lib/voice";
 import { BotAvatar } from "./bot-avatar";
@@ -257,7 +257,7 @@ function RoundButton({
 
 function Waveform({ phase }: { phase: CallPhase }) {
   const tokens = useMobileTokens();
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = !useMotionAllowed();
   const values = useRef(BARS.map(() => new Animated.Value(0.35))).current;
   const still = phase === "thinking" || reduceMotion;
 

@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { TextStyle } from "react-native";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import { useMotionAllowed } from "../lib/motion";
 import { HEADER_TITLE_MAX_FONT_SCALE } from "../lib/native-controls";
 
 /** How long a placeholder title takes to cross-fade into the real name. */
@@ -21,13 +22,16 @@ export function ChatTitleLabel({
   style: TextStyle;
 }) {
   const openedWithPlaceholder = useRef(placeholder).current;
+  const motionAllowed = useMotionAllowed();
   return (
     <Animated.Text
       key={placeholder ? "placeholder" : "name"}
       entering={
-        openedWithPlaceholder && !placeholder ? FadeIn.duration(CHAT_TITLE_FADE_MS) : undefined
+        openedWithPlaceholder && !placeholder && motionAllowed
+          ? FadeIn.duration(CHAT_TITLE_FADE_MS)
+          : undefined
       }
-      exiting={placeholder ? FadeOut.duration(CHAT_TITLE_FADE_MS) : undefined}
+      exiting={placeholder && motionAllowed ? FadeOut.duration(CHAT_TITLE_FADE_MS) : undefined}
       maxFontSizeMultiplier={HEADER_TITLE_MAX_FONT_SCALE}
       numberOfLines={1}
       style={style}

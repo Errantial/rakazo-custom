@@ -4,15 +4,11 @@ import { cloudAgentHttpsUrl, displayName as safeDisplayName } from "@rakazo/core
 import { typeScale } from "@rakazo/ui-tokens";
 import { useEffect, useRef, useState } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import type { MobileBot, MobileSnapshot } from "../../lib/api";
 import { mobileTokens } from "../../lib/appearance";
 import { useI18n } from "../../lib/i18n";
+import { useMotionAllowed } from "../../lib/motion";
 import { useResolvedAppearance } from "../../lib/native";
 import type { UserBubble } from "../../lib/user-bubble";
 import { withUserBubble } from "../../lib/user-bubble";
@@ -57,7 +53,7 @@ function HelperMessageCard({
   const { t } = useI18n();
   const helperHeader = useRef<View>(null);
   const helperCard = useRef<View>(null);
-  const helperReducedMotion = useReducedMotion();
+  const helperReducedMotion = !useMotionAllowed();
   const [subagentOpen, setSubagentOpen] = useState(() => openHelpers.has(special.agentId));
   const helperRotation = useSharedValue(subagentOpen ? 180 : 0);
   useEffect(() => {

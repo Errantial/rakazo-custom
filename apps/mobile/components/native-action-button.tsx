@@ -1,5 +1,6 @@
 import { ActivityIndicator, Platform, Pressable, Text } from "react-native";
 import type { mobileTokens } from "../lib/appearance";
+import { useDisplayMode } from "../lib/display-mode";
 import { native, useMobileTokens } from "../lib/native";
 import type { ActionProminence, NativeActionButtonProps } from "../lib/native-controls";
 import { actionAccessibilityState, actionFills, actionProminence } from "../lib/native-controls";
@@ -25,6 +26,8 @@ export function NativeActionButton({
 }: NativeActionButtonProps) {
   const tokens = useMobileTokens();
   const inactive = disabled || busy;
+  // E-ink keeps the label and relies on the dimmed, disabled state instead of a spinner.
+  const eink = useDisplayMode() === "eink";
   const stretches = actionFills(prominence, fill);
   const small = size === "compact";
   const effectiveProminence = actionProminence(prominence, selected);
@@ -81,7 +84,7 @@ export function NativeActionButton({
         Platform.OS === "android" && { overflow: "hidden" },
       ]}
     >
-      {busy ? (
+      {busy && !eink ? (
         <ActivityIndicator color={colors.label} />
       ) : (
         <>

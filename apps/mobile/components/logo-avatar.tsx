@@ -17,7 +17,6 @@ import Animated, {
   useAnimatedProps,
   useAnimatedStyle,
   useDerivedValue,
-  useReducedMotion,
   useSharedValue,
 } from "react-native-reanimated";
 import Svg, {
@@ -35,6 +34,7 @@ import Svg, {
 import { useAvatarOnScreen, usePoke } from "../lib/avatar-life";
 import { botEyeInk } from "../lib/bot-avatar";
 import { useLogoAvatarClock } from "../lib/logo-avatar-clock";
+import { useMotionAllowed } from "../lib/motion";
 import { useMobileTokens } from "../lib/native";
 
 const AnimatedG = Animated.createAnimatedComponent(G);
@@ -68,7 +68,7 @@ export function LogoAvatar({
     () => logoAvatarPaint(traits.color, traits.originalOrange),
     [traits.color, traits.originalOrange],
   );
-  const reduced = useReducedMotion();
+  const reduced = !useMotionAllowed();
   const onScreen = useAvatarOnScreen();
   const canMove = size >= 24 && motion !== "static" && (motion !== "lazy" || activity !== "idle");
   const milliseconds = useLogoAvatarClock(canMove && onScreen && !reduced);

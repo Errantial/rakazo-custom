@@ -17,6 +17,16 @@ const { activeTags, platform, startBackground, stopBackground, useKeepAwake } = 
   useKeepAwake: vi.fn(),
 }));
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("./call-background", () => ({
   startCallBackground: startBackground,
   stopCallBackground: stopBackground,

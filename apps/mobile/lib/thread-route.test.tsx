@@ -20,6 +20,16 @@ const { element } = vi.hoisted(() => ({
       createElement(tag, onPress ? { onClick: onPress } : null, children),
 }));
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("expo-router", () => ({
   useIsFocused: () => true,
   useLocalSearchParams: () => state.params,

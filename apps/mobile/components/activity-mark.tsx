@@ -10,12 +10,12 @@ import Animated, {
   FadeIn,
   FadeOut,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useAvatarOnScreen } from "../lib/avatar-life";
+import { useMotionAllowed } from "../lib/motion";
 import { useMobileTokens } from "../lib/native";
 import { BotAvatar } from "./bot-avatar";
 
@@ -61,7 +61,7 @@ export function ActivityMark({
   label?: string;
 }) {
   const tokens = useMobileTokens();
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = !useMotionAllowed();
   // A covered screen or a backgrounded app neither cycles members nor pulses dots.
   const onScreen = useAvatarOnScreen();
   const [index, setIndex] = useState(0);
@@ -70,12 +70,14 @@ export function ActivityMark({
   const [arrived, setArrived] = useState(reducedMotion);
 
   useEffect(() => {
-    height.value = withTiming(ROW_HEIGHT, { duration: ROW_MS, easing: ROW_EASING });
-  }, [height]);
+    height.value = reducedMotion
+      ? ROW_HEIGHT
+      : withTiming(ROW_HEIGHT, { duration: ROW_MS, easing: ROW_EASING });
+  }, [height, reducedMotion]);
   useEffect(() => {
     if (arrived || !atBottom) return;
     setArrived(true);
-    scale.value = withSpring(1, MARK_SPRING);
+    scale.value = reducedMotion ? 1 : withSpring(1, MARK_SPRING);
   }, [arrived, atBottom, scale]);
   useEffect(() => {
     if (bots.length < 2 || reducedMotion || !onScreen) return;
@@ -96,8 +98,8 @@ export function ActivityMark({
       <Animated.View style={[{ width: MARK_SIZE, height: MARK_SIZE }, markStyle]}>
         <Animated.View
           key={bot.id}
-          entering={bots.length > 1 ? CROSSFADE.entering : undefined}
-          exiting={bots.length > 1 ? CROSSFADE.exiting : undefined}
+          entering={bots.length > 1 && !reducedMotion ? CROSSFADE.entering : undefined}
+          exiting={bots.length > 1 && !reducedMotion ? CROSSFADE.exiting : undefined}
           style={{ position: "absolute" }}
         >
           {photo ? (
@@ -132,7 +134,7 @@ export function ActivityMark({
 /** A photo can't move or turn into the typing dots, so plain typing dots stand in for it. */
 function PhotoDots({ typing, paused }: { typing: boolean; paused: boolean }) {
   const tokens = useMobileTokens();
-  const reducedMotion = useReducedMotion();
+  const reducedMotion = !useMotionAllowed();
   const ms = useSharedValue(0);
   useEffect(() => {
     if (reducedMotion || paused) return;

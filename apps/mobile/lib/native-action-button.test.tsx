@@ -17,6 +17,16 @@ const appearance = vi.hoisted(() => ({ value: "light" as "light" | "dark" }));
 const swiftHost = vi.hoisted(() => vi.fn());
 const swiftText = vi.hoisted(() => vi.fn());
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("react-native", () => ({
   useWindowDimensions: () => ({ fontScale: 1 }),
   StyleSheet: { flatten: (style: unknown) => style },

@@ -13,6 +13,16 @@ const mocks = vi.hoisted(() => ({
   icon: vi.fn(),
   setState: undefined as undefined | ((state: Record<string, unknown>) => void),
 }));
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("react-native", () => ({
   Pressable: (props: { children?: ReactNode }) => {
     mocks.root(props);

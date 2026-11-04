@@ -3,11 +3,11 @@ import { useEffect, useRef } from "react";
 import {
   cancelAnimation,
   Easing,
-  ReduceMotion,
   useSharedValue,
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
+import { lifeMotionPreference } from "./motion";
 
 /** Native UI-thread clock. Activity/rerender changes do not restart its elapsed phase. */
 export function useLogoAvatarClock(running: boolean) {
@@ -22,12 +22,12 @@ export function useLogoAvatarClock(running: boolean) {
       withTiming(base + LOGO_AVATAR_LOOP_MS, {
         duration: LOGO_AVATAR_LOOP_MS,
         easing: Easing.linear,
-        reduceMotion: ReduceMotion.Never,
+        reduceMotion: lifeMotionPreference(),
       }),
       -1,
       false,
       undefined,
-      ReduceMotion.Never,
+      lifeMotionPreference(),
     );
     return () => {
       const started = mirror.current;

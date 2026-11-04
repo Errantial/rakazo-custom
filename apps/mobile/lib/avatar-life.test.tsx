@@ -33,6 +33,7 @@ import {
 
 const CLOCK_MS = 24 * 60 * 60 * 1000;
 const motion = vi.hoisted(() => ({
+  mode: "standard",
   reducedMotion: false,
   /** Every timing started: [target, duration]. */
   timings: [] as Array<[unknown, number]>,
@@ -42,11 +43,11 @@ const motion = vi.hoisted(() => ({
 }));
 
 vi.mock("./display-mode", () => ({
-  getCachedDisplayMode: () => "standard",
+  getCachedDisplayMode: () => motion.mode,
   mobileBotColor: (color: string) => color,
   legacyEyeInk: () => "#101014",
   subscribeDisplayMode: () => () => undefined,
-  useDisplayMode: () => "standard",
+  useDisplayMode: () => motion.mode,
 }));
 vi.mock("react-native-reanimated", () => {
   const passthrough = ({ children, style }: { children?: ReactNode; style?: unknown }) =>
@@ -65,7 +66,7 @@ vi.mock("react-native-reanimated", () => {
     Easing: { in: easing, out: easing, inOut: easing, quad: 0, cubic: 0, linear: 0 },
     FadeIn: fade,
     FadeOut: fade,
-    ReduceMotion: { Never: "never" },
+    ReduceMotion: { Never: "never", Always: "always", System: "system" },
     useAnimatedProps: (worklet: () => unknown) => worklet(),
     useAnimatedStyle: (worklet: () => unknown) => worklet(),
     useReducedMotion: () => motion.reducedMotion,
@@ -131,6 +132,7 @@ describe("avatar motion on mobile", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.5);
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     motion.reducedMotion = false;
+    motion.mode = "standard";
     motion.timings = [];
     motion.springs = [];
     motion.cancelled = 0;
@@ -250,6 +252,17 @@ describe("avatar motion on mobile", () => {
     render(<BotAvatar color={SHAPE} identity="bot-1" size={62} status="running" motion="lazy" />);
     expect(clockStarted()).toBe(true);
     expect(awake()).toBe(0);
+  });
+
+  it("holds every avatar at its rest pose in e-ink, even a busy live one", () => {
+    motion.mode = "eink";
+    render(
+      <BotAvatar color={SHAPE} identity="bot-1" size={62} status="running" motion="running" />,
+    );
+    wait(30_000);
+    expect(clockStarted()).toBe(false);
+    expect(awake()).not.toBe(1);
+    expect(motion.springs.every(([target]) => target === 0)).toBe(true);
   });
 
   it("keeps a writing bot's face under Reduce Motion instead of turning it into moving dots", () => {

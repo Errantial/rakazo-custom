@@ -9,6 +9,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 let fontScale = 1;
 
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("react-native", () => {
   function MockView(props: {
     children?: ReactNode;

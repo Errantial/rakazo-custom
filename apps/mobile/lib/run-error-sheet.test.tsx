@@ -12,6 +12,16 @@ import { runErrorActionLabel } from "./run-error-presentation";
 import { liveEndRunError } from "./thread-window";
 
 const viewProps = vi.hoisted(() => [] as { style?: unknown; accessibilityRole?: string }[]);
+vi.mock("./display-mode", () => ({
+  useDisplayMode: () => "standard",
+  getCachedDisplayMode: () => "standard",
+}));
+vi.mock("./motion", () => ({
+  useMotionAllowed: () => true,
+  useMotionPreference: () => "system",
+  motionPreference: () => "system",
+  lifeMotionPreference: () => "never",
+}));
 vi.mock("react-native", () => ({
   useWindowDimensions: () => ({ width: 402, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles },

@@ -1,7 +1,8 @@
 import { isRetryableError } from "@rakazo/core";
 import { useIsFocused, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
+import { MotionSpinner } from "../components/motion-spinner";
 import { Thread } from "../components/thread/thread-screen";
 import { currentApiBase, selectedSpaceId, selectSpace } from "../lib/api";
 import { t, useI18n } from "../lib/i18n";
@@ -112,7 +113,7 @@ export default function ThreadRoute() {
   if (request.action === "show" && !focusSync.switchFailed)
     return (
       <>
-        {owner?.generation !== generation ? <ActivityIndicator color={tokens.foreground} /> : null}
+        {owner?.generation !== generation ? <MotionSpinner color={tokens.foreground} /> : null}
         <View style={{ flex: 1, display: owner?.generation === generation ? "flex" : "none" }}>
           {owner ? <Thread key={owner.key} sessionEpoch={ready} userId={owner.userId} /> : null}
         </View>
@@ -128,7 +129,7 @@ export default function ThreadRoute() {
       }}
     >
       {request.action === "switch" && !focusSync.switchFailed ? (
-        <ActivityIndicator color={tokens.foreground} />
+        <MotionSpinner color={tokens.foreground} />
       ) : (
         <View style={{ alignItems: "center", gap: 12 }}>
           <Text style={{ color: tokens.foreground, fontSize: 16 }}>

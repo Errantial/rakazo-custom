@@ -26,12 +26,12 @@ import {
 import {
   cancelAnimation,
   Easing,
-  ReduceMotion,
   useSharedValue,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
 import { useAppForeground } from "./app-foreground";
+import { lifeMotionPreference } from "./motion";
 
 const ScreenFocused = createContext(true);
 
@@ -174,8 +174,8 @@ export function useLife(
     seconds.value = withTiming(start + LIFE_RUN_SECONDS, {
       duration: LIFE_RUN_SECONDS * 1000,
       easing: Easing.linear,
-      // The clock only ever drives blinks under Reduce Motion; it must keep ticking.
-      reduceMotion: ReduceMotion.Never,
+      // The clock only ever drives blinks under Reduce Motion; it must keep ticking (not in e-ink).
+      reduceMotion: lifeMotionPreference(),
     });
     return () => {
       cancelAnimation(seconds);
