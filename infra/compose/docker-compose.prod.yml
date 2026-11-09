@@ -419,10 +419,6 @@ services:
     mem_limit: ${RAKAZO_API_MEMORY_LIMIT:-2g}
     environment:
       <<: *app-environment
-      # In-app server updates: the API relays to the updater sidecar. No default image, so the
-      # section stays off until the operator names the repository whose releases this follows.
-      RAKAZO_UPDATER_TOKEN: ${RAKAZO_UPDATER_TOKEN:-}
-      RAKAZO_IMAGE: ${RAKAZO_IMAGE:-}
       # Sign-in, sessions, billing and inbound webhooks: API only.
       API_HOST: "0.0.0.0"
       API_PORT:
@@ -618,9 +614,14 @@ services:
       # Keep interpolation optional so deployments that do not enable this profile need no token.
       # resolveUpdaterConfig still refuses to start the sidecar without a dedicated secure value.
       RAKAZO_UPDATER_TOKEN: ${RAKAZO_UPDATER_TOKEN:-}
+      # Opens only the release-only door (Settings > Updates): the latest stable release of
+      # RAKAZO_IMAGE as prebuilt images, never a build. It lives here and is typed into Settings;
+      # the API container never holds either token.
+      RAKAZO_UPDATER_RELEASE_TOKEN: ${RAKAZO_UPDATER_RELEASE_TOKEN:-}
       RAKAZO_UPDATER_HOST: "0.0.0.0"
       RAKAZO_UPDATER_PORT: "7092"
-      RAKAZO_IMAGE: ${RAKAZO_IMAGE:-ghcr.io/elie222/rakazo/app}
+      # No default for the release door: it follows RAKAZO_IMAGE only when the operator sets it.
+      RAKAZO_IMAGE: ${RAKAZO_IMAGE:-}
       # `-p` is available to Compose interpolation but is not injected into containers unless it is
       # declared here. The sidecar must target the project the operator actually started.
       COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-rakazo-prod}

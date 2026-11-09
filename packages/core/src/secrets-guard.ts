@@ -150,9 +150,12 @@ export function resolveUpdaterToken(env: NodeJS.ProcessEnv = process.env): strin
  * install the project's own latest release. Returns null when the door is not configured.
  */
 export function resolveUpdaterReleaseToken(env: NodeJS.ProcessEnv = process.env): string | null {
-  if (!env.RAKAZO_UPDATER_RELEASE_TOKEN?.trim()) return null;
+  // Looked up by name, like the other dedicated credentials, so shared code never looks like an
+  // API or worker read of a setting only the updater sidecar holds.
+  const name = "RAKAZO_UPDATER_RELEASE_TOKEN";
+  if (!env[name]?.trim()) return null;
   return resolveDedicatedSecret(env, {
-    name: "RAKAZO_UPDATER_RELEASE_TOKEN",
+    name,
     conflicts: [
       "RAKAZO_UPDATER_TOKEN",
       "BETTER_AUTH_SECRET",

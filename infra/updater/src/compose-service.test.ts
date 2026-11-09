@@ -155,11 +155,17 @@ describe("the updater compose service", () => {
   it("does not let the api container reach the Docker socket to update itself", () => {
     expect(compose.services.api?.volumes ?? []).not.toContain("/var/run/docker.sock");
     expect(compose.services.api?.environment?.RAKAZO_UPDATER_URL).toBeUndefined();
-    // The API relays Settings > Updates with the token, but reaches the sidecar by service name only.
+    expect(compose.services.api?.environment?.RAKAZO_UPDATER_TOKEN).toBeUndefined();
+    expect(compose.services.api?.environment?.RAKAZO_UPDATER_RELEASE_TOKEN).toBeUndefined();
+  });
+
+  it("holds the release token, and follows RAKAZO_IMAGE only when the operator sets it", () => {
     // biome-ignore lint/suspicious/noTemplateCurlyInString: this is the literal Compose expression
-    expect(compose.services.api?.environment?.RAKAZO_UPDATER_TOKEN).toBe(
-      "${RAKAZO_UPDATER_TOKEN:-}",
+    expect(updater.environment?.RAKAZO_UPDATER_RELEASE_TOKEN).toBe(
+      "${RAKAZO_UPDATER_RELEASE_TOKEN:-}",
     );
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: this is the literal Compose expression
+    expect(updater.environment?.RAKAZO_IMAGE).toBe("${RAKAZO_IMAGE:-}");
   });
 
   it("passes logging configuration without using env_file", () => {

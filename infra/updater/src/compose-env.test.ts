@@ -56,6 +56,7 @@ const NOT_PASSED: Record<string, string> = {
   RAKAZO_COMPOSE_PROJECT_NAME: "read by the updater sidecar, which has its own environment",
   RAKAZO_IMAGE_TAG: "read by deployment tooling and the updater sidecar, not app processes",
   RAKAZO_IMAGE_TAG_PREVIOUS: "read by the updater sidecar, which has its own environment",
+  RAKAZO_UPDATER_URL: "optional override; Compose reaches the sidecar as http://updater:7092",
   KUBERNETES_SANDBOX_COMPUTER_IMAGE: KUBERNETES_SANDBOX,
   KUBERNETES_SANDBOX_HOME_CLAIM: KUBERNETES_SANDBOX,
   KUBERNETES_SANDBOX_HOME_COLOCATE_LABELS: KUBERNETES_SANDBOX,
@@ -236,13 +237,15 @@ describe("api and worker environment allowlists", () => {
         "OIDC_CLIENT_SECRET",
         "SCREEN_PROXY_SECRET",
         "RAKAZO_UPDATER_TOKEN",
+        "RAKAZO_UPDATER_RELEASE_TOKEN",
         "STRIPE_SECRET_KEY",
         "POSTGRES_PASSWORD",
       ]) {
         expect(worker).not.toHaveProperty(key);
       }
-      // The API holds the token only to relay Settings > Updates; it still has no Docker socket.
-      expect(stackEnvironment(files, "api")).toHaveProperty("RAKAZO_UPDATER_TOKEN");
+      // Settings > Updates forwards the key an administrator types; the API stores neither token.
+      expect(stackEnvironment(files, "api")).not.toHaveProperty("RAKAZO_UPDATER_TOKEN");
+      expect(stackEnvironment(files, "api")).not.toHaveProperty("RAKAZO_UPDATER_RELEASE_TOKEN");
       // The database password reaches both processes only inside DATABASE_URL.
       expect(stackEnvironment(files, "api")).not.toHaveProperty("POSTGRES_PASSWORD");
       // The owner login goes only to the migrate container, which gets nothing else.
