@@ -57,6 +57,30 @@ function request(app: ReturnType<typeof createUpdaterApp>, pathname: string, bod
 }
 
 describe("updater HTTP surface", () => {
+  it("pulls stable release images when a fork owns the configured image namespace", async () => {
+    const deployDir = await mkdtemp(path.join(os.tmpdir(), "rakazo-release-plan-"));
+    temporaryDirectories.push(deployDir);
+    const envFile = path.join(deployDir, ".env");
+    await writeFile(envFile, "RAKAZO_IMAGE_TAG=v1.0.0\n");
+    const config = {
+      ...resolveUpdaterConfig({ RAKAZO_DEPLOY_DIR: "/release-plan", RAKAZO_UPDATER_TOKEN: token }),
+      deployDir,
+      envFile,
+      image: "ghcr.io/example/custom/app",
+    };
+    const run = async () =>
+      ok(`${targetCommit}\trefs/tags/v1.1.0\n${currentCommit}\trefs/tags/v9.0.0\n`);
+    const subject = createUpdaterApp(config, { run });
+    const response = await request(subject, "/plan", {
+      repoUrl: "https://github.com/example/custom",
+      branch: "v1.1.0",
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      strategy: "pull",
+      targetTag: `sha-${targetCommit}`,
+    });
+  });
   it("answers health without credentials, for the compose healthcheck", async () => {
     const response = await app.request("/health");
     expect(response.status).toBe(200);

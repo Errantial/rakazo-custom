@@ -71,6 +71,7 @@ export * from "./plugin-catalog.js";
 export * from "./product-analytics.js";
 export * from "./prompt-data.js";
 export * from "./refresh-coalescer.js";
+export * from "./release-source.js";
 export * from "./remote-images.js";
 export * from "./response-bytes.js";
 export * from "./retry-policy.js";

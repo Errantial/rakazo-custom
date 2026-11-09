@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, XIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApprovalRulesSettings } from "../components/ApprovalRulesSettings";
 import { computersAreUnavailable } from "../components/ComputersUnavailableHint";
+import { useServerUpdatesAvailable } from "../components/ServerUpdates";
 import { SETTINGS_CONTENT_WIDTH, SettingsGroup, SettingsRow } from "../components/SettingsRows";
 import { VaultSettings } from "../components/VaultSettings";
 import { desktopBridge } from "../lib/desktop";
@@ -91,7 +92,8 @@ export function SettingsOverlay({
   const [keepComputerRecovery, setKeepComputerRecovery] = useState(false);
   const recoveryHoldTimer = useRef<number | undefined>(undefined);
   const showComputer = keepComputerRecovery || computersAreUnavailable(sandboxProvider);
-  const showUpdates = Boolean(desktopBridge()?.update);
+  const serverUpdatesEnabled = useServerUpdatesAvailable();
+  const showUpdates = Boolean(desktopBridge()?.update) || serverUpdatesEnabled;
   // A section that isn't available yet (billing before its flag loads) shows General until it is.
   const section =
     (requestedSection === "computer" && !showComputer) ||
@@ -405,7 +407,9 @@ export function SettingsOverlay({
                     />
                   ) : null}
                   {section === "billing" && billingEnabled ? <BillingSettingsPanel /> : null}
-                  {section === "updates" && showUpdates ? <UpdatesSettingsPanel /> : null}
+                  {section === "updates" && showUpdates ? (
+                    <UpdatesSettingsPanel serverUpdatesEnabled={serverUpdatesEnabled} />
+                  ) : null}
                   {section === "models" ? (
                     <ModelSettingsOverlay embedded scope="account" onClose={requestClose} />
                   ) : null}

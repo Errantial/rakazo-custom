@@ -34,6 +34,7 @@ export interface AppEnv {
   oidc?: OidcConfig;
   nodeEnv: string;
   desktopStackToken?: string;
+  serverUpdates?: { token: string; image: string };
   databaseUrl: string;
   realtimeDatabaseUrl: string;
   authSecret: string;
@@ -219,6 +220,12 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     databaseUrl: required(source, "DATABASE_URL"),
     realtimeDatabaseUrl: source.REALTIME_DATABASE_URL ?? required(source, "DATABASE_URL"),
     desktopStackToken: optional(source.RAKAZO_DESKTOP_STACK_TOKEN),
+    // The release source comes from the image's repository, so there is no default: an unset
+    // image must never point a custom server at someone else's releases.
+    serverUpdates:
+      source.RAKAZO_UPDATER_TOKEN && source.RAKAZO_IMAGE
+        ? { token: source.RAKAZO_UPDATER_TOKEN, image: source.RAKAZO_IMAGE }
+        : undefined,
     authSecret,
     authUrl: source.BETTER_AUTH_URL ?? source.WEB_ORIGIN ?? "http://127.0.0.1:5173",
     webOrigin: source.WEB_ORIGIN ?? "http://127.0.0.1:5173",

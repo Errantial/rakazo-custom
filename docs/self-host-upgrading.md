@@ -127,6 +127,28 @@ not an online rolling migration. Stop the old API and worker, apply the migratio
 versions together. Its lock waits are bounded so contention fails the migration instead of leaving
 application traffic queued indefinitely.
 
+## Custom release updates in Settings
+
+The production Compose stack can expose **Settings → Updates → Server** when
+`RAKAZO_UPDATER_TOKEN` is configured (at least 32 characters). Start the existing
+`updater` Compose profile and set `RAKAZO_IMAGE` to the fork's
+`ghcr.io/example/custom-app/app` image. Configure the corresponding computer and
+updater images from the same fork. The API and sidecar must share the same token
+and app image configuration. Use HTTPS for remote access. Without `RAKAZO_IMAGE` the section
+stays hidden, so a custom server never follows another repository's releases.
+
+Enter the deployment token to check releases, then select **Update server**.
+The token stays in the open settings form only; it is not an account permission
+or saved browser setting. The server selects the repository from its configured
+image namespace and deploys the latest stable release tag's source-addressed
+image, with the existing rollback behavior on failed health checks. Publish all
+images before offering a release. Reload and check again if restarting the API
+interrupts the response. Source development installs have no apply control.
+
+The control is available in web and Electron Settings. Native mobile users
+manage deployments through the server's web UI; app accounts have no host
+administration authority.
+
 ## Published images and tags
 
 `.github/workflows/publish-server-image.yml` publishes to `ghcr.io/<owner>/<repo>/…`, derived from

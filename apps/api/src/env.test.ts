@@ -25,6 +25,19 @@ describe("loadEnv", () => {
     },
   );
 
+  it("offers server updates only when the token and the image repository are both set", () => {
+    const token = "fake-operator-token-000000000000000000";
+    expect(loadEnv(base).serverUpdates).toBeUndefined();
+    expect(loadEnv({ ...base, RAKAZO_UPDATER_TOKEN: token }).serverUpdates).toBeUndefined();
+    expect(
+      loadEnv({ ...base, RAKAZO_IMAGE: "ghcr.io/example/custom/app" }).serverUpdates,
+    ).toBeUndefined();
+    expect(
+      loadEnv({ ...base, RAKAZO_UPDATER_TOKEN: token, RAKAZO_IMAGE: "ghcr.io/example/custom/app" })
+        .serverUpdates,
+    ).toEqual({ token, image: "ghcr.io/example/custom/app" });
+  });
+
   it("keeps calls off unless explicitly enabled", () => {
     expect(loadEnv(base).phoneCallsEnabled).toBe(false);
     for (const value of ["false", "1", ""]) {

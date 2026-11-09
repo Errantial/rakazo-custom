@@ -37,6 +37,7 @@ import { ComputerDeviceSettings } from "../components/ComputerDeviceSettings";
 import { ComputersUnavailableHint } from "../components/ComputersUnavailableHint";
 import { DesktopUpdateSection } from "../components/DesktopUpdates";
 import { PasskeySettings } from "../components/PasskeySettings";
+import { ServerUpdateSection } from "../components/ServerUpdates";
 import { SettingsGroup, SettingsRow } from "../components/SettingsRows";
 import { TrustedLinkSitesSettings } from "../components/TrustedLinkSitesSettings";
 import { authClient } from "../lib/auth";
@@ -587,10 +588,15 @@ export function ComputerSettingsPanel({
   );
 }
 
-export function UpdatesSettingsPanel() {
+export function UpdatesSettingsPanel({
+  serverUpdatesEnabled = false,
+}: {
+  serverUpdatesEnabled?: boolean;
+}) {
   return (
     <div className="space-y-5">
       <DesktopUpdateSection />
+      {serverUpdatesEnabled ? <ServerUpdateSection /> : null}
     </div>
   );
 }

@@ -27,6 +27,7 @@ import {
   parseGitNameOnly,
   parseGitStatusPorcelain,
   parseLsRemoteReleases,
+  releaseRepository,
   repoIdentity,
   resolveTrackedDirtyPaths,
   rollbackTarget,
@@ -255,7 +256,7 @@ export function createUpdaterApp(
             checkout,
           };
         }
-        const target = await resolveRelease(request.repoUrl);
+        const target = await resolveRelease(request.repoUrl, request.branch);
         return {
           strategy: decision.strategy,
           reason: `${decision.reason} Latest stable release: ${target.releaseTag}.`,
@@ -308,6 +309,10 @@ export function createUpdaterApp(
     const source = (input ?? {}) as { repoUrl?: unknown; branch?: unknown };
     const result = validateUpdateRequest(source);
     if ("error" in result) throw new UpdateRefused(result.error);
+    const repository = releaseRepository(config.image);
+    if (repository && repoIdentity(result.request.repoUrl) === `github.com/${repository}`) {
+      return { ...result.request, official: true };
+    }
     return result.request;
   }
 
@@ -431,7 +436,7 @@ export function createUpdaterApp(
   }
 
   /** `ls-remote` reads the tag list without cloning, so it works for the pull path with no checkout. */
-  async function resolveRelease(repoUrl: string) {
+  async function resolveRelease(repoUrl: string, ref: string) {
     const listed = await run("git", ["ls-remote", "--tags", "--", repoUrl], {
       cwd: config.deployDir,
       timeoutMs: STEP_TIMEOUT_MS.fetch ?? DEFAULT_TIMEOUT_MS,
@@ -439,7 +444,10 @@ export function createUpdaterApp(
     if (!listed.ok) {
       throw new UpdateRefused(`Could not read releases from ${repoUrl}: ${listed.output}`);
     }
-    const release = selectLatestRelease(parseLsRemoteReleases(listed.stdout));
+    const releases = parseLsRemoteReleases(listed.stdout);
+    const release = selectLatestRelease(
+      /^v\d+\.\d+\.\d+$/.test(ref) ? releases.filter((entry) => entry.tag === ref) : releases,
+    );
     if (release === null) {
       throw new UpdateRefused(
         `${repoUrl} has no published release tags, so there is no image to pull.`,
@@ -511,7 +519,7 @@ export function createUpdaterApp(
     let targetCommit: string | null = null;
     let releaseTag: string | null = null;
     if (decision.strategy === "pull") {
-      const target = await resolveRelease(request.repoUrl);
+      const target = await resolveRelease(request.repoUrl, request.branch);
       targetTag = target.imageTag;
       targetCommit = target.commit;
       releaseTag = target.releaseTag;

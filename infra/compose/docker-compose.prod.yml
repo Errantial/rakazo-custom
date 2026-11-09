@@ -420,6 +420,10 @@ services:
     environment:
       <<: *app-environment
       # Sign-in, sessions, billing and inbound webhooks: API only.
+      RAKAZO_UPDATER_TOKEN: ${RAKAZO_UPDATER_TOKEN:-}
+      # No default: in-app server updates stay off until the operator names the image repository
+      # whose releases this deployment follows.
+      RAKAZO_IMAGE: ${RAKAZO_IMAGE:-}
       API_HOST: "0.0.0.0"
       API_PORT:
       BETTER_AUTH_SECRET:
