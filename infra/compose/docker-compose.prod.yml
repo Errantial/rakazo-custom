@@ -419,11 +419,11 @@ services:
     mem_limit: ${RAKAZO_API_MEMORY_LIMIT:-2g}
     environment:
       <<: *app-environment
-      # Sign-in, sessions, billing and inbound webhooks: API only.
+      # In-app server updates: the API relays to the updater sidecar. No default image, so the
+      # section stays off until the operator names the repository whose releases this follows.
       RAKAZO_UPDATER_TOKEN: ${RAKAZO_UPDATER_TOKEN:-}
-      # No default: in-app server updates stay off until the operator names the image repository
-      # whose releases this deployment follows.
       RAKAZO_IMAGE: ${RAKAZO_IMAGE:-}
+      # Sign-in, sessions, billing and inbound webhooks: API only.
       API_HOST: "0.0.0.0"
       API_PORT:
       BETTER_AUTH_SECRET:

@@ -400,6 +400,9 @@ services:
       - "host.docker.internal:host-gateway"
     environment:
       <<: *app-environment
+      # In-app server updates; off unless both are set.
+      RAKAZO_UPDATER_TOKEN: ${RAKAZO_UPDATER_TOKEN:-}
+      RAKAZO_IMAGE: ${RAKAZO_IMAGE:-}
       # Sign-in, sessions, billing and inbound webhooks: API only.
       API_HOST: "0.0.0.0"
       API_PORT:

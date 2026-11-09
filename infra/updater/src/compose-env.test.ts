@@ -241,7 +241,8 @@ describe("api and worker environment allowlists", () => {
       ]) {
         expect(worker).not.toHaveProperty(key);
       }
-      expect(stackEnvironment(files, "api")).not.toHaveProperty("RAKAZO_UPDATER_TOKEN");
+      // The API holds the token only to relay Settings > Updates; it still has no Docker socket.
+      expect(stackEnvironment(files, "api")).toHaveProperty("RAKAZO_UPDATER_TOKEN");
       // The database password reaches both processes only inside DATABASE_URL.
       expect(stackEnvironment(files, "api")).not.toHaveProperty("POSTGRES_PASSWORD");
       // The owner login goes only to the migrate container, which gets nothing else.
