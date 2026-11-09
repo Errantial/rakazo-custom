@@ -416,6 +416,25 @@ describe("LocalStackController", () => {
     ).toBe(false);
   });
 
+  it("pins the managed images to the packaged release repository, and leaves Compose defaults without one", async () => {
+    const packaged = controller({ releaseRepository: "example/custom-app" });
+    await packaged.start();
+    for (const call of calls.filter((entry) => entry.args[0] === "compose")) {
+      expect(call.env.RAKAZO_IMAGE).toBe("ghcr.io/example/custom-app/app");
+      expect(call.env.RAKAZO_COMPUTER_IMAGE).toBe("ghcr.io/example/custom-app/computer");
+    }
+
+    // `electron .` and unpackaged builds have no releaseRepository in package.json.
+    calls.length = 0;
+    await controller({ releaseRepository: undefined }).start();
+    const compose = calls.filter((entry) => entry.args[0] === "compose");
+    expect(compose.length).toBeGreaterThan(0);
+    for (const call of compose) {
+      expect(call.env).not.toHaveProperty("RAKAZO_IMAGE");
+      expect(call.env).not.toHaveProperty("RAKAZO_COMPUTER_IMAGE");
+    }
+  });
+
   it("pushes every state change so the setup window is never left waiting on a poll", async () => {
     const pushed: string[] = [];
     const stack = controller({ onState: (state) => pushed.push(state.phase) });

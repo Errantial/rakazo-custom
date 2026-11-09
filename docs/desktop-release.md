@@ -60,6 +60,21 @@ gh secret set APPLE_API_KEY_P8 < AuthKey_XXXXXXXXXX.p8
 
 ## Cut a release
 
+Fork builds derive the desktop update feed and managed-server image namespace
+from GitHub's `GITHUB_REPOSITORY`. The packaging commands use
+`apps/desktop/electron-builder.config.cjs`; local packaging derives the repository
+from the GitHub `origin` remote, or accepts `GITHUB_REPOSITORY=example/custom-app`.
+Source archives without either use the stock repository. Keep
+desktop installers, update manifests (`latest*.yml`), and server/computer images
+on the same stable version. The existing **Check for updates** button in Settings
+uses that packaged feed; **Restart to update** installs the verified download.
+The desktop-managed server moves to the same version on the next launch.
+
+Creating a fork does not copy signing credentials or publish a release. Configure
+the signing requirements above before running the release workflow; macOS builds
+still require signing and notarization. Never disable signature validation to
+make a custom release work.
+
 1. Bump `version` in `apps/desktop/package.json` on `main`.
 2. Tag that commit `v<version>` and push the tag:
 

@@ -1215,6 +1215,9 @@ app.whenReady().then(async () => {
       }),
   });
   localStack = new LocalStackController({
+    releaseRepository: JSON.parse(
+      await readFile(path.join(app.getAppPath(), "package.json"), "utf8"),
+    ).releaseRepository,
     hostComputer: hostComputer?.connection,
     platform: process.platform,
     env: process.env,

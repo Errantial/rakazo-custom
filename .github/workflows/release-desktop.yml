@@ -204,7 +204,7 @@ jobs:
             # The main app alone gets the association; helpers keep entitlementsInherit.
             passkeys=("-c.mac.entitlements=$PASSKEY_ENTITLEMENTS" "-c.mac.provisioningProfile=$PASSKEY_PROFILE")
           fi
-          pnpm --filter @rakazo/desktop exec electron-builder \
+          pnpm --filter @rakazo/desktop exec electron-builder --config electron-builder.config.cjs \
             --mac --universal --publish never -c.forceCodeSigning=true "${passkeys[@]}"
       - name: Remove the App Store Connect API key from the runner
         if: always() && runner.os == 'macOS'
@@ -249,8 +249,8 @@ jobs:
           xcrun stapler validate "$app"
           spctl --assess --type execute --verbose=2 "$app"
           grep -Fqx "provider: github" "$app/Contents/Resources/app-update.yml"
-          grep -Fqx "owner: elie222" "$app/Contents/Resources/app-update.yml"
-          grep -Fqx "repo: rakazo" "$app/Contents/Resources/app-update.yml"
+          grep -Fqx "owner: ${GITHUB_REPOSITORY%/*}" "$app/Contents/Resources/app-update.yml"
+          grep -Fqx "repo: ${GITHUB_REPOSITORY#*/}" "$app/Contents/Resources/app-update.yml"
 
       - name: Verify packaged native dependencies
         if: runner.os == 'macOS'
@@ -317,7 +317,7 @@ jobs:
           SIGNING_PUBLISHER: ${{ vars.DESKTOP_WIN_PUBLISHER }}
         run: |
           set -euo pipefail
-          pnpm --filter @rakazo/desktop exec electron-builder \
+          pnpm --filter @rakazo/desktop exec electron-builder --config electron-builder.config.cjs \
             --win --x64 --publish never -c.forceCodeSigning=true \
             "-c.win.azureSignOptions.endpoint=$SIGNING_ENDPOINT" \
             "-c.win.azureSignOptions.codeSigningAccountName=$SIGNING_ACCOUNT" \
@@ -326,7 +326,7 @@ jobs:
       - name: Package unsigned x64 Windows app
         if: runner.os == 'Windows' && needs.validate.outputs.windows_signed != 'true'
         run: >-
-          pnpm --filter @rakazo/desktop exec electron-builder
+          pnpm --filter @rakazo/desktop exec electron-builder --config electron-builder.config.cjs
           --win --x64 --publish never
       - name: Verify Windows Authenticode signature and publisher-bound update feed
         if: runner.os == 'Windows'
@@ -343,7 +343,8 @@ jobs:
           if ($executables.Count -lt 2) { throw "Windows installer or application was not created." }
           $config = "apps/desktop/out/win-unpacked/resources/app-update.yml"
           $feed = Get-Content -Raw $config
-          foreach ($expected in @("provider: github", "owner: elie222", "repo: rakazo")) {
+          $repository = $env:GITHUB_REPOSITORY.Split('/')
+          foreach ($expected in @("provider: github", "owner: $($repository[0])", "repo: $($repository[1])")) {
             if ($feed -notmatch "(?m)^$([regex]::Escape($expected))\r?$") {
               throw "Windows update config missing '$expected'."
             }
@@ -370,9 +371,9 @@ jobs:
       - name: Package x64 Linux AppImage
         if: runner.os == 'Linux'
         run: >-
-          pnpm --filter @rakazo/desktop exec electron-builder
+          pnpm --filter @rakazo/desktop exec electron-builder --config electron-builder.config.cjs
           --linux --x64 --publish never
-      - name: Verify Linux update feed is pinned to the official GitHub channel
+      - name: Verify Linux update feed is pinned to this repository
         if: runner.os == 'Linux'
         shell: bash
         env:
@@ -386,8 +387,8 @@ jobs:
           test -n "$config"
           test -f "$config"
           grep -Fqx "provider: github" "$config"
-          grep -Fqx "owner: elie222" "$config"
-          grep -Fqx "repo: rakazo" "$config"
+          grep -Fqx "owner: ${GITHUB_REPOSITORY%/*}" "$config"
+          grep -Fqx "repo: ${GITHUB_REPOSITORY#*/}" "$config"
           test -f apps/desktop/out/latest-linux.yml
           grep -Fqx "version: $RELEASE_VERSION" apps/desktop/out/latest-linux.yml
 

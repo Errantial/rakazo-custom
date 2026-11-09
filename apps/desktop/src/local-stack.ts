@@ -10,6 +10,7 @@ import {
   dockerSpawnEnv,
   resolveDockerBinary,
 } from "./docker-cli.js";
+import { releaseImages } from "./release-images.js";
 import { readPrivateFile, writePrivateFile } from "./setup-store.js";
 
 export const STACK_DIR_NAME = "stack";
@@ -303,6 +304,7 @@ function interrupted(signal: AbortSignal, result: RunDockerResult): boolean {
 }
 
 export interface LocalStackDeps {
+  releaseRepository?: string;
   hostComputer?: { url: string; token: string };
   platform: string;
   env: NodeJS.ProcessEnv;
@@ -615,6 +617,7 @@ export class LocalStackController {
         SANDBOX_HOST_TOKEN: this.deps.hostComputer?.token ?? "",
         RAKAZO_IMAGE_TAG: this.deps.imageTag,
         RAKAZO_COMPUTER_IMAGE_TAG: this.deps.imageTag,
+        ...releaseImages(this.deps.releaseRepository),
         // Restricted egress needs host iptables rules. Docker Desktop keeps its
         // bridges inside its VM where the host cannot add them, and the app cannot
         // install root firewall rules on Linux either, so the stack would refuse

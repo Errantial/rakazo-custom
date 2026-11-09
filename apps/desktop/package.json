@@ -11,12 +11,12 @@
   "scripts": {
     "dev": "pnpm build && electron .",
     "build": "node scripts/build.mjs && node scripts/copy-static.mjs && node scripts/build-speech.mjs",
-    "pack": "pnpm --filter @rakazo/web build && pnpm build && electron-builder --mac --win --linux",
-    "pack:dir": "pnpm --filter @rakazo/web build && pnpm build && electron-builder --dir",
+    "pack": "pnpm --filter @rakazo/web build && pnpm build && electron-builder --config electron-builder.config.cjs --mac --win --linux",
+    "pack:dir": "pnpm --filter @rakazo/web build && pnpm build && electron-builder --config electron-builder.config.cjs --dir",
     "check": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.jsdom.json",
     "test": "vitest run --root ../.. apps/desktop/src",
     "test:e2e": "pnpm build && playwright test --config e2e/playwright.config.ts",
-    "release": "pnpm --filter @rakazo/web build && pnpm build && electron-builder --publish never"
+    "release": "pnpm --filter @rakazo/web build && pnpm build && electron-builder --config electron-builder.config.cjs --publish never"
   },
   "dependencies": {
     "@rakazo/contracts": "workspace:*",

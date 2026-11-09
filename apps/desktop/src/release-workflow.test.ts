@@ -5,11 +5,17 @@ import { describe, expect, it } from "vitest";
 const workflow = readFileSync(
   path.resolve(import.meta.dirname, "../../../.github/workflows/release-desktop.yml"),
   "utf8",
-);
+).replace(/\r\n/g, "\n");
 
 const expression = (inner: string) => `\${{ ${inner} }}`;
 
 describe("desktop release workflow", () => {
+  it("packages and verifies the repository's own release feed on every platform", () => {
+    expect(workflow.match(/--config electron-builder.config.cjs/g)).toHaveLength(4);
+    expect(workflow.match(/owner: \$\{GITHUB_REPOSITORY%\/\*\}/g)).toHaveLength(2);
+    expect(workflow).toContain("$env:GITHUB_REPOSITORY.Split('/')");
+    expect(workflow).not.toContain("owner: elie222");
+  });
   it("cannot execute contributor pull-request code with release credentials", () => {
     expect(workflow).not.toMatch(/^\s*pull_request:/m);
     expect(workflow).toContain("permissions:\n  contents: read");
@@ -92,11 +98,9 @@ describe("desktop release workflow", () => {
     expect(workflow).toContain("compgen -G 'release-artifacts/*.exe' >/dev/null");
   });
 
-  it("pins every platform update feed to the official GitHub owner and repo", () => {
+  it("verifies provider, repository, and version in every platform update feed", () => {
     expect(workflow).toContain('grep -Fqx "provider: github"');
-    expect(workflow).toContain('grep -Fqx "owner: elie222"');
-    expect(workflow).toContain('grep -Fqx "repo: rakazo"');
-    expect(workflow).toContain("Verify Linux update feed is pinned to the official GitHub channel");
+    expect(workflow).toContain("Verify Linux update feed is pinned to this repository");
     expect(workflow).toContain("Windows update config missing");
     expect(workflow).toContain("RELEASE_VERSION:");
     expect(workflow).toContain('grep -Fqx "version: $RELEASE_VERSION"');
