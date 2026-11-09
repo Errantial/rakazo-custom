@@ -158,6 +158,7 @@ async function* spaceRecords(
       memoryScope: bot.memoryScope,
       voiceId: bot.voiceId,
       autoSpeak: bot.autoSpeak,
+      autoApprove: bot.autoApprove,
       modelProvider: bot.modelProvider,
       modelId: bot.modelId,
       thinkingLevel: bot.thinkingLevel,

@@ -18,6 +18,18 @@ Open **Settings → Approvals** and pick a **Mode**:
 > Start with **Ask** or **Auto**. As you approve the same action again and again, choose
 > **Always allow** on the card and the bot stops asking for that one.
 
+## Let one bot run without asking
+
+Open a bot's settings, expand **Advanced**, and turn on **Run without asking** under
+**Permissions**. When you start the run yourself, that bot skips cards even for the actions below,
+such as creating routines, spaces, groups, or child bot settings. A blocked action still refuses,
+and payments, secrets, and computer access keep their own prompts. The setting applies to that bot
+only.
+
+It does not turn off the protections against text you didn't write. Like **Never ask**, the bot
+refuses those actions, instead of asking, in a run started by a webhook, message, routine, or
+another bot, or once the run has read outside content such as a web page or an email.
+
 ## Approval cards
 
 When a bot needs a yes, it posts a card in the chat showing exactly what it wants to do:
@@ -42,9 +54,11 @@ To stop one bot from ever using a tool, open the bot's settings, expand **Advanc
 
 - Changing a bot's instructions, creating a space, and the actions in
   [Bots that manage bots](./fleet-management.md) always show a card. **Auto** and **Always allow**
-  don't skip it.
+  don't skip it. A bot with **Run without asking** on does skip it in a run you started that has
+  read no outside content.
 - Actions that text you didn't write could be steering, such as changes in a run started by a
-  webhook, ask in **Auto** and **Ask**, and are refused in **Never ask**.
+  webhook, ask in **Auto** and **Ask**, and are refused in **Never ask** and for a bot set to
+  **Run without asking**.
 
 ## Per space
 

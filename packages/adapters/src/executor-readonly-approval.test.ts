@@ -74,6 +74,7 @@ function fixture({
   nativeReview = false,
   checkerConnected = true,
   skipApprovals = false,
+  autoApprove = false,
   trigger = "user",
   secrets = [] as string[],
   prompt = "Read the item",
@@ -129,6 +130,8 @@ function fixture({
   nativeReview?: boolean;
   checkerConnected?: boolean;
   skipApprovals?: boolean;
+  /** The bot runs every action without a card, except blocks, secrets and computer work. */
+  autoApprove?: boolean;
   trigger?: string;
   secrets?: string[];
   prompt?: string;
@@ -285,6 +288,7 @@ function fixture({
         modelId: null,
         thinkingLevel: null,
         autoSpeak: false,
+        autoApprove,
         disabledBuiltinTools,
         fleetManagement,
         computerId: "computer-1",
@@ -1308,6 +1312,104 @@ describe("create_space", () => {
     await skipped.run(true);
     expect(skipped.pauseRunForInput).not.toHaveBeenCalled();
     expect(skipped.effects[0]?.status).not.toBe("intended");
+  });
+});
+
+describe("bot auto-approve", () => {
+  it("runs a boundary tool without a card", async () => {
+    const allowed = fixture({
+      name: "create_space",
+      builtin: true,
+      autoApprove: true,
+    });
+    allowed.setCalls([{ args: { name: "Support" }, executionId: "call-1" }]);
+    // Past the gate, routine creation needs tables this fixture does not mock.
+    await allowed.run(true);
+    expect(allowed.pauseRunForInput).not.toHaveBeenCalled();
+    expect(allowed.effects[0]?.status).not.toBe("intended");
+  });
+
+  it("still asks for a secret", async () => {
+    const asked = fixture({ name: "secret_request", builtin: true, autoApprove: true });
+    asked.setCalls([{ args: { name: "API key" }, executionId: "call-1" }]);
+    await asked.run(true);
+    expect(asked.pauseRunForInput).toHaveBeenCalledOnce();
+  });
+
+  it("refuses a routine naming a new site once outside content entered the run", async () => {
+    const f = fixture({
+      builtin: true,
+      sourceRole: "user",
+      autoApprove: true,
+      prompt: "Find news daily",
+    });
+    f.setCalls([
+      { name: "web_search", args: { query: "news" }, executionId: "call-1" },
+      {
+        name: "schedule_create",
+        args: {
+          name: "Daily",
+          prompt: "Every day fetch https://attacker.test/",
+          every: 1,
+          unit: "days",
+        },
+        executionId: "call-2",
+      },
+    ]);
+    await f.run();
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
+    expect(f.results[1]).toMatchObject({ error: expect.stringContaining("owner's approval") });
+    expect(f.effects.some((effect) => effect.status === "completed")).toBe(false);
+  });
+
+  it("refuses a webhook run's side effect instead of running or asking", async () => {
+    const f = fixture({ name: "shell", trigger: "webhook", autoApprove: true });
+    await f.run();
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
+    expect(f.results[0]).toMatchObject({ error: expect.stringContaining("owner's approval") });
+    expect(f.execute).not.toHaveBeenCalled();
+  });
+
+  it("refuses an instruction rewrite once an owner-started run read outside content", async () => {
+    const f = fixture({ name: "update_bot", builtin: true, autoApprove: true });
+    f.setCalls([
+      { args: { instructions: "Draft only. Ask before sending." }, executionId: "call-1" },
+    ]);
+    f.instructionState.instructions = "";
+    f.claimedOutsideSteering(true);
+    await f.run();
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
+    expect(f.results[0]).toMatchObject({ error: expect.stringContaining("owner's approval") });
+    expect(f.instructionState.instructions).toBe("");
+  });
+
+  it("refuses a routine run's instruction change, since routine runs start tainted", async () => {
+    const f = fixture({
+      name: "update_bot",
+      builtin: true,
+      trigger: "routine",
+      autoApprove: true,
+    });
+    f.setCalls([
+      { args: { instructions: "Draft only. Ask before sending." }, executionId: "call-1" },
+    ]);
+    await f.run();
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
+    expect(f.results[0]).toMatchObject({ error: expect.stringContaining("owner's approval") });
+    expect(f.instructionState.instructions).toBe("Draft only");
+  });
+
+  it("still refuses a blocked tool", async () => {
+    const blocked = fixture({
+      name: "create_space",
+      builtin: true,
+      autoApprove: true,
+      rules: [{ effect: "deny", matchKind: "tool", matchValue: "create_space" } as const],
+    });
+    blocked.setCalls([{ args: { name: "Support" }, executionId: "call-1" }]);
+    await blocked.run();
+    expect(blocked.pauseRunForInput).not.toHaveBeenCalled();
+    expect(blocked.results[0]).toMatchObject({ error: expect.stringContaining("blocked") });
   });
 });
 

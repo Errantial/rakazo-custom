@@ -389,6 +389,22 @@ describe("planActionGate", () => {
     expect(gate("ask")).toBe("ask");
   });
 
+  it("runs everything short of a block when the bot never asks", () => {
+    expect(gate("ask", { autoApprove: true })).toBe("allow");
+    expect(gate("auto", { autoApprove: true, resolved: asked })).toBe("allow");
+    expect(gate("ask", { autoApprove: true, mandatory: true })).toBe("allow");
+    expect(gate("ask", { autoApprove: true, mandatory: true, steerable: false })).toBe("allow");
+    expect(gate("ask", { autoApprove: true, newDestination: true })).toBe("allow");
+    expect(gate("ask", { autoApprove: true, resolved: blocked })).toBe("deny");
+  });
+
+  it("refuses what needs a person when someone else could have asked, even if the bot never asks", () => {
+    for (const mode of ["never", "auto", "ask"] as const) {
+      expect(gate(mode, { autoApprove: true, mandatory: true, steerable: true })).toBe("deny");
+    }
+    expect(gate("ask", { autoApprove: true, steerable: true })).toBe("allow");
+  });
+
   it("asks in Auto when no approval model is set up", () => {
     expect(gate("auto", { checkerConfigured: false })).toBe("ask");
   });

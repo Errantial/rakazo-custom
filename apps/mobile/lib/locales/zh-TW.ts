@@ -49,6 +49,7 @@ export const ZH_TW_MESSAGES: Record<string, string> = {
   "Ex: Project Falcon": "例如：獵鷹計畫",
   "Search bots": "搜尋機器人",
   "About {label}": "關於 {label}",
+  "Run without asking": "無需詢問即可執行",
   "Manage the bots it creates": "管理它建立的機器人",
   "Allow cross-space bot communication": "允許跨空間機器人通訊",
   "Organize the sidebar and edit bots. Instruction, model, routine and group edits need approval.":

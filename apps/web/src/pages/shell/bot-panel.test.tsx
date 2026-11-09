@@ -279,6 +279,7 @@ it("shows the profile and the Advanced tab's controls", async () => {
     memoryScope: "Memory scope",
     voice: "Voice",
     readAloud: "Read replies aloud",
+    autoApprove: "Run without asking",
     fleetManagement: "Manage the bots it creates",
   };
   const controls = [...advanced.querySelectorAll("h3, span, label, div")].flatMap((node) =>
@@ -296,6 +297,7 @@ it("shows the profile and the Advanced tab's controls", async () => {
     "memoryScope",
     "voice",
     "readAloud",
+    "autoApprove",
     "fleetManagement",
   ]);
 });
@@ -441,6 +443,18 @@ describe("BotSettings bot management saves", () => {
     expect(onSave).toHaveBeenCalledExactlyOnceWith({ fleetManagement: !enabled });
     await clickSave();
     expect(onSave.mock.lastCall?.[0]).not.toHaveProperty("fleetManagement");
+  });
+
+  it.each([false, true])("saves only the auto-approve toggle from %s", async (enabled) => {
+    await render("Billing", { autoApprove: enabled });
+    const toggle = container.querySelector<HTMLButtonElement>('button[id$="-auto-approve"]');
+    if (!toggle) throw new Error("Missing switch");
+    await act(async () => {
+      toggle.click();
+    });
+    expect(onSave).toHaveBeenCalledExactlyOnceWith({ autoApprove: !enabled });
+    await clickSave();
+    expect(onSave.mock.lastCall?.[0]).not.toHaveProperty("autoApprove");
   });
 });
 

@@ -58,6 +58,7 @@ export const ZH_MESSAGES: Record<string, string> = {
   "Search bots": "搜索 Bot",
   "{count} messages with {peer}": "与 {peer} 的 {count} 条消息",
   "About {label}": "关于{label}",
+  "Run without asking": "无需询问即可执行",
   "Manage the bots it creates": "管理它创建的机器人",
   "Allow cross-space bot communication": "允许跨空间机器人通信",
   "Organize the sidebar and edit bots. Instruction, model, routine and group edits need approval.":

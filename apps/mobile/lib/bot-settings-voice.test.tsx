@@ -706,6 +706,7 @@ describe("bot settings device voice menu", () => {
       model: "Model",
       readAloud: "Read replies aloud",
       voice: "Device voice",
+      autoApprove: "Run without asking",
       crossSpaceCommunication: "Allow cross-space bot communication",
       fleetManagement: "Manage the bots it creates",
     };
@@ -727,6 +728,7 @@ describe("bot settings device voice menu", () => {
       "model",
       "readAloud",
       "voice",
+      "autoApprove",
       "crossSpaceCommunication",
       "fleetManagement",
     ]);
@@ -863,6 +865,32 @@ describe("bot settings device voice menu", () => {
     });
     for (const [, input] of mocks.rpc.mock.calls)
       expect(input).not.toHaveProperty("fleetManagement");
+  });
+
+  it("persists auto-approve immediately without adding it to unrelated saves", async () => {
+    mocks.rpc.mockResolvedValue(undefined);
+    await render();
+    const toggle = container.querySelector<HTMLButtonElement>('[aria-label="Run without asking"]');
+    if (!toggle) throw new Error("Missing auto-approve switch");
+    await act(async () => {
+      toggle.click();
+    });
+    expect(mocks.rpc).toHaveBeenCalledExactlyOnceWith("bots/update", {
+      botId: "bot-fixture",
+      autoApprove: true,
+    });
+    mocks.rpc.mockClear();
+    const save = [...container.querySelectorAll("button")].find(
+      (button) => button.textContent === "Save",
+    );
+    if (!save) {
+      expect(container.querySelector('[aria-label="Save"]')).toBeNull();
+      return;
+    }
+    await act(async () => {
+      save.click();
+    });
+    for (const [, input] of mocks.rpc.mock.calls) expect(input).not.toHaveProperty("autoApprove");
   });
 
   it("keeps the switch and Save enabled while saving and coalesces rapid toggles", async () => {

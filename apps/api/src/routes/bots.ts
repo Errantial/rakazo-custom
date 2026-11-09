@@ -376,6 +376,7 @@ export function botsRoutes(ctx: RouterContext) {
             sectionId: input.sectionId,
             voiceId: input.voiceId,
             autoSpeak: input.autoSpeak,
+            autoApprove: input.autoApprove,
             ...(input.modelProvider !== undefined
               ? { modelProvider: input.modelProvider, modelId: input.modelId ?? null }
               : {}),
@@ -404,6 +405,21 @@ export function botsRoutes(ctx: RouterContext) {
         });
         for (const setting of changedBotSettings(existing, input)) {
           deps.analytics?.capture(context.actor.userId, { name: "bot_setting_changed", setting });
+        }
+        if (
+          input.autoApprove !== undefined &&
+          input.autoApprove !== Boolean(existing.autoApprove)
+        ) {
+          await recordSecurityEvent({
+            type: "approval.policy.changed",
+            userId: context.actor.userId,
+            spaceId: context.actor.spaceId,
+            metadata: {
+              procedure: "bots.update",
+              botId: input.botId,
+              autoApprove: input.autoApprove,
+            },
+          });
         }
         const bots = await repos.listBots(context.actor);
         const bot = bots.find((b) => b.id === input.botId);

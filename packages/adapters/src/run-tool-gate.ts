@@ -79,6 +79,9 @@ import { watchFromTool } from "./schedule-tools.js";
 
 export type AppliedEffect = Awaited<ReturnType<typeof recordEffect>>;
 
+/** Asking for a secret stays a person's decision even when a bot runs without asking. */
+const SECRET_APPROVAL_TOOLS = new Set(["secret_request", "forget_secret"]);
+
 type ApprovalCard = {
   reviewReason: string | undefined;
   summary: FleetCardSummary | undefined;
@@ -237,6 +240,13 @@ export async function gateToolCall(
     (name === "schedule_create" || (name === "schedule_update" && Boolean(args.prompt))) &&
     (await isRunTainted(ctx)) &&
     (await ctx.trust.routineNamesNewSite(String(args.prompt ?? "")));
+  // The bot's own full auto-approve: no cards for its owner. It never covers a block, a
+  // scheduled shell command or a secret; payments and computer access keep their separate flows.
+  // A call that needs a person (a webhook run's side effect, a routine naming a new site, a
+  // change to the bot's own instructions) still never runs when someone else could have asked for
+  // it: planActionGate refuses it while the run is steerable, as Never ask does.
+  const autoApprove =
+    ctx.bot.autoApprove === true && !commandWatch && !SECRET_APPROVAL_TOOLS.has(name);
   const requiresApprovalByDefault =
     request.ownerApproval ||
     commandWatch ||
@@ -307,9 +317,10 @@ export async function gateToolCall(
     : planActionGate({
         resolved: approvalResolved,
         mode,
+        autoApprove,
         mandatory: requiresMandatoryApproval,
         steerable:
-          requiresMandatoryApproval && mode === "never"
+          requiresMandatoryApproval && (mode === "never" || autoApprove)
             ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
             : undefined,
         consequential: requiresApprovalByDefault,
@@ -319,14 +330,19 @@ export async function gateToolCall(
       });
   if (plan === "deny") {
     await auditToolCall(ctx, name, "denied", {
-      reason: approvalResolved.decision === "deny" ? "rule" : "never_asks",
+      reason:
+        approvalResolved.decision === "deny"
+          ? "rule"
+          : autoApprove
+            ? "auto_approve_steerable"
+            : "never_asks",
     });
     return {
       result: {
         error:
           approvalResolved.decision === "deny"
             ? `${name} is blocked in this space${blockingRuleSuffix(approvalResolved)}. Don't try it another way; tell the user it's blocked.`
-            : `${name} needs the owner's approval because it could have been asked for by someone else, and this space never asks. Don't retry; tell the user.`,
+            : `${name} needs the owner's approval because it could have been asked for by someone else, and ${autoApprove ? "this bot runs without asking" : "this space never asks"}. Don't retry; tell the user.`,
       },
     };
   }

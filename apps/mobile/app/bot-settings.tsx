@@ -87,6 +87,7 @@ export default function BotSettingsScreen() {
   const [thinkingLevel, setThinkingLevel] = useState("");
   const [notifyOnFinish, setNotifyOnFinish] = useState(true);
   const [autoSpeak, setAutoSpeak] = useState(false);
+  const [autoApprove, setAutoApprove] = useState(false);
   const [crossSpaceCommunication, setCrossSpaceCommunication] = useState(false);
   const [fleetManagement, setFleetManagement] = useState(false);
   const [credentials, setCredentials] = useState<MobileModelCredential[]>([]);
@@ -122,6 +123,18 @@ export default function BotSettingsScreen() {
           await rpc("bots/update", { botId, fleetManagement: value });
         },
         onChange: setFleetManagement,
+        onError: (err) => setError(errorText(err, t("Could not save bot"))),
+      }),
+    [botId, t],
+  );
+
+  const autoApproveSave = useMemo(
+    () =>
+      createQueuedSave<boolean>(false, {
+        save: async (value) => {
+          await rpc("bots/update", { botId, autoApprove: value });
+        },
+        onChange: setAutoApprove,
         onError: (err) => setError(errorText(err, t("Could not save bot"))),
       }),
     [botId, t],
@@ -173,6 +186,8 @@ export default function BotSettingsScreen() {
         );
         setThinkingLevel(next.thinkingLevel ?? "");
         setAutoSpeak(next.autoSpeak);
+        setAutoApprove(next.autoApprove === true);
+        autoApproveSave.reset(next.autoApprove === true);
         setNotifyOnFinish(next.notifyOnFinish ?? true);
         setCrossSpaceCommunication(next.crossSpaceCommunication ?? false);
         crossSpaceSave.reset(next.crossSpaceCommunication ?? false);
@@ -180,7 +195,7 @@ export default function BotSettingsScreen() {
         fleetSave.reset(next.fleetManagement);
       })
       .catch((err) => setError(errorText(err, t("Could not load bot"))));
-  }, [botId, crossSpaceSave, fleetSave, notifySave, nameSave]);
+  }, [botId, crossSpaceSave, fleetSave, notifySave, nameSave, autoApproveSave]);
 
   useEffect(() => {
     void Promise.all([rpc("me"), rpc("models/list"), rpc("models/credentials")])
@@ -411,6 +426,7 @@ export default function BotSettingsScreen() {
       await Promise.all([
         crossSpaceSave.flush(),
         fleetSave.flush(),
+        autoApproveSave.flush(),
         notifySave.flush(),
         nameSave.flush(),
       ]);
@@ -643,6 +659,20 @@ export default function BotSettingsScreen() {
               ) : null}
             </SettingsGroup>
             <SettingsGroup label={t("Permissions")}>
+              <View style={styles.row}>
+                <Text style={[styles.rowLabel, { color: tokens.foreground }]}>
+                  {t("Run without asking")}
+                </Text>
+                <NativeSwitch
+                  accessibilityLabel={t("Run without asking")}
+                  onValueChange={(value) => {
+                    if (!botId) return;
+                    setError(null);
+                    autoApproveSave.update(value);
+                  }}
+                  value={autoApprove}
+                />
+              </View>
               <View style={styles.row}>
                 <Text style={[styles.rowLabel, { color: tokens.foreground }]}>
                   {t("Allow cross-space bot communication")}

@@ -561,6 +561,14 @@ export type AutoReviewJudgeDecision = "pass" | "ask" | "error";
 export function planActionGate(input: {
   resolved: ActionApprovalResolved;
   mode: ApprovalMode;
+  /**
+   * The bot is set to run without asking: no cards for its owner. It still cannot pass a block,
+   * and a call that needs a person (`mandatory`) runs only when the run is not `steerable`, the
+   * same as Never ask. The caller leaves it off for calls whose approval is never the owner's to
+   * waive (webhook side effects, a routine naming a new site); command watches, payments,
+   * secrets and computer access keep their own gates.
+   */
+  autoApprove?: boolean;
   /** Needs a person whatever the rules say (see toolRequiresExplicitApproval). */
   mandatory?: boolean;
   /** The owner did not start this run, or outside content entered it. */
@@ -577,9 +585,10 @@ export function planActionGate(input: {
 }): "ask" | "allow" | "judge" | "deny" {
   if (input.resolved.decision === "deny") return "deny";
   if (input.mandatory) {
-    if (input.mode !== "never") return "ask";
+    if (input.mode !== "never" && !input.autoApprove) return "ask";
     return input.steerable ? "deny" : "allow";
   }
+  if (input.autoApprove) return "allow";
   if (input.mode === "never") return "allow";
   if (input.resolved.decision === "ask") return "ask";
   const review = input.mode === "auto" && input.checkerConfigured ? "judge" : "ask";

@@ -13,6 +13,7 @@ const SETTINGS: Partial<Record<Field, AnalyticsBotSetting>> = {
   memoryScope: "memory",
   voiceId: "voice",
   autoSpeak: "auto_speak",
+  autoApprove: "auto_approve",
   modelProvider: "model",
   modelId: "model",
   thinkingLevel: "thinking",

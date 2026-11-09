@@ -67,6 +67,7 @@ export const ES_MESSAGES: Record<string, string> = {
   "Ex: Project Falcon": "Ej.: Proyecto Halcón",
   "Search bots": "Buscar bots",
   "About {label}": "Acerca de {label}",
+  "Run without asking": "Ejecutar sin preguntar",
   "Manage the bots it creates": "Gestionar los bots que crea",
   "Allow cross-space bot communication":
     "Permitir la comunicación entre bots de distintos espacios",

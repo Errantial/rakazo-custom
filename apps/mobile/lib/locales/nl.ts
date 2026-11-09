@@ -59,6 +59,7 @@ export const NL_MESSAGES: Record<string, string> = {
   "Search bots": "Bots zoeken",
   "{count} messages with {peer}": "{count} berichten met {peer}",
   "About {label}": "Over {label}",
+  "Run without asking": "Uitvoeren zonder te vragen",
   "Manage the bots it creates": "De bots beheren die deze bot maakt",
   "Allow cross-space bot communication":
     "Communicatie tussen bots in verschillende ruimtes toestaan",

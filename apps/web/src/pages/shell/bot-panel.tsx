@@ -134,6 +134,7 @@ export function BotSettings({
     computerMode?: ComputerMode;
     memoryScope?: "isolated" | "shared" | null;
     autoSpeak?: boolean;
+    autoApprove?: boolean;
     fleetManagement?: boolean;
     crossSpaceCommunication?: boolean;
     voiceId?: string | null;
@@ -174,6 +175,8 @@ export function BotSettings({
   const [computerMode, setComputerMode] = useState(bot.computerMode);
   const [memoryScope, setMemoryScope] = useState(bot.memoryScope);
   const [autoSpeak, setAutoSpeak] = useState(bot.autoSpeak);
+  const [autoApprove, setAutoApprove] = useState(bot.autoApprove === true);
+  useEffect(() => setAutoApprove(bot.autoApprove === true), [bot.autoApprove]);
   const [crossSpaceCommunication, setCrossSpaceCommunication] = useState(
     bot.crossSpaceCommunication ?? false,
   );
@@ -242,6 +245,7 @@ export function BotSettings({
         color?: string;
         avatarSet?: BotAvatarSet;
         notifyOnFinish?: boolean;
+        autoApprove?: boolean;
         fleetManagement?: boolean;
         crossSpaceCommunication?: boolean;
         disabledBuiltinTools?: string[];
@@ -330,6 +334,7 @@ export function BotSettings({
       color?: string;
       avatarSet?: BotAvatarSet;
       notifyOnFinish?: boolean;
+      autoApprove?: boolean;
       fleetManagement?: boolean;
       crossSpaceCommunication?: boolean;
       disabledBuiltinTools?: string[];
@@ -342,6 +347,10 @@ export function BotSettings({
       setError(null);
       if (patchOverrides?.crossSpaceCommunication !== undefined) {
         await onSave({ crossSpaceCommunication: patchOverrides.crossSpaceCommunication });
+        return;
+      }
+      if (patchOverrides?.autoApprove !== undefined) {
+        await onSave({ autoApprove: patchOverrides.autoApprove });
         return;
       }
       if (patchOverrides?.fleetManagement !== undefined) {
@@ -480,6 +489,7 @@ export function BotSettings({
     color?: string;
     avatarSet?: BotAvatarSet;
     notifyOnFinish?: boolean;
+    autoApprove?: boolean;
     fleetManagement?: boolean;
     crossSpaceCommunication?: boolean;
     disabledBuiltinTools?: string[];
@@ -717,6 +727,20 @@ export function BotSettings({
               ) : null}
             </SettingsGroup>
             <SettingsGroup label={t`Permissions`}>
+              <div className="flex min-h-11 items-center justify-between gap-3 text-sm">
+                <label htmlFor={`${ids}-auto-approve`} className={rowLabelClass}>
+                  <Trans>Run without asking</Trans>
+                </label>
+                <Switch
+                  id={`${ids}-auto-approve`}
+                  checked={autoApprove}
+                  disabled={saving}
+                  onCheckedChange={(checked) => {
+                    setAutoApprove(checked);
+                    void enqueueSave({ autoApprove: checked });
+                  }}
+                />
+              </div>
               <div className="flex min-h-11 items-center justify-between gap-3 text-sm">
                 <label htmlFor={`${ids}-cross-space`} className={rowLabelClass}>
                   <Trans>Allow cross-space bot communication</Trans>

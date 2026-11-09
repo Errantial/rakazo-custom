@@ -6621,6 +6621,19 @@ describe("bot model auth on save", () => {
     );
   });
 
+  it("saves the bot's auto-approve switch", async () => {
+    const { botUpdate, handler } = saveDeps({ modelId: luna, preferences: () => null });
+
+    const response = await call(handler, "bots/update", { botId: "bot-1", autoApprove: true });
+
+    expect(response.status).toBe(200);
+    expect(botUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ autoApprove: true }),
+      }),
+    );
+  });
+
   it("rejects setting Codex Spark on the space's ChatGPT subscription credential", async () => {
     const oauthCredential = credentialRow("cred-oauth", "secret-oauth");
     const { preferenceFindFirst, handler } = saveDeps({
