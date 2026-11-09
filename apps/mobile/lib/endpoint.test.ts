@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 describe("normalizeApiBase", () => {
-  it("trims, adds https, and keeps only the origin", () => {
+  it("trims, adds https for public hosts, and keeps only the origin", () => {
     expect(normalizeApiBase("  app.example.com/rpc  ")).toEqual({
       ok: true,
       url: "https://app.example.com",
@@ -32,6 +32,25 @@ describe("normalizeApiBase", () => {
     expect(normalizeApiBase("http://app.example.com")).toEqual({
       ok: false,
       error: "Public servers need https://",
+    });
+  });
+
+  it("assumes http for a bare address on the local network", () => {
+    expect(normalizeApiBase("192.168.0.8:3100")).toEqual({
+      ok: true,
+      url: "http://192.168.0.8:3100",
+    });
+    expect(normalizeApiBase("localhost:3100")).toEqual({
+      ok: true,
+      url: "http://localhost:3100",
+    });
+    expect(normalizeApiBase("rakazo.local:3100")).toEqual({
+      ok: true,
+      url: "http://rakazo.local:3100",
+    });
+    expect(normalizeApiBase("[fd00::1]:3100")).toEqual({
+      ok: true,
+      url: "http://[fd00::1]:3100",
     });
   });
 

@@ -16,13 +16,8 @@ export function defaultApiBase() {
 export function normalizeApiBase(input: string): EndpointResult {
   const trimmed = input.trim();
   if (!trimmed) return { ok: false, error: t("Enter a server URL") };
-  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-  let parsed: URL;
-  try {
-    parsed = new URL(withScheme);
-  } catch {
-    return { ok: false, error: t("That doesn’t look like a URL") };
-  }
+  const parsed = parseServerAddress(trimmed);
+  if (!parsed) return { ok: false, error: t("That doesn’t look like a URL") };
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     return { ok: false, error: t("Use an http or https URL") };
   }
@@ -32,6 +27,21 @@ export function normalizeApiBase(input: string): EndpointResult {
   }
   const url = `${parsed.protocol}//${parsed.host}`;
   return { ok: true, url };
+}
+
+/**
+ * Accepts what someone types on a phone. A bare address is usually this network's
+ * server, which speaks http, so private hosts get http and public hosts get https.
+ * The desktop setup infers the same way.
+ */
+function parseServerAddress(trimmed: string): URL | null {
+  try {
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)) return new URL(trimmed);
+    const candidate = new URL(`http://${trimmed}`);
+    return isPrivateNetworkHost(candidate.hostname) ? candidate : new URL(`https://${trimmed}`);
+  } catch {
+    return null;
+  }
 }
 
 export function displayApiHost(url: string) {
