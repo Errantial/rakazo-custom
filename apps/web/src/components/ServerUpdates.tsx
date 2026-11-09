@@ -27,7 +27,7 @@ export function ServerUpdateSection() {
     try {
       const response = await fetch(`/api/operator-updates/${action}`, {
         method: "POST",
-        headers: { authorization: `Bearer ${token}` },
+        headers: { "x-update-token": token },
       });
       if (!response.ok) throw new Error("Update failed");
       const result = await response.json();

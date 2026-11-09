@@ -143,6 +143,7 @@ import { cors } from "hono/cors";
 import { deleteAccountContent } from "./account-deletion.js";
 import { mountAccountExportRoute } from "./account-export.js";
 import { mountAccountImportRoute } from "./account-import.js";
+import { isAdmin } from "./admins.js";
 import { mountAppAssociation, nativePasskeys } from "./app-association.js";
 import { storeInboundAttachment } from "./artifacts.js";
 import { mountAuditExportRoute } from "./audit-export.js";
@@ -881,7 +882,18 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
     }),
   );
   app.route("/", marketingEmailRoutes(prisma, env.authSecret));
-  app.route("/", operatorUpdateRoutes(env.updaterUrl));
+  app.route(
+    "/",
+    operatorUpdateRoutes({
+      updaterUrl: env.updaterUrl,
+      session: async (request) => {
+        const session = await auth.api.getSession({ headers: request.headers });
+        return session?.user ? { userId: session.user.id } : null;
+      },
+      isAdmin: (userId) => isAdmin({ prisma, env }, userId),
+      clientIp: requestClientIp,
+    }),
+  );
   mountApiRequestBodyLimits(app, env.maxUploadSizeBytes);
   mountScreenTarget(app, prisma, env.screenProxySecret);
   mountDiagramScript(app);

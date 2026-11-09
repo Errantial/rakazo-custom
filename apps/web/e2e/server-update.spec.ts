@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { captureScreenshot, completeOnboarding, openUserSettings, signup } from "./helpers";
 
-test("server releases require the operator token and a separate apply action", async ({
+test("server releases need the typed update key and a separate apply action", async ({
   page,
 }, testInfo) => {
   let applied = false;
@@ -9,7 +9,9 @@ test("server releases require the operator token and a separate apply action", a
     const request = route.request();
     const action = new URL(request.url()).pathname.split("/").at(-1);
     if (request.method() === "GET") return route.fulfill({ json: { enabled: true } });
-    expect(await request.headerValue("authorization")).toBe("Bearer fake-test-operator-token");
+    // The key travels in its own header: `Authorization` belongs to app sessions.
+    expect(await request.headerValue("x-update-token")).toBe("fake-test-operator-token");
+    expect(await request.headerValue("authorization")).toBeNull();
     if (action === "apply") applied = true;
     return route.fulfill({ json: { ok: true, targetTag: "sha-example", upToDate: false } });
   });
