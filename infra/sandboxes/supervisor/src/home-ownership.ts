@@ -208,7 +208,7 @@ async function assertWritableDirectory(
   await assertFdBeneathRoot(handle, rootPath);
 }
 
-async function assertWritableLinux(root: string, uid: number, gid: number): Promise<void> {
+async function assertHomeRoot(root: string): Promise<void> {
   let rootStat: Stats;
   try {
     rootStat = await lstat(root);
@@ -224,6 +224,10 @@ async function assertWritableLinux(root: string, uid: number, gid: number): Prom
   if (!rootStat.isDirectory()) {
     throw new Error(`computer home ${root} must be a directory`);
   }
+}
+
+async function assertWritableLinux(root: string, uid: number, gid: number): Promise<void> {
+  await assertHomeRoot(root);
 
   let handle: FileHandle;
   try {
@@ -253,10 +257,12 @@ export async function assertComputerHomeWritable(
     await assertWritableLinux(root, uid, gid);
     return;
   }
-  // Windows: NTFS carries no POSIX owner, and Docker Desktop presents an NTFS bind mount to
-  // the container as the desktop user (1000:1000), so a uid/mode check on the host proves
-  // nothing and always fails. There is nothing useful to assert here.
-  if (process.platform === "win32") return;
+  // NTFS ownership/mode bits cannot prove access for a container uid. Still reject
+  // missing, linked (including junctions), and non-directory roots before mounting.
+  if (process.platform === "win32") {
+    await assertHomeRoot(root);
+    return;
+  }
   await assertWritableEntry(root, "", root, uid, gid);
 }
 

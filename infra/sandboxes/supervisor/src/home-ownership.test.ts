@@ -58,40 +58,56 @@ async function assertHomeWritableOn(
   }
 }
 
-describe("computer home ownership", () => {
-  it("rejects a missing home instead of creating it as root", async () => {
-    const parent = await mkdtemp(path.join(tmpdir(), "rakazo-home-missing-"));
-    roots.push(parent);
+describe.each(process.platform === "win32" ? ["win32"] : [process.platform, "win32"])(
+  "computer home root on %s",
+  (platform) => {
+    it("rejects a missing home instead of creating it as root", async () => {
+      const parent = await mkdtemp(path.join(tmpdir(), "rakazo-home-missing-"));
+      roots.push(parent);
 
-    await expect(
-      assertComputerHomeWritable(path.join(parent, "missing"), 1000, 1000),
-    ).rejects.toThrow(/does not exist/);
+      await expect(
+        assertHomeWritableOn(platform, path.join(parent, "missing"), 1000, 1000),
+      ).rejects.toThrow(/does not exist/);
+    });
+
+    it("rejects a symlink as the home root", async () => {
+      const parent = await mkdtemp(path.join(tmpdir(), "rakazo-home-root-link-"));
+      roots.push(parent);
+      const outside = path.join(parent, "outside");
+      const home = path.join(parent, "home");
+      await mkdir(outside);
+      await symlink(outside, home, process.platform === "win32" ? "junction" : "dir");
+
+      await expect(assertHomeWritableOn(platform, home, 1000, 1000)).rejects.toThrow(
+        /symbolic link/,
+      );
+    });
+
+    it("rejects a writable regular file as the home root", async () => {
+      const parent = await mkdtemp(path.join(tmpdir(), "rakazo-home-file-root-"));
+      roots.push(parent);
+      const home = path.join(parent, "home");
+      await writeFile(home, "{}");
+      await chmod(home, 0o600);
+
+      const stat = await lstat(home);
+      await expect(assertHomeWritableOn(platform, home, stat.uid, stat.gid)).rejects.toThrow(
+        /must be a directory/,
+      );
+    });
+  },
+);
+
+describe("Windows computer home", () => {
+  it("accepts a directory without comparing POSIX ownership", async () => {
+    const home = await mkdtemp(path.join(tmpdir(), "rakazo-home-windows-"));
+    roots.push(home);
+    await writeFile(path.join(home, "profile.json"), "{}");
+    await expect(assertHomeWritableOn("win32", home, 4242, 4243)).resolves.toBeUndefined();
   });
+});
 
-  it("rejects a symlink as the home root", async () => {
-    const parent = await mkdtemp(path.join(tmpdir(), "rakazo-home-root-link-"));
-    roots.push(parent);
-    const outside = path.join(parent, "outside");
-    const home = path.join(parent, "home");
-    await mkdir(outside);
-    await symlink(outside, home);
-
-    await expect(assertComputerHomeWritable(home, 1000, 1000)).rejects.toThrow(/symbolic link/);
-  });
-
-  it("rejects a writable regular file as the home root", async () => {
-    const parent = await mkdtemp(path.join(tmpdir(), "rakazo-home-file-root-"));
-    roots.push(parent);
-    const home = path.join(parent, "home");
-    await writeFile(home, "{}");
-    await chmod(home, 0o600);
-
-    const stat = await lstat(home);
-    await expect(assertComputerHomeWritable(home, stat.uid, stat.gid)).rejects.toThrow(
-      /must be a directory/,
-    );
-  });
-
+describe.skipIf(process.platform === "win32")("POSIX computer home ownership", () => {
   it("rejects an existing entry that the host-run computer cannot write", async () => {
     const parent = await mkdtemp(path.join(tmpdir(), "rakazo-home-writable-"));
     roots.push(parent);
@@ -217,7 +233,7 @@ describe("computer home ownership", () => {
   );
 });
 
-describe.each(
+describe.skipIf(process.platform === "win32").each(
   process.platform === "linux"
     ? [
         { walk: "descriptor", platform: "linux" },
