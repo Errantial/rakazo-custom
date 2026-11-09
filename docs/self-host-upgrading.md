@@ -143,9 +143,12 @@ least 32 characters, different from every other secret) and `RAKAZO_IMAGE`. The 
 while the updater reports both as configured. Without either, the door stays closed and the section
 stays hidden, so a custom server never follows another repository's releases.
 
-The API container holds neither token. The administrator types the release token into Settings
-each time; the API forwards it to the updater as-is and the updater validates it in constant time.
-It is not an account permission or a saved browser setting. The full token is refused on the release
+The API container holds neither token. Only a signed-in administrator (a verified email listed in
+`RAKAZO_ADMIN_EMAILS`) can use the section; others get a 403 and never see it. The administrator
+types the release token into Settings each time; the API forwards it to the updater as-is and the
+updater validates it in constant time. It is not an account permission or a saved browser setting.
+Attempts are rate limited per account and per address (a few a minute), and repeated wrong keys
+lock both out for 15 minutes. The full token is refused on the release
 endpoints, so a typed-in release key can never reach the build path and a compromised API never
 sees the full key.
 
@@ -156,6 +159,23 @@ pulls that release's prebuilt images. It never builds from source on this path, 
 caller can do through it is install your own latest real release. Rollback on failed health checks
 is unchanged. Publish all images before offering a release. Reload and check again if restarting
 the API interrupts the response. Source development installs have no apply control.
+
+### Upgrading an existing server
+
+If you already ran the earlier Settings update (or the updater sidecar), change these before you
+pull this release, or the section stays hidden:
+
+1. Add `RAKAZO_UPDATER_RELEASE_TOKEN` to `.env`: a new random value of at least 32 characters, different
+   from `RAKAZO_UPDATER_TOKEN` and every other secret. Only the `updater` container receives it.
+2. Set `RAKAZO_IMAGE` explicitly (for example `ghcr.io/example/custom-app/app`). The updater's
+   Compose default is now empty and the release door follows no repository until you name one.
+   `RAKAZO_IMAGE_TAG` and the image pulls are unchanged.
+3. Remove any `RAKAZO_UPDATER_TOKEN`, `RAKAZO_UPDATER_RELEASE_TOKEN`, `RAKAZO_IMAGE` or
+   `RAKAZO_UPDATER_URL` you added to the `api` service (an override file or a copied Compose
+   file). The API must hold none of them; the compose guard test fails if the shipped files do.
+   Then recreate the `api` and `updater` services.
+
+Keep `RAKAZO_UPDATER_TOKEN` in `.env` for the updater and your CLI tooling.
 
 TODO (phase 2): verify image signatures (cosign) before applying a release. The publish workflow
 already signs some builds; until the updater checks them, trust rests on the GHCR namespace and
