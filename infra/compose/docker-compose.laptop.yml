@@ -1,0 +1,18 @@
+# Optional development-only Postgres tuning. Add after docker-compose.yml and
+# docker-compose.postgres-host.yml when starting the laptop database.
+services:
+  postgres:
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - effective_cache_size=1GB
+      - -c
+      - max_connections=60
+      - -c
+      - random_page_cost=1.1

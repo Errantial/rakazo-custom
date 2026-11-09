@@ -4,9 +4,9 @@
 
 This checkout comes from https://github.com/elie222/rakazo at commit
 `5e8ed855fe950ec5ffa03a94eb166ec71d69b736` (2026-10-30 setup).
-Custom work starts on `custom/development`. The original repository is the
-`upstream` remote. `origin` also fetches upstream because the development runner
-requires `origin/main`; its push URL is disabled. No personal fork has been configured.
+Custom work lives on the custom branches. The original repository is the
+`upstream` remote; `origin` now points to the custom release fork. Keep its
+`main` branch current because the development runner requires `origin/main`.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -36,16 +36,50 @@ owner login. `pnpm dev` generates Prisma and applies migrations automatically.
 # Start the configured database after stopping it:
 docker compose --env-file .env \
   -f infra/compose/docker-compose.yml \
-  -f infra/compose/docker-compose.postgres-host.yml up postgres -d
+  -f infra/compose/docker-compose.postgres-host.yml \
+  -f infra/compose/docker-compose.laptop.yml up postgres -d
 # Stop without deleting database data:
 docker compose --env-file .env \
   -f infra/compose/docker-compose.yml stop postgres
 ```
 
 Avoid `pnpm compose:down`: it includes `-v` and deletes database volumes.
+The optional `docker-compose.laptop.yml` overlay applies laptop Postgres memory
+and connection limits. Omit it for normal deployment defaults; it affects only
+the Compose database, not the dev runner's fallback container.
 If the configured database is unreachable, `pnpm dev` falls back to a separate
 shared development Postgres container on port 54318; check its startup output.
 Do not assume that fallback database contains the data from the configured one.
+
+## Persistent Windows installation
+
+Build the local images, then start the installation:
+
+```powershell
+docker compose --env-file .env --project-name rakazo `
+  -f infra/compose/docker-compose.yml `
+  -f infra/compose/docker-compose.laptop.yml `
+  -f infra/compose/docker-compose.local.yml build
+./scripts/start-local.ps1
+```
+
+The local overlay enables container restart policies. The Windows Startup folder
+contains a `Rakazo.vbs` launcher that runs `scripts/start-local.ps1` hidden at
+sign-in. The script waits for Docker Desktop and starts the existing stack
+without rebuilding or opening an app window. Remove that launcher to disable
+sign-in startup. Keep the checkout at its installed location, or update the
+launcher's script path after moving it. Docker Desktop requires a signed-in
+Windows session; this does not start the Linux containers before sign-in.
+
+The app is at `http://127.0.0.1:5173`. Data and the pre-deployment database backup
+remain local under the ignored `data` directory and existing Docker volumes.
+
+To reach this installation from the mobile app, set `RAKAZO_BIND_ADDRESS=0.0.0.0`
+in `.env` and restart the stack. On a phone joined to the same Tailscale tailnet,
+enter the computer's Tailscale address as the custom server, for example
+`http://100.93.77.86:5173` or `http://100.93.77.86:3100`; on the same Wi-Fi, use
+its LAN address instead. Keep the default loopback binding when no other device
+needs access, since this traffic is cleartext HTTP.
 
 ## Where to customize
 
