@@ -1240,6 +1240,7 @@ msgid "Check failed: {0}"
 msgstr "Échec de la vérification : {0}"
 
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Check for updates"
 msgstr "Rechercher des mises à jour"
 
@@ -1277,6 +1278,7 @@ msgstr "Vérification de la connexion…"
 
 #: src/components/ComputersUnavailableHint.tsx
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 #: src/pages/HostComputerPrompt.tsx
 msgid "Checking…"
 msgstr "Vérification en cours…"
@@ -1804,6 +1806,10 @@ msgstr "Impossible de terminer OAuth"
 #: src/components/DesktopUpdates.tsx
 msgid "Could not complete the update. Try again."
 msgstr "Impossible de terminer la mise à jour. Réessayez."
+
+#: src/components/ServerUpdates.tsx
+msgid "Could not confirm the update. Reload to check."
+msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -5016,6 +5022,10 @@ msgstr "Historique des exécutions"
 msgid "Run time must be in the future."
 msgstr "L'horaire d'exécution doit être dans le futur."
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Run without asking"
+msgstr ""
+
 #: src/components/CloudAgentCard.tsx
 msgid "running"
 msgstr "en cours"
@@ -5265,9 +5275,17 @@ msgstr "Alerte Sentry"
 msgid "Serenity endpoint is required."
 msgstr "Le point de terminaison Serenity est obligatoire."
 
+#: src/components/ServerUpdates.tsx
+msgid "Server"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Server name"
 msgstr "Nom du serveur"
+
+#: src/components/ServerUpdates.tsx
+msgid "Server updated. Reload to continue."
+msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/McpServersOverlay.tsx
@@ -5524,14 +5542,6 @@ msgstr "Défaut de l'espace"
 msgid "Spaces"
 msgstr "Espaces"
 
-#: src/pages/shell/message-view.tsx
-msgid "Speak"
-msgstr "Parler"
-
-#: src/pages/shell/message-view.tsx
-msgid "Speak this reply"
-msgstr "Lire cette réponse à voix haute"
-
 #: src/components/call/CallCard.tsx
 msgid "Speaking"
 msgstr "Parle"
@@ -5580,17 +5590,12 @@ msgstr "Étapes"
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/computer-overlay.tsx
-#: src/pages/shell/message-view.tsx
 msgid "Stop"
 msgstr "Arrêter"
 
 #: src/components/ComputerMaintenanceActions.tsx
 msgid "Stop computer"
 msgstr ""
-
-#: src/pages/shell/message-view.tsx
-msgid "Stop speaking"
-msgstr "Arrêter la lecture"
 
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Stop teaching"
@@ -6106,6 +6111,7 @@ msgid "Unsupported file type: {0}"
 msgstr "Type de fichier non pris en charge : {0}"
 
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Up to date"
 msgstr "À jour"
 
@@ -6137,6 +6143,14 @@ msgstr "Mettre à jour les instructions ?"
 msgid "Update progress"
 msgstr "Progression de la mise à jour"
 
+#: src/components/ServerUpdates.tsx
+msgid "Update server"
+msgstr ""
+
+#: src/components/ServerUpdates.tsx
+msgid "Update token"
+msgstr ""
+
 #: src/components/VaultSettings.tsx
 msgid "Updated {updated}"
 msgstr ""
@@ -6155,6 +6169,7 @@ msgid "Updating Team Computer"
 msgstr "Mise à jour de l'ordinateur d'équipe"
 
 #: src/components/ComputerMaintenanceActions.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Updating…"
 msgstr "Mise à jour en cours…"
 

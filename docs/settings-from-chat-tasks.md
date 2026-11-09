@@ -7,6 +7,8 @@ rest on demand. Every step is measured with tool-choice evals before and after.
 
 ## Why
 
+The following describes the original problems; implementation status is tracked below.
+
 - Users ask bots to switch their model, rewrite their instructions, rename
   themselves and change notifications. Model changes never succeed today: the
   bot says it can't, or guesses which model it runs. The fleet model tool fails
@@ -58,23 +60,29 @@ rest on demand. Every step is measured with tool-choice evals before and after.
 
 ## Tasks
 
+Repository audit: the tool-choice CLI, call capture, synthetic cases, preference
+tools, built-in help skill, and lazy tool catalog are implemented. Checked items
+describe implementation, not a fresh live-model qualification. Baseline and
+comparison reports have not been verified in this audit; keep those gates open.
+
 ### 1. Tool-choice eval suite (baseline first)
 
-- [ ] Add a `tool-choice` suite to `packages/testkit` (`pnpm test:evals --suite
-      tool-choice`). Each case: optional prior turns, prompt, bot/user state,
+- [x] Add a `tool-choice` suite to `packages/testkit` (`pnpm test:evals --suite
+      tool-choice`). Each case: optional prior turns, prompt, bot setup,
       and expectations on built-in tool calls: `calls` (tool + argument
       matchers), `notCalls`, `order`, `maxCalls`. Grade structured calls
-      deterministically; reuse the existing judge only for reply meaning.
-- [ ] Capture the built-in tool calls a run makes (name + arguments) as
-      evidence, and record the tool definition bytes/tokens sent per call.
-- [ ] Cases, synthetic only, guard and control, across every tool family, not
-      just settings: settings (model by loose name, instructions, name, avatar,
-      notifications, thinking, voice, "which model are you?" must read only,
-      "you're slow" must not switch model), product help (where is X, billing,
-      credits, connect an integration), memory, files, shell, web, schedules,
-      scratchpad, tickets, skills, fleet, secrets, ask_user/message_user, and
-      plain conversation that must call nothing. Target 60+ cases.
-- [ ] `--cases-file <path>` loads extra cases in the same format from a local
+      deterministically. Reply-meaning qualification is tracked separately below.
+- [x] Capture built-in tool names and arguments as evidence and record the
+      listed tool count and serialized definition bytes on each run's first call
+      (`packages/testkit/src/evals/tool-calls.ts`).
+- [ ] Record tool definition bytes/tokens for every provider call, including
+      schemas returned by deferred tool discovery.
+- [x] 73 synthetic guard and control cases cover settings, product help,
+      memory, files, shell, web, schedules, scratchpad, tickets, skills, fleet,
+      secrets, user interaction, conversation, and lazy tool discovery in
+      `packages/testkit/src/evals/tool-choice-cases.ts`. Specific remaining
+      coverage gaps are tracked below.
+- [x] `--cases-file <path>` loads extra cases in the same format from a local
       file outside git, for the private held-out set paraphrased from
       production. Never commit it or anything derived verbatim from user data.
 - [ ] Record the baseline on Claude Haiku 5.5 via OpenRouter (3 trials) and keep
@@ -107,16 +115,20 @@ rest on demand. Every step is measured with tool-choice evals before and after.
       connection and its catalog, not a simple value.
 - Theme stays out: it is device-local (`@rakazo/ui-tokens` appearance
   preference), not an account setting.
-- [ ] Eval cases for each preference and for refused ones (email, billing).
+- [x] Synthetic timezone, marketing opt-out, email refusal, and deletion refusal
+      cases exist in `packages/testkit/src/evals/tool-choice-cases.ts`.
+- [ ] Add an explicit billing-change refusal case.
 
 ### 4. Product help skill
 
-- [ ] Built-in `rakazo` skill: an index of product topics with links to the
-      published docs (`/docs/*.md`, `llms.txt`), loaded via `skill_read`, with
-      the instruction to fetch the page before answering. One catalog line
-      until used. Must work for self-hosted installs (docs URL from config).
-- [ ] Eval: product-question cases read the skill and answer from the docs
-      (judge, versioned rubric) instead of guessing or web searching.
+- [x] Built-in `Rakazo` skill indexes product topics and published Markdown
+      docs, loaded via `skill_read`, and instructs the model to fetch the page
+      before answering. Implemented in `packages/adapters/src/builtin-skills.ts`;
+      self-hosted installs currently use the same fixed public docs URLs.
+- [ ] Support a configurable docs URL for installs that need their own docs.
+- [x] Product-question cases assert help-skill use in the tool-choice suite.
+- [ ] Qualify documentation-grounded answer meaning with a versioned judge
+      rubric; skill selection alone does not establish factual correctness.
 
 ### 5. Lazy tool loading
 

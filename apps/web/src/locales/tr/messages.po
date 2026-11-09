@@ -1240,6 +1240,7 @@ msgid "Check failed: {0}"
 msgstr "Kontrol başarısız: {0}"
 
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Check for updates"
 msgstr ""
 
@@ -1277,6 +1278,7 @@ msgstr "Bağlantı kontrol ediliyor…"
 
 #: src/components/ComputersUnavailableHint.tsx
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 #: src/pages/HostComputerPrompt.tsx
 msgid "Checking…"
 msgstr ""
@@ -1803,6 +1805,10 @@ msgstr "OAuth tamamlanamadı"
 
 #: src/components/DesktopUpdates.tsx
 msgid "Could not complete the update. Try again."
+msgstr ""
+
+#: src/components/ServerUpdates.tsx
+msgid "Could not confirm the update. Reload to check."
 msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
@@ -5016,6 +5022,10 @@ msgstr ""
 msgid "Run time must be in the future."
 msgstr ""
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Run without asking"
+msgstr ""
+
 #: src/components/CloudAgentCard.tsx
 msgid "running"
 msgstr "çalışıyor"
@@ -5265,9 +5275,17 @@ msgstr ""
 msgid "Serenity endpoint is required."
 msgstr ""
 
+#: src/components/ServerUpdates.tsx
+msgid "Server"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Server name"
 msgstr "Sunucu adı"
+
+#: src/components/ServerUpdates.tsx
+msgid "Server updated. Reload to continue."
+msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/McpServersOverlay.tsx
@@ -5524,14 +5542,6 @@ msgstr "Alan varsayılanı"
 msgid "Spaces"
 msgstr "Alanlar"
 
-#: src/pages/shell/message-view.tsx
-msgid "Speak"
-msgstr "Seslendir"
-
-#: src/pages/shell/message-view.tsx
-msgid "Speak this reply"
-msgstr "Bu yanıtı seslendir"
-
 #: src/components/call/CallCard.tsx
 msgid "Speaking"
 msgstr ""
@@ -5580,17 +5590,12 @@ msgstr "Adımlar"
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/computer-overlay.tsx
-#: src/pages/shell/message-view.tsx
 msgid "Stop"
 msgstr "Durdur"
 
 #: src/components/ComputerMaintenanceActions.tsx
 msgid "Stop computer"
 msgstr ""
-
-#: src/pages/shell/message-view.tsx
-msgid "Stop speaking"
-msgstr "Seslendirmeyi durdur"
 
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Stop teaching"
@@ -6106,6 +6111,7 @@ msgid "Unsupported file type: {0}"
 msgstr "Desteklenmeyen dosya türü: {0}"
 
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Up to date"
 msgstr ""
 
@@ -6137,6 +6143,14 @@ msgstr "Talimatlar güncellensin mi?"
 msgid "Update progress"
 msgstr ""
 
+#: src/components/ServerUpdates.tsx
+msgid "Update server"
+msgstr ""
+
+#: src/components/ServerUpdates.tsx
+msgid "Update token"
+msgstr ""
+
 #: src/components/VaultSettings.tsx
 msgid "Updated {updated}"
 msgstr ""
@@ -6155,6 +6169,7 @@ msgid "Updating Team Computer"
 msgstr ""
 
 #: src/components/ComputerMaintenanceActions.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Updating…"
 msgstr ""
 

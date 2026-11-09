@@ -1240,6 +1240,7 @@ msgid "Check failed: {0}"
 msgstr "確認に失敗しました: {0}"
 
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Check for updates"
 msgstr "アップデートを確認"
 
@@ -1277,6 +1278,7 @@ msgstr "接続を確認中…"
 
 #: src/components/ComputersUnavailableHint.tsx
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 #: src/pages/HostComputerPrompt.tsx
 msgid "Checking…"
 msgstr "確認中…"
@@ -1804,6 +1806,10 @@ msgstr "OAuthを完了できませんでした"
 #: src/components/DesktopUpdates.tsx
 msgid "Could not complete the update. Try again."
 msgstr "アップデートを完了できませんでした。もう一度お試しください。"
+
+#: src/components/ServerUpdates.tsx
+msgid "Could not confirm the update. Reload to check."
+msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/PluginsOverlay.tsx
@@ -5016,6 +5022,10 @@ msgstr "実行履歴"
 msgid "Run time must be in the future."
 msgstr "実行日時は未来の日時を指定してください。"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Run without asking"
+msgstr ""
+
 #: src/components/CloudAgentCard.tsx
 msgid "running"
 msgstr "実行中"
@@ -5265,9 +5275,17 @@ msgstr "Sentryアラート"
 msgid "Serenity endpoint is required."
 msgstr "Serenityのエンドポイントは必須です。"
 
+#: src/components/ServerUpdates.tsx
+msgid "Server"
+msgstr ""
+
 #: src/pages/McpServersOverlay.tsx
 msgid "Server name"
 msgstr "サーバー名"
+
+#: src/components/ServerUpdates.tsx
+msgid "Server updated. Reload to continue."
+msgstr ""
 
 #: src/components/integrations/IntegrationSetup.tsx
 #: src/pages/McpServersOverlay.tsx
@@ -5524,14 +5542,6 @@ msgstr "スペースのデフォルト"
 msgid "Spaces"
 msgstr "スペース"
 
-#: src/pages/shell/message-view.tsx
-msgid "Speak"
-msgstr "読み上げ"
-
-#: src/pages/shell/message-view.tsx
-msgid "Speak this reply"
-msgstr "この返信を読み上げ"
-
 #: src/components/call/CallCard.tsx
 msgid "Speaking"
 msgstr "話しています"
@@ -5580,17 +5590,12 @@ msgstr "手順"
 #: src/pages/RoutineEditor.tsx
 #: src/pages/shell/composer.tsx
 #: src/pages/shell/computer-overlay.tsx
-#: src/pages/shell/message-view.tsx
 msgid "Stop"
 msgstr "停止"
 
 #: src/components/ComputerMaintenanceActions.tsx
 msgid "Stop computer"
 msgstr ""
-
-#: src/pages/shell/message-view.tsx
-msgid "Stop speaking"
-msgstr "読み上げを停止"
 
 #: src/components/teach/TeachRecordingChrome.tsx
 msgid "Stop teaching"
@@ -6106,6 +6111,7 @@ msgid "Unsupported file type: {0}"
 msgstr "サポートされていないファイル形式です: {0}"
 
 #: src/components/DesktopUpdates.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Up to date"
 msgstr "最新です"
 
@@ -6137,6 +6143,14 @@ msgstr "指示を更新しますか？"
 msgid "Update progress"
 msgstr "更新の進行状況"
 
+#: src/components/ServerUpdates.tsx
+msgid "Update server"
+msgstr ""
+
+#: src/components/ServerUpdates.tsx
+msgid "Update token"
+msgstr ""
+
 #: src/components/VaultSettings.tsx
 msgid "Updated {updated}"
 msgstr "更新日: {updated}"
@@ -6155,6 +6169,7 @@ msgid "Updating Team Computer"
 msgstr "チームのコンピューターを更新中"
 
 #: src/components/ComputerMaintenanceActions.tsx
+#: src/components/ServerUpdates.tsx
 msgid "Updating…"
 msgstr "更新中…"
 
