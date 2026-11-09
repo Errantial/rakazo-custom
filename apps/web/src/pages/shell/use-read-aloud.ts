@@ -1,8 +1,7 @@
-import type { Bot, ThreadMessage, ThreadSnapshot } from "@rakazo/contracts";
+import type { Bot, ThreadSnapshot } from "@rakazo/contracts";
 import { speechFromBlocks } from "@rakazo/core";
 import { toast } from "@rakazo/ui-web";
-import type { RefObject } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { speaker } from "../../lib/tts";
 
 const READ_ALOUD_TOAST = "read-aloud-error";
@@ -14,30 +13,18 @@ function readAloud(text: string, opts: { botId: string; messageId: string }) {
   });
 }
 
-/** Reads bot replies aloud: on request, and automatically for bots that speak their replies. */
+/** Reads new replies aloud for bots set to speak their replies. */
 export function useReadAloud({
   active,
   snapshot,
   callBotId,
-  activeBotId,
 }: {
   active: Bot | undefined;
   snapshot: ThreadSnapshot | null;
   callBotId: string | undefined;
-  activeBotId: RefObject<string | undefined>;
 }) {
-  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const autoSpoken = useRef<string | null>(null);
   const autoSpokenBotId = useRef<string | null>(null);
-
-  useEffect(() => {
-    const unsubSpeech = speaker.subscribe((state) => {
-      setSpeakingMessageId(state.status === "idle" ? null : (state.messageId ?? null));
-    });
-    return () => {
-      unsubSpeech();
-    };
-  }, []);
 
   useEffect(() => {
     if (!active || !snapshot || snapshot.botId !== active.id) return;
@@ -65,18 +52,4 @@ export function useReadAloud({
     active?.id,
     callBotId,
   ]);
-
-  const speakingMessageIdRef = useRef(speakingMessageId);
-  speakingMessageIdRef.current = speakingMessageId;
-  const speakMessage = useCallback((message: ThreadMessage) => {
-    if (speakingMessageIdRef.current === message.id) {
-      speaker.stop();
-      return;
-    }
-    const text = speechFromBlocks(message.blocks);
-    const id = message.botId ?? activeBotId.current;
-    if (text && id) readAloud(text, { botId: id, messageId: message.id });
-  }, []);
-
-  return { speakingMessageId, speakMessage };
 }

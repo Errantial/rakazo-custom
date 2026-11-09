@@ -288,11 +288,10 @@ function SpaceShell() {
   });
   const { notifyBrowserForEvent, flushPendingBrowserNotifications } =
     useBrowserNotifications(botsRef);
-  const { speakingMessageId, speakMessage } = useReadAloud({
+  useReadAloud({
     active,
     snapshot,
     callBotId: call?.botId,
-    activeBotId,
   });
   const read = useChatRead({ rpc, active, groupId, activeGroup, setBots, setGroups });
   const {
@@ -949,9 +948,6 @@ function SpaceShell() {
               onRefresh={refreshActiveThread}
               onBotChanged={refreshBots}
               onAddRoutine={addSkillRoutine}
-              voiceReady={Boolean(voiceStatus?.ready)}
-              speakingMessageId={speakingMessageId}
-              onSpeak={speakMessage}
               onOpenComputer={computerControls.onOpenComputer}
               onOpenImportSetup={(target) => {
                 importSetupOpen.current = true;

@@ -84,9 +84,6 @@ export const Transcript = memo(function Transcript({
   onRefresh,
   onBotChanged,
   onAddRoutine,
-  voiceReady,
-  speakingMessageId,
-  onSpeak,
   onOpenComputer,
   onOpenImportSetup,
 }: {
@@ -131,9 +128,6 @@ export const Transcript = memo(function Transcript({
   onRefresh: () => Promise<void>;
   onBotChanged: () => Promise<void>;
   onAddRoutine: (name: string, prompt: string) => void;
-  voiceReady: boolean;
-  speakingMessageId: string | null;
-  onSpeak: (message: ThreadMessage) => void;
   onOpenComputer: (botId?: string) => void;
   onOpenImportSetup?: (target: ImportSetupTarget) => void;
 }) {
@@ -533,9 +527,6 @@ export const Transcript = memo(function Transcript({
                       onRefresh={onRefresh}
                       onBotChanged={onBotChanged}
                       onAddRoutine={onAddRoutine}
-                      voiceReady={voiceReady}
-                      speaking={speakingMessageId === message.id}
-                      onSpeak={() => onSpeak(message)}
                       onOpenComputer={onOpenComputer}
                       onOpenImportSetup={onOpenImportSetup}
                       showToolActivity={showToolActivity}

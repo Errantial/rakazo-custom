@@ -84,9 +84,6 @@ function renderView(
         onRefresh={vi.fn()}
         onBotChanged={vi.fn()}
         onAddRoutine={vi.fn()}
-        voiceReady={false}
-        speaking={false}
-        onSpeak={vi.fn()}
         onOpenComputer={vi.fn()}
         showToolActivity={false}
         onReply={vi.fn()}
@@ -216,9 +213,6 @@ it("keeps an edit made after a save when the saved status arrives late", async (
         onRefresh={() => Promise.reject(new Error("offline"))}
         onBotChanged={vi.fn()}
         onAddRoutine={vi.fn()}
-        voiceReady={false}
-        speaking={false}
-        onSpeak={vi.fn()}
         onOpenComputer={vi.fn()}
         showToolActivity={false}
         onReply={vi.fn()}

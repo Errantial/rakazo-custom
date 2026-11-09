@@ -99,9 +99,6 @@ export function FixtureTranscript({
         onRefresh={resolved}
         onBotChanged={resolved}
         onAddRoutine={noop}
-        voiceReady={false}
-        speakingMessageId={null}
-        onSpeak={noop}
         onOpenComputer={noop}
       />
     </main>

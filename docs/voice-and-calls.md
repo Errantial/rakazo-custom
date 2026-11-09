@@ -25,7 +25,6 @@ don't have to keep holding.
 
 ## Hear replies
 
-- To hear one reply, choose **Speak this reply** on the message.
 - To hear every reply from a bot, open its settings, expand **Advanced**, and turn on
   **Read replies aloud**. The **Voice** next to it overrides your default voice for that bot.
 

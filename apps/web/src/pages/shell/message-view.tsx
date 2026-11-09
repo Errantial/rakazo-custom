@@ -64,9 +64,6 @@ export const MessageView = memo(function MessageView({
   onRefresh,
   onBotChanged,
   onAddRoutine,
-  voiceReady,
-  speaking,
-  onSpeak,
   onOpenComputer,
   onOpenImportSetup,
   showToolActivity,
@@ -102,9 +99,6 @@ export const MessageView = memo(function MessageView({
   onRefresh: () => Promise<void>;
   onBotChanged: () => Promise<void>;
   onAddRoutine: (name: string, prompt: string) => void;
-  voiceReady: boolean;
-  speaking: boolean;
-  onSpeak: () => void;
   onOpenComputer: (botId?: string) => void;
   /** Opens where an imported item's setup is finished. */
   onOpenImportSetup?: (target: ImportSetupTarget) => void;
@@ -260,17 +254,6 @@ export const MessageView = memo(function MessageView({
                 }
                 return null;
               })}
-              {!isLive && voiceReady && message.blocks.some((block) => block.kind === "text") ? (
-                <Button
-                  variant="text"
-                  size="xs"
-                  aria-label={speaking ? t`Stop speaking` : t`Speak this reply`}
-                  onClick={onSpeak}
-                  className="font-normal"
-                >
-                  {speaking ? <Trans>Stop</Trans> : <Trans>Speak</Trans>}
-                </Button>
-              ) : null}
             </div>
           </div>
           {hoverActions}
@@ -520,17 +503,6 @@ export const MessageView = memo(function MessageView({
                   <div data-quote-message-id={quoteMessageId}>
                     <ChatMarkdown renderMention={renderMention}>{block.text}</ChatMarkdown>
                   </div>
-                  {voiceReady ? (
-                    <Button
-                      variant="text"
-                      size="xs"
-                      aria-label={speaking ? t`Stop speaking` : t`Speak this reply`}
-                      onClick={onSpeak}
-                      className="mt-2 font-normal"
-                    >
-                      {speaking ? <Trans>Stop</Trans> : <Trans>Speak</Trans>}
-                    </Button>
-                  ) : null}
                 </div>
                 {i === hoverAnchorIndex ? hoverActions : null}
               </div>
