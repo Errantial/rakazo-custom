@@ -127,27 +127,42 @@ not an online rolling migration. Stop the old API and worker, apply the migratio
 versions together. Its lock waits are bounded so contention fails the migration instead of leaving
 application traffic queued indefinitely.
 
-## Custom release updates in Settings
+## Release updates in Settings
 
-The production Compose stack can expose **Settings → Updates → Server** when
-`RAKAZO_UPDATER_TOKEN` is configured (at least 32 characters). Start the existing
-`updater` Compose profile and set `RAKAZO_IMAGE` to the fork's
-`ghcr.io/example/custom-app/app` image. Configure the corresponding computer and
-updater images from the same fork. The API and sidecar must share the same token
-and app image configuration. Use HTTPS for remote access. Without `RAKAZO_IMAGE` the section
+**Settings → Updates → Server** installs the latest stable release of the repository named by
+`RAKAZO_IMAGE` (for a fork, `ghcr.io/example/custom-app/app`). It is built on a narrow door with
+its own credential, separate from the full updater token:
+
+| Token | Lives in | Can do |
+| --- | --- | --- |
+| `RAKAZO_UPDATER_TOKEN` | the `updater` container and your CLI tooling only | any repository, source builds, rollback (`/state`, `/plan`, `/apply`, `/rollback`) |
+| `RAKAZO_UPDATER_RELEASE_TOKEN` | the `updater` container only, and the administrator's head | `/release/check` and `/release/apply`, nothing else |
+
+To turn it on, start the `updater` profile and set a dedicated `RAKAZO_UPDATER_RELEASE_TOKEN` (at
+least 32 characters, different from every other secret) and `RAKAZO_IMAGE`. The section appears
+while the updater reports both as configured. Without either, the door stays closed and the section
 stays hidden, so a custom server never follows another repository's releases.
 
-Enter the deployment token to check releases, then select **Update server**.
-The token stays in the open settings form only; it is not an account permission
-or saved browser setting. The server selects the repository from its configured
-image namespace and deploys the latest stable release tag's source-addressed
-image, with the existing rollback behavior on failed health checks. Publish all
-images before offering a release. Reload and check again if restarting the API
-interrupts the response. Source development installs have no apply control.
+The API container holds neither token. The administrator types the release token into Settings
+each time; the API forwards it to the updater as-is and the updater validates it in constant time.
+It is not an account permission or a saved browser setting. The full token is refused on the release
+endpoints, so a typed-in release key can never reach the build path and a compromised API never
+sees the full key.
 
-The control is available in web and Electron Settings. Native mobile users
-manage deployments through the server's web UI; app accounts have no host
-administration authority.
+The release endpoints take no parameters; a request carrying a repository, ref, image or build
+option is refused rather than ignored. The updater derives the repository from its own
+`RAKAZO_IMAGE`, selects the newest stable `vX.Y.Z` tag (no prereleases, branches or SHAs), and only
+pulls that release's prebuilt images. It never builds from source on this path, so the worst a
+caller can do through it is install your own latest real release. Rollback on failed health checks
+is unchanged. Publish all images before offering a release. Reload and check again if restarting
+the API interrupts the response. Source development installs have no apply control.
+
+TODO (phase 2): verify image signatures (cosign) before applying a release. The publish workflow
+already signs some builds; until the updater checks them, trust rests on the GHCR namespace and
+the Git tags of `RAKAZO_IMAGE`'s repository.
+
+The control is available in web and Electron Settings. Native mobile users manage deployments
+through the server's web UI; app accounts have no host administration authority.
 
 ## Published images and tags
 
@@ -228,7 +243,7 @@ docker compose --env-file .env -f infra/compose/docker-compose.prod.yml \
 
 It exposes `/health`, `/state`, `/plan`, `/apply`, and `/rollback` at `http://updater:7092` with
 `RAKAZO_UPDATER_TOKEN`. Operator CLI upgrades above do not need it; the sidecar is for automated
-apply/rollback over that private HTTP API. Only deployment tooling calls it; app accounts have no update endpoint, and the application API does not receive the updater token.
+apply/rollback over that private HTTP API. Only deployment tooling calls it; app accounts have no update endpoint, and the application API receives neither the full token nor the release token (see "Release updates in Settings").
 
 The API cannot update itself — its image has no `.git`, and nothing inside the container would
 restart it — so the work happens in a separate `updater` container that outlives the recreate:
@@ -319,8 +334,11 @@ as that allows:
 - No `ports`, so nothing is published on the host.
 - Only on the dedicated `control` network shared with the API. Caddy is not attached, so the
   reverse proxy has no route to the updater.
-- Every route except `/health` requires the shared bearer token, compared in constant time.
-- The process environment carries only updater settings (`RAKAZO_UPDATER_TOKEN`, deploy path,
+- Every route except `/health` requires a bearer token, compared in constant time. `/release/check` and
+  `/release/apply` accept only `RAKAZO_UPDATER_RELEASE_TOKEN`; every other route accepts only
+  `RAKAZO_UPDATER_TOKEN`.
+- The process environment carries only updater settings (`RAKAZO_UPDATER_TOKEN`,
+  `RAKAZO_UPDATER_RELEASE_TOKEN`, deploy path,
   image name, project name). Application secrets stay in the bind-mounted `.env` that Compose
   reads for interpolation; they are not loaded into this container.
 - The Docker CLI lives only in the updater image. The api, worker, and web containers keep

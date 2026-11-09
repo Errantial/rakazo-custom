@@ -60,6 +60,8 @@ secret into multiple keys):
 - `SANDBOX_SUPERVISOR_TOKEN`
 - `RAKAZO_UPDATER_TOKEN` (only if the updater profile is enabled; ≥32 chars,
   also distinct from the four above)
+- `RAKAZO_UPDATER_RELEASE_TOKEN` (optional, enables Settings > Updates; held by the updater only,
+  ≥32 chars, distinct from every secret above)
 
 Rotating `ENCRYPTION_KEY` after credentials were stored makes old ciphertext
 unreadable. Keep the original key for an existing deployment unless you

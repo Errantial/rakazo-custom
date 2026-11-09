@@ -36,7 +36,8 @@ container logs, default no-new-privileges, and the kernel NAT path instead of Do
    the supported Linux default, `/srv/rakazo`. Use URL-safe random values for database credentials.
    If you enable the `updater` profile, also set a dedicated `RAKAZO_UPDATER_TOKEN` (at least 32
    characters) that differs from `BETTER_AUTH_SECRET`, `SANDBOX_SUPERVISOR_TOKEN`, and
-   `SCREEN_PROXY_SECRET`.
+   `SCREEN_PROXY_SECRET`. For updates from Settings, also set a different
+   `RAKAZO_UPDATER_RELEASE_TOKEN` and `RAKAZO_IMAGE` (see "Release updates in Settings" in Upgrading).
 3. Keep registration allowlisted while the service is private:
 
 ```env
@@ -60,6 +61,8 @@ RAKAZO_DEPLOY_DIR=/srv/rakazo
 RAKAZO_IMAGE_TAG=local
 # Optional: required only with `--profile updater`.
 # RAKAZO_UPDATER_TOKEN=replace-with-32-plus-character-updater-token
+# Optional: Settings > Updates, latest stable release only. Must differ from the token above.
+# RAKAZO_UPDATER_RELEASE_TOKEN=replace-with-another-32-plus-character-token
 ```
 
 4. Build the images from your checkout and start the stack, then verify its public health endpoint:
