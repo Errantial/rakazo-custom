@@ -144,6 +144,28 @@ export function resolveUpdaterToken(env: NodeJS.ProcessEnv = process.env): strin
 }
 
 /**
+ * The credential for the updater's release-only door (latest stable release of the configured
+ * image, never a source build). It is typed into Settings and forwarded by the API, which never
+ * stores it, so it must stay independent from the full updater token: a leak here may only ever
+ * install the project's own latest release. Returns null when the door is not configured.
+ */
+export function resolveUpdaterReleaseToken(env: NodeJS.ProcessEnv = process.env): string | null {
+  if (!env.RAKAZO_UPDATER_RELEASE_TOKEN?.trim()) return null;
+  return resolveDedicatedSecret(env, {
+    name: "RAKAZO_UPDATER_RELEASE_TOKEN",
+    conflicts: [
+      "RAKAZO_UPDATER_TOKEN",
+      "BETTER_AUTH_SECRET",
+      "SANDBOX_SUPERVISOR_TOKEN",
+      "SCREEN_PROXY_SECRET",
+    ],
+    missingMessage: "Set RAKAZO_UPDATER_RELEASE_TOKEN to a dedicated random release credential.",
+    conflictMessage:
+      "RAKAZO_UPDATER_RELEASE_TOKEN must differ from RAKAZO_UPDATER_TOKEN, BETTER_AUTH_SECRET, SANDBOX_SUPERVISOR_TOKEN, and SCREEN_PROXY_SECRET.",
+  });
+}
+
+/**
  * Constant-time string comparison for shared-secret headers that carry no
  * `Bearer ` prefix (e.g. a vendor static signing-secret header).
  * Same XOR rationale as `hasValidBearerToken` below.

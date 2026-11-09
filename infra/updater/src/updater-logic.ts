@@ -8,7 +8,9 @@ import {
   OFFICIAL_SERVER_IMAGE,
   PREVIOUS_IMAGE_TAG_ENV,
   RECREATED_SERVICES,
+  releaseRepository,
   resolveComposeProjectName,
+  resolveUpdaterReleaseToken,
   resolveUpdaterToken,
 } from "@rakazo/core";
 
@@ -32,7 +34,18 @@ export interface UpdaterConfig {
   /** Passed as `docker compose -p`. Compose injects this into running services. */
   projectName: string;
   image: string;
+  /** Full credential: any repository, source builds, rollback. Never accepted on `/release/*`. */
   token: string;
+  /**
+   * Credential for the release-only door. Accepted only on `/release/*`, which installs the
+   * latest stable release of `releaseRepository` as prebuilt images and never builds.
+   */
+  releaseToken: string | null;
+  /**
+   * `owner/repo` of an explicitly configured `RAKAZO_IMAGE`. Null when the image is unset or not a
+   * GHCR image, so a deployment that never named its release source cannot follow anyone's.
+   */
+  releaseRepository: string | null;
   host: string;
   port: number;
 }
@@ -48,7 +61,8 @@ export function resolveUpdaterConfig(env: NodeJS.ProcessEnv): UpdaterConfig {
   if (deployDir === "" || !path.posix.isAbsolute(deployDir)) {
     throw new Error("Set RAKAZO_DEPLOY_DIR to the absolute path of the deployment directory.");
   }
-  const image = env.RAKAZO_IMAGE?.trim() || OFFICIAL_SERVER_IMAGE;
+  const configuredImage = env.RAKAZO_IMAGE?.trim();
+  const image = configuredImage || OFFICIAL_SERVER_IMAGE;
   if (!isValidImageName(image))
     throw new Error(`RAKAZO_IMAGE is not a usable image name: ${image}`);
   // Compose itself takes a list here (COMPOSE_FILE with COMPOSE_PATH_SEPARATOR), and a deployment
@@ -103,6 +117,8 @@ export function resolveUpdaterConfig(env: NodeJS.ProcessEnv): UpdaterConfig {
     projectName: resolveComposeProjectName(env),
     image,
     token: resolveUpdaterToken(env),
+    releaseToken: resolveUpdaterReleaseToken(env),
+    releaseRepository: configuredImage ? releaseRepository(configuredImage) : null,
     host: env.RAKAZO_UPDATER_HOST?.trim() || "127.0.0.1",
     port,
   };

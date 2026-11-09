@@ -60,6 +60,8 @@ const STEP_TIMEOUT_MS: Record<string, number> = {
   recover: 1_800_000,
 };
 const DEFAULT_TIMEOUT_MS = 120_000;
+/** The only paths the release token opens. */
+const RELEASE_PATHS: ReadonlySet<string> = new Set(["/release/check", "/release/apply"]);
 
 export interface CommandResult {
   ok: boolean;
@@ -203,10 +205,15 @@ export function createUpdaterApp(
   /** Survives API recreate so Settings can confirm apply after the proxy drops. */
   let lastRun: ServerUpdateRun | null = null;
 
-  app.get("/health", (c) => c.json({ ok: true, service: "updater", image: config.image }));
+  const releaseDoorOpen = config.releaseToken !== null && config.releaseRepository !== null;
+  app.get("/health", (c) =>
+    c.json({ ok: true, service: "updater", image: config.image, releases: releaseDoorOpen }),
+  );
 
+  // Everything except the two release paths needs the full token, matched on the exact path so a
+  // malformed or traversal-style path can never fall through to the release credential.
   app.use("*", async (c, next) => {
-    if (c.req.path === "/health") {
+    if (c.req.path === "/health" || RELEASE_PATHS.has(c.req.path)) {
       await next();
       return;
     }
@@ -214,6 +221,58 @@ export function createUpdaterApp(
       return c.json({ error: "unauthorized" }, 401);
     }
     await next();
+  });
+
+  // The release-only door. It takes no parameters, derives the repository from the updater's own
+  // RAKAZO_IMAGE, installs only the latest stable vX.Y.Z as prebuilt images and never builds. Only
+  // the release token opens it: the full token is refused here so a typed-in full key is never
+  // forwarded through the API.
+  app.use("/release/*", async (c, next) => {
+    if (!RELEASE_PATHS.has(c.req.path)) return c.json({ error: "not found" }, 404);
+    if (!config.releaseToken || !config.releaseRepository) {
+      return c.json({ error: "unavailable" }, 404);
+    }
+    if (!hasValidBearerToken(c.req.header("authorization"), config.releaseToken)) {
+      return c.json({ error: "unauthorized" }, 401);
+    }
+    const query = new URL(c.req.url).search;
+    const payload = await c.req.text().catch(() => "x");
+    if (query !== "" || payload !== "") {
+      return c.json({ error: "Release updates take no parameters." }, 400);
+    }
+    await next();
+  });
+
+  app.get("/release/check", async (c) => {
+    try {
+      const tags = readTagState(await readEnvFile());
+      const target = await resolveRelease(releaseRepoUrl(), "");
+      return c.json({
+        currentTag: tags.currentTag,
+        targetTag: target.imageTag,
+        upToDate: target.imageTag === tags.currentTag,
+        running,
+      });
+    } catch (error) {
+      return refusal(c, error);
+    }
+  });
+
+  app.post("/release/apply", async (c) => {
+    try {
+      const record = await withRunLock(() =>
+        apply({ repoUrl: releaseRepoUrl(), branch: "", official: true }, { pullOnly: true }),
+      );
+      return c.json({
+        ok: record.ok,
+        upToDate: record.ok && record.steps.length === 0,
+        running: false,
+        currentTag: record.fromTag,
+        targetTag: record.toTag,
+      });
+    } catch (error) {
+      return refusal(c, error);
+    }
   });
 
   app.get("/state", async (c) => {
@@ -314,6 +373,12 @@ export function createUpdaterApp(
       return { ...result.request, official: true };
     }
     return result.request;
+  }
+
+  /** Derived from the updater's own RAKAZO_IMAGE; nothing in a release request can change it. */
+  function releaseRepoUrl() {
+    if (!config.releaseRepository) throw new UpdateRefused("Release updates are not configured.");
+    return `https://github.com/${config.releaseRepository}`;
   }
 
   function refusal(c: Context, error: unknown) {
@@ -487,8 +552,14 @@ export function createUpdaterApp(
     return currentTag === forkImageTag(commit);
   }
 
-  async function apply(request: { repoUrl: string; branch: string; official: boolean }) {
+  async function apply(
+    request: { repoUrl: string; branch: string; official: boolean },
+    options: { pullOnly?: boolean } = {},
+  ) {
     const decision = chooseUpdateStrategy(request);
+    if (options.pullOnly && decision.strategy !== "pull") {
+      throw new UpdateRefused("Release updates install published images and never build.");
+    }
     const tags = readTagState(await readEnvFile());
     const checkout = await readCheckout();
 

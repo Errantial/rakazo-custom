@@ -11,6 +11,7 @@ import {
   resolveEncryptionKey,
   resolveScreenProxySecret,
   resolveSupervisorToken,
+  resolveUpdaterReleaseToken,
   resolveUpdaterToken,
   timingSafeStringEqual,
 } from "./secrets-guard.js";
@@ -233,6 +234,31 @@ describe("secrets-guard", () => {
       resolveUpdaterToken({
         NODE_ENV: "production",
         RAKAZO_UPDATER_TOKEN: "too-short",
+      }),
+    ).toThrow(/at least 32 characters/);
+  });
+
+  it("keeps the updater release token optional, long and separate from the full token", () => {
+    expect(resolveUpdaterReleaseToken({ NODE_ENV: "production" })).toBeNull();
+    const release = "r".repeat(32);
+    expect(
+      resolveUpdaterReleaseToken({
+        NODE_ENV: "production",
+        RAKAZO_UPDATER_RELEASE_TOKEN: release,
+        RAKAZO_UPDATER_TOKEN: "f".repeat(32),
+      }),
+    ).toBe(release);
+    expect(() =>
+      resolveUpdaterReleaseToken({
+        NODE_ENV: "production",
+        RAKAZO_UPDATER_RELEASE_TOKEN: release,
+        RAKAZO_UPDATER_TOKEN: release,
+      }),
+    ).toThrow(/must differ/);
+    expect(() =>
+      resolveUpdaterReleaseToken({
+        NODE_ENV: "production",
+        RAKAZO_UPDATER_RELEASE_TOKEN: "too-short",
       }),
     ).toThrow(/at least 32 characters/);
   });
