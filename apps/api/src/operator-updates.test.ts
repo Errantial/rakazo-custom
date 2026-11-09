@@ -1,100 +1,99 @@
 import { describe, expect, it, vi } from "vitest";
 import { operatorUpdateRoutes } from "./operator-updates.js";
 
-const config = {
-  token: "fake-operator-token-000000000000000000",
-  image: "ghcr.io/example/custom/app",
-};
-const headers = { authorization: `Bearer ${config.token}` };
-const release = { tag_name: "v1.1.0", draft: false, prerelease: false };
+const url = "http://updater.test:7092";
+const headers = { authorization: "Bearer typed-by-the-administrator" };
 
 describe("operator updates", () => {
-  it("stays disabled without a deployment token or supported image namespace", async () => {
-    for (const value of [
-      undefined,
-      { ...config, token: "short" },
-      { ...config, image: "local/app" },
-    ]) {
-      const app = operatorUpdateRoutes(value);
-      expect(await (await app.request("/api/operator-updates")).json()).toEqual({ enabled: false });
-      expect(
-        (await app.request("/api/operator-updates/apply", { method: "POST", headers })).status,
-      ).toBe(404);
+  it("shows only while the updater reports its release door as configured", async () => {
+    for (const [answer, enabled] of [
+      [Response.json({ ok: true, releases: true }), true],
+      [Response.json({ ok: true, releases: false }), false],
+      [Response.json({ ok: true }), false],
+      [new Response("down", { status: 503 }), false],
+    ] as const) {
+      const fetcher = vi.fn<typeof fetch>().mockResolvedValue(answer.clone());
+      const app = operatorUpdateRoutes(url, fetcher);
+      expect(await (await app.request("/api/operator-updates")).json()).toEqual({ enabled });
+      expect(fetcher.mock.calls[0]?.[0]).toBe(`${url}/health`);
     }
+    const unreachable = vi.fn<typeof fetch>().mockRejectedValue(new Error("ECONNREFUSED"));
+    const app = operatorUpdateRoutes(url, unreachable);
+    expect(await (await app.request("/api/operator-updates")).json()).toEqual({ enabled: false });
   });
-  it("never gives ordinary app sessions deployment authority", async () => {
+
+  it("refuses a request with no bearer key without calling the updater", async () => {
     const fetcher = vi.fn<typeof fetch>();
-    const app = operatorUpdateRoutes(config, fetcher);
-    for (const authorization of ["", "Bearer wrong", "Basic abc"]) {
+    const app = operatorUpdateRoutes(url, fetcher);
+    for (const authorization of ["", "Bearer", "Bearer   ", "Basic abc"]) {
       const response = await app.request("/api/operator-updates/apply", {
         method: "POST",
         headers: { authorization, cookie: "session=fake-app-session" },
       });
-      expect(response.status).toBe(401);
+      expect(response.status, authorization).toBe(401);
     }
     expect(fetcher).not.toHaveBeenCalled();
   });
-  it("pins both sidecar and release source and omits host diagnostics", async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(Response.json(release))
-      .mockResolvedValueOnce(
-        Response.json({
-          currentTag: "v1.0.0",
-          targetTag: "sha-example",
-          upToDate: false,
-          deployDir: "/private/deployment",
-          checkout: { remoteUrl: "private" },
-        }),
-      );
-    const app = operatorUpdateRoutes(config, fetcher);
-    const response = await app.request("/api/operator-updates/plan", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        repoUrl: "https://untrusted.invalid/repo",
-        url: "http://untrusted.invalid",
-      }),
-    });
-    expect(fetcher).toHaveBeenCalledWith(
-      "http://updater:7092/plan",
-      expect.objectContaining({
-        redirect: "error",
-        body: JSON.stringify({ repoUrl: "https://github.com/example/custom", branch: "v1.1.0" }),
+
+  it("forwards the typed key as-is to the release endpoints and nothing else", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () =>
+      Response.json({
+        currentTag: "v1.0.0",
+        targetTag: "sha-example",
+        upToDate: false,
+        running: false,
+        ok: true,
+        deployDir: "/private/deployment",
       }),
     );
-    expect(await response.json()).toEqual({
+    const app = operatorUpdateRoutes(url, fetcher);
+    const body = JSON.stringify({ repoUrl: "https://untrusted.invalid/repo", branch: "main" });
+
+    const plan = await app.request("/api/operator-updates/plan?repo=x", {
+      method: "POST",
+      headers,
+      body,
+    });
+    const apply = await app.request("/api/operator-updates/apply", {
+      method: "POST",
+      headers,
+      body,
+    });
+
+    expect(fetcher.mock.calls.map(([target]) => target)).toEqual([
+      `${url}/release/check`,
+      `${url}/release/apply`,
+    ]);
+    for (const [, init] of fetcher.mock.calls) {
+      expect(init?.headers).toEqual({ authorization: headers.authorization });
+      expect(init?.body).toBeUndefined();
+      expect(init?.redirect).toBe("error");
+    }
+    expect(await plan.json()).toEqual({
       currentTag: "v1.0.0",
-      targetTag: "v1.1.0",
+      targetTag: "sha-example",
       upToDate: false,
       running: false,
       ok: true,
     });
+    expect(apply.status).toBe(200);
   });
-  it("does not return raw sidecar errors", async () => {
-    const fetcher = vi
-      .fn<typeof fetch>()
-      .mockResolvedValueOnce(Response.json(release))
-      .mockResolvedValue(new Response("private diagnostics", { status: 500 }));
-    const response = await operatorUpdateRoutes(config, fetcher).request(
-      "/api/operator-updates/apply",
-      { method: "POST", headers },
-    );
-    expect(response.status).toBe(502);
-    expect(await response.text()).not.toContain("private diagnostics");
-  });
-  it.each([
-    { ...release, draft: true },
-    { ...release, prerelease: true },
-    { ...release, tag_name: "main" },
-  ])("refuses an unpublished or unstable release: %j", async (candidate) => {
-    const fetcher = vi.fn<typeof fetch>().mockResolvedValueOnce(Response.json(candidate));
-    const response = await operatorUpdateRoutes(config, fetcher).request(
-      "/api/operator-updates/apply",
-      { method: "POST", headers },
-    );
-    expect(response.status).toBe(502);
-    expect(fetcher).toHaveBeenCalledTimes(1);
-    expect(fetcher.mock.calls[0]?.[1]?.headers).toEqual({ accept: "application/vnd.github+json" });
+
+  it("passes the updater's rejection of the key through and hides everything else", async () => {
+    const answer = (status: number) =>
+      vi.fn<typeof fetch>().mockResolvedValue(new Response("private diagnostics", { status }));
+    for (const [status, expected] of [
+      [401, 401],
+      [404, 404],
+      [400, 502],
+      [500, 502],
+    ] as const) {
+      const response = await operatorUpdateRoutes(url, answer(status)).request(
+        "/api/operator-updates/apply",
+        { method: "POST", headers },
+      );
+      expect(response.status, String(status)).toBe(expected);
+      expect(await response.text()).not.toContain("private diagnostics");
+    }
   });
 });

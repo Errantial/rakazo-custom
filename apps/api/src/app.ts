@@ -881,7 +881,7 @@ async function buildApp(overrides: CreateAppOverrides): Promise<AppHandles> {
     }),
   );
   app.route("/", marketingEmailRoutes(prisma, env.authSecret));
-  app.route("/", operatorUpdateRoutes(env.serverUpdates));
+  app.route("/", operatorUpdateRoutes(env.updaterUrl));
   mountApiRequestBodyLimits(app, env.maxUploadSizeBytes);
   mountScreenTarget(app, prisma, env.screenProxySecret);
   mountDiagramScript(app);

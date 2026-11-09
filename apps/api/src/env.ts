@@ -27,6 +27,9 @@ import { monitoringPseudonymSecret } from "@rakazo/logging";
 
 export { resolveCloudAgentProvider, resolveSandboxProvider } from "@rakazo/adapters";
 
+/** Compose reaches the updater sidecar by service name; set RAKAZO_UPDATER_URL for other layouts. */
+const DEFAULT_UPDATER_URL = "http://updater:7092";
+
 export interface AppEnv {
   passwordAuth?: boolean;
   /** Opt-in Have I Been Pwned check for new passwords. Default off: it calls an outside service. */
@@ -34,7 +37,8 @@ export interface AppEnv {
   oidc?: OidcConfig;
   nodeEnv: string;
   desktopStackToken?: string;
-  serverUpdates?: { token: string; image: string };
+  /** Where Settings > Updates reaches the updater sidecar. It holds no updater credential. */
+  updaterUrl: string;
   databaseUrl: string;
   realtimeDatabaseUrl: string;
   authSecret: string;
@@ -220,12 +224,7 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     databaseUrl: required(source, "DATABASE_URL"),
     realtimeDatabaseUrl: source.REALTIME_DATABASE_URL ?? required(source, "DATABASE_URL"),
     desktopStackToken: optional(source.RAKAZO_DESKTOP_STACK_TOKEN),
-    // The release source comes from the image's repository, so there is no default: an unset
-    // image must never point a custom server at someone else's releases.
-    serverUpdates:
-      source.RAKAZO_UPDATER_TOKEN && source.RAKAZO_IMAGE
-        ? { token: source.RAKAZO_UPDATER_TOKEN, image: source.RAKAZO_IMAGE }
-        : undefined,
+    updaterUrl: (optional(source.RAKAZO_UPDATER_URL) ?? DEFAULT_UPDATER_URL).replace(/\/+$/, ""),
     authSecret,
     authUrl: source.BETTER_AUTH_URL ?? source.WEB_ORIGIN ?? "http://127.0.0.1:5173",
     webOrigin: source.WEB_ORIGIN ?? "http://127.0.0.1:5173",

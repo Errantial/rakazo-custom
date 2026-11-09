@@ -25,17 +25,18 @@ describe("loadEnv", () => {
     },
   );
 
-  it("offers server updates only when the token and the image repository are both set", () => {
-    const token = "fake-operator-token-000000000000000000";
-    expect(loadEnv(base).serverUpdates).toBeUndefined();
-    expect(loadEnv({ ...base, RAKAZO_UPDATER_TOKEN: token }).serverUpdates).toBeUndefined();
-    expect(
-      loadEnv({ ...base, RAKAZO_IMAGE: "ghcr.io/example/custom/app" }).serverUpdates,
-    ).toBeUndefined();
-    expect(
-      loadEnv({ ...base, RAKAZO_UPDATER_TOKEN: token, RAKAZO_IMAGE: "ghcr.io/example/custom/app" })
-        .serverUpdates,
-    ).toEqual({ token, image: "ghcr.io/example/custom/app" });
+  it("reaches the updater by service name unless told otherwise, and keeps no updater key", () => {
+    expect(loadEnv(base).updaterUrl).toBe("http://updater:7092");
+    expect(loadEnv({ ...base, RAKAZO_UPDATER_URL: "http://localhost:9000/" }).updaterUrl).toBe(
+      "http://localhost:9000",
+    );
+    const env = loadEnv({
+      ...base,
+      RAKAZO_UPDATER_TOKEN: "t".repeat(40),
+      RAKAZO_UPDATER_RELEASE_TOKEN: "r".repeat(40),
+    });
+    expect(JSON.stringify(env)).not.toContain("t".repeat(40));
+    expect(JSON.stringify(env)).not.toContain("r".repeat(40));
   });
 
   it("keeps calls off unless explicitly enabled", () => {
