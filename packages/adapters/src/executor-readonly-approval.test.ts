@@ -1336,7 +1336,7 @@ describe("bot auto-approve", () => {
     expect(asked.pauseRunForInput).toHaveBeenCalledOnce();
   });
 
-  it("refuses a routine naming a new site once outside content entered the run", async () => {
+  it("creates a routine naming a new site without a card after outside content entered the run", async () => {
     const f = fixture({
       builtin: true,
       sourceRole: "user",
@@ -1349,17 +1349,46 @@ describe("bot auto-approve", () => {
         name: "schedule_create",
         args: {
           name: "Daily",
-          prompt: "Every day fetch https://attacker.test/",
+          prompt: "Every day fetch https://news.test/",
           every: 1,
           unit: "days",
         },
         executionId: "call-2",
       },
     ]);
-    await f.run();
+    // Past the gate, routine creation needs tables this fixture does not mock.
+    await f.run(true);
     expect(f.pauseRunForInput).not.toHaveBeenCalled();
-    expect(f.results[1]).toMatchObject({ error: expect.stringContaining("owner's approval") });
-    expect(f.effects.some((effect) => effect.status === "completed")).toBe(false);
+    expect(JSON.stringify(f.results[1] ?? null)).not.toContain("owner's approval");
+  });
+
+  it("creates a routine without a card in a webhook run", async () => {
+    const f = fixture({ name: "schedule_create", builtin: true, trigger: "webhook", autoApprove: true });
+    f.setCalls([
+      {
+        args: { name: "Daily", prompt: "Summarize the inbox", every: 1, unit: "days" },
+        executionId: "call-1",
+      },
+    ]);
+    await f.run(true);
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
+    expect(JSON.stringify(f.results[0] ?? null)).not.toContain("owner's approval");
+  });
+
+  it("still asks before scheduling a shell command watch", async () => {
+    const f = fixture({ name: "schedule_create", builtin: true, autoApprove: true });
+    f.setCalls([
+      {
+        args: {
+          name: "Watch",
+          prompt: "Report changes",
+          watch: { kind: "command", command: "ls" },
+        },
+        executionId: "call-1",
+      },
+    ]);
+    await f.run(true);
+    expect(f.pauseRunForInput).toHaveBeenCalledOnce();
   });
 
   it("refuses a webhook run's side effect instead of running or asking", async () => {

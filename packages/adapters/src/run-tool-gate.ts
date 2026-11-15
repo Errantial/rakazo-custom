@@ -77,6 +77,8 @@ import { USER_COMPUTER_TOOLS, userComputerGate } from "./run-tools-user-computer
 import { connectorTrustKeys } from "./run-trust.js";
 import { watchFromTool } from "./schedule-tools.js";
 
+const AUTO_APPROVED_ROUTINE_TOOLS = new Set(["schedule_create", "schedule_update", "create_child_routine"]);
+
 export type AppliedEffect = Awaited<ReturnType<typeof recordEffect>>;
 
 /** Asking for a secret stays a person's decision even when a bot runs without asking. */
@@ -247,6 +249,10 @@ export async function gateToolCall(
   // it: planActionGate refuses it while the run is steerable, as Never ask does.
   const autoApprove =
     ctx.bot.autoApprove === true && !commandWatch && !SECRET_APPROVAL_TOOLS.has(name);
+  // Fork policy: a bot that runs without asking also creates and edits routines without a card in
+  // every run, including tainted, webhook and other people's runs. Scheduled shell commands
+  // (command watches) still need a person.
+  const autoApprovedRoutine = autoApprove && AUTO_APPROVED_ROUTINE_TOOLS.has(name);
   const requiresApprovalByDefault =
     request.ownerApproval ||
     commandWatch ||
@@ -319,8 +325,9 @@ export async function gateToolCall(
         mode,
         autoApprove,
         mandatory: requiresMandatoryApproval,
-        steerable:
-          requiresMandatoryApproval && (mode === "never" || autoApprove)
+        steerable: autoApprovedRoutine
+          ? false
+          : requiresMandatoryApproval && (mode === "never" || autoApprove)
             ? !ctx.source.ownerStartedRun || (await isRunTainted(ctx))
             : undefined,
         consequential: requiresApprovalByDefault,

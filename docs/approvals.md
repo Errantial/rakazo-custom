@@ -30,6 +30,11 @@ It does not turn off the protections against text you didn't write. Like **Never
 refuses those actions, instead of asking, in a run started by a webhook, message, routine, or
 another bot, or once the run has read outside content such as a web page or an email.
 
+Routines are the exception: a bot with **Run without asking** on creates and edits routines
+(including a child bot's routines) without a card in every run, even one started by a webhook,
+message, routine, or another bot, or one that read outside content. A routine that runs a shell
+command as its watch still asks.
+
 ## Approval cards
 
 When a bot needs a yes, it posts a card in the chat showing exactly what it wants to do:
