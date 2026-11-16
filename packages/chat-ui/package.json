@@ -20,11 +20,14 @@
     "@rakazo/ui-tokens": "workspace:*",
     "@rakazo/ui-web": "workspace:*",
     "@ronradtke/react-native-markdown-display": "9.0.3",
+    "katex": "0.16.47",
     "linkify-it": "5.0.2",
     "mermaid": "11.17.2",
     "prism-react-renderer": "2.4.1",
     "react-markdown": "10.1.0",
-    "remark-gfm": "4.0.1"
+    "rehype-katex": "7.0.1",
+    "remark-gfm": "4.0.1",
+    "remark-math": "6.0.0"
   },
   "peerDependencies": {
     "react": "19.2.3",

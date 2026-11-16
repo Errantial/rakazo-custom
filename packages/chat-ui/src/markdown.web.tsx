@@ -9,10 +9,13 @@ import {
   useRef,
   useState,
 } from "react";
-import type { Components } from "react-markdown";
+import type { Components, Options } from "react-markdown";
 import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import type { HastNode } from "./table-utils";
+import "katex/dist/katex.min.css";
 import "./markdown.web.css";
 import "./markdown-table.css";
 import { droppedTableHtmlText } from "@rakazo/contracts";
@@ -49,6 +52,7 @@ import {
 import { useMarkdownCopy } from "./markdown-copy";
 import { useMarkdownLinkCopy, useMarkdownLinkTrust } from "./markdown-link-prompt";
 import { MarkdownTable, MarkdownTableSourceContext } from "./markdown-table";
+import { normalizeMathDelimiters, remarkDisplayDoubleDollar } from "./math";
 import { isMermaidFence, mermaidSvgImage } from "./mermaid";
 import { useMermaidSvg } from "./mermaid.web";
 
@@ -589,6 +593,13 @@ const components: Components = {
   },
 };
 
+const remarkPlugins: Options["remarkPlugins"] = [remarkGfm, remarkMath, remarkDisplayDoubleDollar];
+// KaTeX draws a formula it cannot parse, such as one still streaming, as its source in red.
+const rehypePlugins: Options["rehypePlugins"] = [
+  preserveSkippedTableText,
+  [rehypeKatex, { strict: "ignore" }],
+];
+
 type PlainTextState = { text: string; failed: boolean };
 
 /** The parser recurses, so a pathological message can exhaust the stack; show it as plain text. */
@@ -640,7 +651,9 @@ export const ChatMarkdown = memo(function ChatMarkdown({
   renderMention,
 }: ChatMarkdownProps) {
   const { request, dialog } = useExternalLinkConfirm();
-  const source = streaming ? closeUnterminatedFence(children) : children;
+  // Normalized first so parser offsets match the source the fence check reads while streaming.
+  const markdown = normalizeMathDelimiters(children);
+  const source = streaming ? closeUnterminatedFence(markdown) : markdown;
 
   return (
     <ConfirmLinkContext.Provider value={request}>
@@ -649,13 +662,13 @@ export const ChatMarkdown = memo(function ChatMarkdown({
           className={streaming ? "rk-chat-markdown rk-chat-markdown-streaming" : "rk-chat-markdown"}
         >
           <LinkFaviconsPausedContext.Provider value={streaming}>
-            <StreamingSourceContext.Provider value={streaming ? children : undefined}>
+            <StreamingSourceContext.Provider value={streaming ? markdown : undefined}>
               <MarkdownTableSourceContext.Provider value={source}>
                 <PlainTextOnFailure text={children}>
                   <ReactMarkdown
                     components={components}
-                    remarkPlugins={[remarkGfm]}
-                    rehypePlugins={[preserveSkippedTableText]}
+                    remarkPlugins={remarkPlugins}
+                    rehypePlugins={rehypePlugins}
                     skipHtml
                     // MarkdownImage decides what an image source may do, so it receives the source as written.
                     urlTransform={(url, key) =>
