@@ -26,6 +26,7 @@ import {
   messagingDmSurfaceNote,
   nextFence,
   PEER_REPLY_AFTER_ANSWER_NOTE,
+  type PeerViewer,
   promptInvokesSkill,
   redactSecrets,
   renderBotDirectory,
@@ -85,7 +86,7 @@ import { formatCurrentTimeInstruction } from "./current-time.js";
 import { resolveDeploymentModel } from "./deployment-model.js";
 import type { ExecutorDeps } from "./executor-deps.js";
 import type { FleetRun } from "./fleet-tools.js";
-import { loadBotGroupDirectory, loadGroupContext } from "./group-handoff.js";
+import { loadBotGroupDirectory, loadGroupContext, sharedBotAddress } from "./group-handoff.js";
 import {
   formatCompactedSummary,
   formatRecalledMemory,
@@ -1016,12 +1017,6 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           resolved.acceptsImages,
         );
         const acceptsImages = deps.runtime.describe().capabilities.scripted || modelSeesImages;
-        const groupContext = thread.groupId
-          ? await loadGroupContext(deps.prisma, thread.groupId, {
-              id: bot.id,
-              name: bot.name,
-            })
-          : undefined;
         const hasMessagingIdentity = deps.messaging
           ? await deps.messaging.hasIdentity(bot.id)
           : false;
@@ -1438,8 +1433,12 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
             })
           : history;
         const runtimeHistory = [...historicalContext, ...historyWithImages];
+        // What another bot may read of this one: a fleet-manager run is the audience the bot
+        // management tools already require, and every other run is a plain teammate.
+        const peerViewer: PeerViewer =
+          bot.fleetManagement && ownerStartedRun ? "manager" : "teammate";
         // Without a roster a bot only knows the bots it spawned itself.
-        const [teammates, groupDirectory] = await Promise.all([
+        const [teammates, groupDirectory, groupContext] = await Promise.all([
           thread.groupId
             ? []
             : deps.prisma.bot.findMany({
@@ -1450,14 +1449,27 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
                   id: { not: bot.id },
                   thread: { isNot: null },
                 },
-                select: { id: true, name: true, description: true },
+                select: { id: true, name: true, description: true, peerVisibility: true },
                 orderBy: { createdAt: "asc" },
                 take: BOT_DIRECTORY_LIMIT,
               }),
           !thread.groupId ? loadBotGroupDirectory(deps.prisma, run) : undefined,
+          thread.groupId
+            ? loadGroupContext(
+                deps.prisma,
+                thread.groupId,
+                { id: bot.id, name: bot.name },
+                peerViewer,
+              )
+            : undefined,
         ]);
         const botDirectory =
-          [renderBotDirectory(teammates), groupDirectory].filter(Boolean).join("\n\n") || undefined;
+          [
+            renderBotDirectory(teammates.map((teammate) => sharedBotAddress(teammate, peerViewer))),
+            groupDirectory,
+          ]
+            .filter(Boolean)
+            .join("\n\n") || undefined;
 
         if (heldForTakeover) {
           const releasedCheckpoint = takeoverCheckpointOf(

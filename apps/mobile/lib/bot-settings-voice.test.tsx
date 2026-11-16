@@ -719,12 +719,14 @@ describe("bot settings device voice menu", () => {
         )
         .map(([key]) => key),
     );
-    expect(actual).toEqual(
+    // The privacy rows repeat two control names on purpose; they follow the shared sections.
+    expect(actual.slice(-2)).toEqual(["instructions", "model"]);
+    expect(actual.slice(0, -2)).toEqual(
       Object.values(BOT_SETTINGS_SECTIONS)
         .flat()
         .filter((key) => key in labels && key !== "instructions" && key !== "computer"),
     );
-    expect(actual).toEqual([
+    expect(actual.slice(0, -2)).toEqual([
       "model",
       "readAloud",
       "voice",
@@ -1280,4 +1282,60 @@ it.each(["  \n", "# Fixture\n\n"])("hides empty memory: %j", async (content) => 
   } finally {
     await act(async () => root.unmount());
   }
+});
+
+describe("bot settings privacy rows", () => {
+  let root: Root;
+  let container: HTMLDivElement;
+  beforeEach(() => {
+    mocks.crossSpaceCommunication = false;
+    mocks.avatarSet = undefined;
+    vi.clearAllMocks();
+    mocks.focus = undefined;
+    mocks.instructions = "";
+    mocks.description = "";
+    mocks.os = "ios";
+    mocks.work = [];
+    mocks.history = [];
+    mocks.docs = [];
+    mocks.fill = "light-fill";
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mocks.deviceVoices.mockResolvedValue([]);
+    mocks.voiceForBot.mockResolvedValue(undefined);
+    container = document.createElement("div");
+    root = createRoot(container);
+  });
+  afterEach(() => {
+    act(() => root.unmount());
+    vi.unstubAllGlobals();
+  });
+
+  it("offers every part of the bot and saves the whole choice", async () => {
+    await act(async () => root.render(<BotSettingsScreen />));
+    await act(async () =>
+      container.querySelector<HTMLButtonElement>('[aria-label="Advanced"]')!.click(),
+    );
+
+    for (const label of ["Instructions", "Description", "Memory", "Routines", "Model", "Tools"]) {
+      expect(container.querySelector(`[data-menu="${label}"]`)).not.toBeNull();
+    }
+
+    const row = container.querySelector('[data-menu="Instructions"]')!;
+    const managers = [...row.querySelectorAll("button")].find(
+      (node) => node.textContent === "Managers",
+    )!;
+    await act(async () => managers.click());
+
+    expect(mocks.rpc).toHaveBeenCalledWith("bots/update", {
+      botId: "bot-fixture",
+      peerVisibility: {
+        instructions: "managers",
+        description: "teammates",
+        memory: "owner",
+        routines: "owner",
+        model: "owner",
+        tools: "owner",
+      },
+    });
+  });
 });

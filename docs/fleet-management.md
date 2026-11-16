@@ -28,8 +28,8 @@ message it answers came from you in the app.
 
 ## Tools
 
-- `list_fleet`: lists active bots, groups and sections. With `bot_id` of a bot it created, it instead
-  returns only that bot's full instructions and current version.
+- `list_fleet`: lists active bots, groups and sections. With `bot_id` it instead returns that bot's
+  instructions version and, when that bot shares them, the instructions themselves.
 - `create_group`: creates a group from existing bots.
 - `update_group`: renames a group or adds and removes members.
 - `organize_bot`: sets a section (`section`), clears it (`clear_section: true`) or sets a pin on a bot
@@ -38,7 +38,7 @@ message it answers came from you in the app.
   notifications. It never changes instructions. Without `bot_id` it acts on the calling bot as
   before.
 - `set_child_instructions`: replaces a child bot's instructions. The bot passes the version it read
-  with `list_fleet`.
+  with `list_fleet`; it does not need to read the old text, which a bot may keep to itself.
 - `set_child_bot_model`: sets or clears a child bot's model and thinking level.
 - `create_child_routine`: schedules a prompt for a child bot.
 

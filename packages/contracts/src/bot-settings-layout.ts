@@ -14,6 +14,7 @@ export const BOT_SETTINGS_SECTIONS = {
     "fleetManagement",
     "instructions",
     "description",
+    "peerVisibility",
     "disabledTools",
     "credentials",
     "skills",

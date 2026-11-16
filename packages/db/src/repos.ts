@@ -7,6 +7,7 @@ import type {
   SpaceBot,
 } from "@rakazo/contracts";
 import {
+  botPeerVisibility,
   canonicalPiProviderId,
   DEFAULT_NEW_BOT_AVATAR_SET,
   disabledBuiltinToolSet,
@@ -107,6 +108,7 @@ function mapBot(
     teamChatRules?: string;
     crossSpaceCommunication?: boolean;
     fleetManagement?: boolean;
+    peerVisibility?: unknown;
     disabledBuiltinTools?: string[];
     webhookSecretId?: string | null;
     spawnKey?: string | null;
@@ -154,6 +156,7 @@ function mapBot(
     teamChatRules: bot.teamChatRules ?? "",
     crossSpaceCommunication: bot.crossSpaceCommunication ?? false,
     fleetManagement: bot.fleetManagement ?? false,
+    peerVisibility: botPeerVisibility(bot.peerVisibility),
     // Stored lists may name a tool that no longer exists; settings resend what they read.
     disabledBuiltinTools: [...disabledBuiltinToolSet(bot.disabledBuiltinTools)],
     webhookConfigured: Boolean(bot.webhookSecretId),

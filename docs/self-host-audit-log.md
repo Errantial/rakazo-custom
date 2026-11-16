@@ -13,6 +13,7 @@ Organization owners and admins can export it as JSON Lines, and operators can fo
 | `approval.decided` | A person allowed or denied an action a bot asked for |
 | `approval.auto_reviewed` | The auto-reviewer judged an action (`metadata.decision`) |
 | `approval.policy.changed` | Approval mode, allow/block rules, or a space setting changed |
+| `bot.privacy.changed` | A bot started or stopped sharing part of itself with other bots |
 | `credential.created`, `credential.changed`, `credential.deleted`, `credential.revealed` | Model, MCP, connector, voice, memory, vault and bot secrets |
 | `space.created`, `space.renamed`, `space.deleted` | Spaces |
 | `auth.sign_in`, `auth.sign_out`, `auth.password.changed`, `auth.passkey.*`, `auth.session.revoked`, `device.*` | Account security, recorded in each organization the account belongs to |

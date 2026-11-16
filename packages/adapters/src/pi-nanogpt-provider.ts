@@ -287,6 +287,9 @@ export function nanoGptProvider(): Provider {
 
 /** Add NanoGPT to a registry unless a newer Pi already ships a provider with this id. */
 export function registerNanoGptProvider(models: MutableModels): MutableModels {
-  if (!models.getProvider?.(NANOGPT_PROVIDER_ID)) models.setProvider(nanoGptProvider());
+  // A catalog that cannot look a provider up is a reduced double (some tests pass one);
+  // there is nothing to register into and no way to tell whether it is already there.
+  if (!models.getProvider) return models;
+  if (!models.getProvider(NANOGPT_PROVIDER_ID)) models.setProvider(nanoGptProvider());
   return models;
 }

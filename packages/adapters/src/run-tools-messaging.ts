@@ -7,6 +7,7 @@ import {
 import { messageBot } from "./bot-messages.js";
 import { endCallFromTool, requestUserCall } from "./call-request.js";
 import { handoffToGroupBot } from "./group-handoff.js";
+import { readPeerProfile } from "./peer-profile.js";
 import { publishMessage } from "./run-messages.js";
 import {
   canPublishDurableProgress,
@@ -102,6 +103,30 @@ export const messagingTools: ToolHandlers = {
           }
         : { ok: true },
     );
+  },
+  async read_bot_profile(ctx, call) {
+    const { deps, run, bot, context } = ctx;
+    const { args } = call;
+    // A manager run is the audience the bot management tools already require, checked live so
+    // turning fleet management off mid-run ends it.
+    const manager =
+      ctx.source.ownerStartedRun &&
+      Boolean(
+        (
+          await deps.prisma.bot.findUnique({
+            where: { id: bot.id },
+            select: { fleetManagement: true },
+          })
+        )?.fleetManagement,
+      );
+    const profile = await readPeerProfile(
+      { prisma: deps.prisma, memory: deps.memory },
+      { spaceId: run.spaceId, userId: run.userId, botId: bot.id },
+      manager ? "manager" : "teammate",
+      args,
+      context,
+    );
+    return call.finish(profile);
   },
   async message_bot(ctx, call) {
     const { deps, run, bot } = ctx;

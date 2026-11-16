@@ -6634,6 +6634,25 @@ describe("bot model auth on save", () => {
     );
   });
 
+  it("saves what the bot shares with other bots", async () => {
+    const { botUpdate, handler } = saveDeps({ modelId: luna, preferences: () => null });
+    const peerVisibility = {
+      instructions: "owner",
+      description: "teammates",
+      memory: "owner",
+      routines: "managers",
+      model: "teammates",
+      tools: "owner",
+    } as const;
+
+    const response = await call(handler, "bots/update", { botId: "bot-1", peerVisibility });
+
+    expect(response.status).toBe(200);
+    expect(botUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ peerVisibility }) }),
+    );
+  });
+
   it("rejects setting Codex Spark on the space's ChatGPT subscription credential", async () => {
     const oauthCredential = credentialRow("cred-oauth", "secret-oauth");
     const { preferenceFindFirst, handler } = saveDeps({
