@@ -5,6 +5,7 @@ import { DEFAULT_OPENROUTER_MODEL_ID } from "./deployment-model.js";
 import { liveModelSibling, withLiveImageInput } from "./pi-live-model.js";
 import { registerLocalProvider } from "./pi-local-provider.js";
 import { applyPiModelCompatibility } from "./pi-model-compat.js";
+import { registerNanoGptProvider } from "./pi-nanogpt-provider.js";
 import { CHATGPT_OAUTH_PROVIDER } from "./pi-oauth.js";
 import {
   OPENAI_COMPATIBLE_PROVIDER_ID,
@@ -56,7 +57,7 @@ let catalogModelsCache: Models | undefined;
 function catalogModels(): Models {
   // Same catalog the runtime calls, including configured compatible providers.
   catalogModelsCache ??= registerOpenAiCompatibleCatalog(
-    registerLocalProvider(applyPiModelCompatibility(builtinModels())),
+    registerLocalProvider(applyPiModelCompatibility(registerNanoGptProvider(builtinModels()))),
   );
   return catalogModelsCache;
 }

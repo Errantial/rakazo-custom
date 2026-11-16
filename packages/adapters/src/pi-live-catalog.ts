@@ -14,6 +14,7 @@ import {
   listPiCatalog,
   probeCatalogProviderModels,
 } from "./pi-models.js";
+import { registerNanoGptProvider } from "./pi-nanogpt-provider.js";
 import { parseModelSecret } from "./pi-oauth.js";
 
 /** Credential governing each provider/model slot, shared with the run selection path. */
@@ -60,7 +61,7 @@ export function trustedProviderModels(provider: string, ids: readonly string[]):
   );
 }
 
-const siblingModels = builtinModels();
+const siblingModels = registerNanoGptProvider(builtinModels());
 
 export function liveCatalogEntry(provider: string, id: string): PiCatalogEntry | undefined {
   provider = canonicalPiProviderId(provider);

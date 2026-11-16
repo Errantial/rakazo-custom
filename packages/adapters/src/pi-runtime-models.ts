@@ -14,6 +14,7 @@ import { PiRuntimeCredentialStore, toOAuthCredential } from "./pi-credentials.js
 import { liveModelSibling, withLiveImageInput } from "./pi-live-model.js";
 import { registerLocalProvider } from "./pi-local-provider.js";
 import { applyPiModelCompatibility } from "./pi-model-compat.js";
+import { registerNanoGptProvider } from "./pi-nanogpt-provider.js";
 import { CHATGPT_OAUTH_PROVIDER } from "./pi-oauth.js";
 import {
   OPENAI_COMPATIBLE_PROVIDER_ID,
@@ -28,7 +29,7 @@ import { REASONING_MODEL_MAX_TOKENS, resolveCompletionMaxTokens } from "./pi-run
 let catalogModelsCache: Models | undefined;
 function catalogModels(): Models {
   catalogModelsCache ??= registerOpenAiCompatibleCatalog(
-    registerLocalProvider(applyPiModelCompatibility(builtinModels())),
+    registerLocalProvider(applyPiModelCompatibility(registerNanoGptProvider(builtinModels()))),
   );
   return catalogModelsCache;
 }
@@ -144,7 +145,9 @@ export function modelsForRequest(
   const store = credentials ?? credentialStoreForRequest(request, provider);
   if (store) {
     return registerOpenAiCompatibleCatalog(
-      registerLocalProvider(applyPiModelCompatibility(builtinModels({ credentials: store }))),
+      registerLocalProvider(
+        applyPiModelCompatibility(registerNanoGptProvider(builtinModels({ credentials: store }))),
+      ),
     );
   }
   if (
@@ -153,7 +156,7 @@ export function modelsForRequest(
     request.model.id.trim()
   ) {
     const models = registerOpenAiCompatibleCatalog(
-      registerLocalProvider(applyPiModelCompatibility(builtinModels())),
+      registerLocalProvider(applyPiModelCompatibility(registerNanoGptProvider(builtinModels()))),
     );
     return registerOpenAiCompatibleRuntime(models, {
       modelId: request.model.id,

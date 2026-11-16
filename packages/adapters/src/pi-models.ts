@@ -9,6 +9,7 @@ import {
 } from "@rakazo/contracts";
 import { LOCAL_PROVIDER_ID, registerLocalProvider } from "./pi-local-provider.js";
 import { applyPiModelCompatibility } from "./pi-model-compat.js";
+import { registerNanoGptProvider } from "./pi-nanogpt-provider.js";
 import { loadProviderOAuth, SUBSCRIPTION_SIGN_IN_PROVIDERS } from "./pi-oauth.js";
 import {
   OPENAI_COMPATIBLE_PROVIDER_ID,
@@ -53,6 +54,8 @@ const RECOMMENDED_MODEL_IDS: Readonly<Record<string, string>> = {
   google: "gemini-3.8-flash",
   groq: "openai/gpt-oss-120b",
   minimax: "MiniMax-M3",
+  // Included in the NanoGPT subscription, so a subscriber starts without per-token charges.
+  nanogpt: "z-ai/glm-5.3",
 };
 
 export function isRecommendedCatalogModel(provider: string, id: string): boolean {
@@ -264,7 +267,7 @@ function buildPiCatalog(): PiCatalogEntry[] {
   catalogBaseUrls.clear();
   hiddenCatalogKeys.clear();
   const models = registerOpenAiCompatibleCatalog(
-    registerLocalProvider(applyPiModelCompatibility(builtinModels())),
+    registerLocalProvider(applyPiModelCompatibility(registerNanoGptProvider(builtinModels()))),
   );
   const entries: PiCatalogEntry[] = [];
   for (const provider of models.getProviders()) {
