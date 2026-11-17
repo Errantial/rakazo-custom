@@ -32,8 +32,8 @@ another bot, or once the run has read outside content such as a web page or an e
 
 Routines are the exception: a bot with **Run without asking** on creates and edits routines
 (including a child bot's routines) without a card in every run, even one started by a webhook,
-message, routine, or another bot, or one that read outside content. A routine that runs a shell
-command as its watch still asks.
+message, routine, or another bot, or one that read outside content. That includes a routine that
+runs a shell command as its watch; for every other bot, a scheduled shell command still asks.
 
 ## Approval cards
 

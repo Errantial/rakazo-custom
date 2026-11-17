@@ -285,8 +285,12 @@ export function nanoGptProvider(): Provider {
   });
 }
 
-/** Add NanoGPT to a registry unless a newer Pi already ships a provider with this id. */
+/**
+ * Add NanoGPT to a registry unless a newer Pi already ships a provider with this id.
+ * A registry without `setProvider` (a read-only or minimal one) is returned unchanged.
+ */
 export function registerNanoGptProvider(models: MutableModels): MutableModels {
+  if (typeof models.setProvider !== "function") return models;
   if (!models.getProvider?.(NANOGPT_PROVIDER_ID)) models.setProvider(nanoGptProvider());
   return models;
 }
