@@ -35,8 +35,8 @@ const DESCRIPTION_MAX_LENGTH = 280;
 
 /** Per-section budgets keep a long card from crowding out standing instructions. */
 const SECTION_LIMITS = {
-  canon: 6_000,
-  personality: 3_000,
+  canon: 2_500,
+  personality: 6_500,
   scenario: 2_500,
   examples: 5_000,
   direction: 1_500,
@@ -231,6 +231,19 @@ export function cardBotProfile(
   const direction = [expand(card.systemPrompt), expand(card.postHistoryInstructions)]
     .filter(Boolean)
     .join("\n\n");
+
+  const warnOverBudget = (section: string, text: string, limit: number): void => {
+    if (text.length > limit) {
+      console.warn(
+        `[bot-cards] ${section} over budget: ${text.length} > ${limit} chars; truncating`,
+      );
+    }
+  };
+  warnOverBudget("Canon", canon, SECTION_LIMITS.canon);
+  warnOverBudget("Personality", personality, SECTION_LIMITS.personality);
+  warnOverBudget("Setting", scenario, SECTION_LIMITS.scenario);
+  warnOverBudget("Example exchanges", examples, SECTION_LIMITS.examples);
+  warnOverBudget("Standing direction", direction, SECTION_LIMITS.direction);
 
   return {
     name,

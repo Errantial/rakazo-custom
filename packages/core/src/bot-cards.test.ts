@@ -437,8 +437,8 @@ describe("card to bot profile", () => {
     )!;
     expect(profile.name).toHaveLength(BOT_NAME_MAX_LENGTH);
     expect(profile.description).toHaveLength(280);
-    expect(sectionBody(profile.instructions, "Canon")).toHaveLength(6_000);
-    expect(sectionBody(profile.instructions, "Personality")).toHaveLength(3_000);
+    expect(sectionBody(profile.instructions, "Canon")).toHaveLength(2_500);
+    expect(sectionBody(profile.instructions, "Personality")).toHaveLength(6_500);
     expect(sectionBody(profile.instructions, "Setting")).toHaveLength(2_500);
     expect(sectionBody(profile.instructions, "Example exchanges")).toHaveLength(5_000);
     expect(sectionBody(profile.instructions, "Standing direction")).toHaveLength(1_500);
