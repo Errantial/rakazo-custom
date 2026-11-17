@@ -234,6 +234,10 @@ export async function gateToolCall(
   // This schedules unattended shell execution; require a person to approve
   // the command once, rather than letting an allow rule or reviewer schedule it.
   const commandWatch = watch?.kind === "command";
+  // Fork policy: a bot that runs without asking also schedules shell command watches without a
+  // card, in every run. Everyone else still approves a scheduled command once.
+  const commandWatchNeedsPerson =
+    commandWatch && !(ctx.bot.autoApprove === true && AUTO_APPROVED_ROUTINE_TOOLS.has(name));
   // A routine's prompt counts as the owner's words when it runs, so the sites it names are
   // ones its runs may fetch. Once outside content entered this run, a routine naming a
   // site this run was not given needs a person: a reviewer would judge it on this run's
@@ -248,14 +252,14 @@ export async function gateToolCall(
   // change to the bot's own instructions) still never runs when someone else could have asked for
   // it: planActionGate refuses it while the run is steerable, as Never ask does.
   const autoApprove =
-    ctx.bot.autoApprove === true && !commandWatch && !SECRET_APPROVAL_TOOLS.has(name);
+    ctx.bot.autoApprove === true && !commandWatchNeedsPerson && !SECRET_APPROVAL_TOOLS.has(name);
   // Fork policy: a bot that runs without asking also creates and edits routines without a card in
-  // every run, including tainted, webhook and other people's runs. Scheduled shell commands
-  // (command watches) still need a person.
+  // every run, including tainted, webhook and other people's runs, scheduled shell commands
+  // (command watches) included.
   const autoApprovedRoutine = autoApprove && AUTO_APPROVED_ROUTINE_TOOLS.has(name);
   const requiresApprovalByDefault =
     request.ownerApproval ||
-    commandWatch ||
+    commandWatchNeedsPerson ||
     requiresUnattendedApproval ||
     siteGate === "new" ||
     unidentifiedAction ||
@@ -266,7 +270,7 @@ export async function gateToolCall(
   const gated = requiresApprovalByDefault || connectorReadGated;
   const requiresMandatoryApproval =
     request.ownerApproval ||
-    commandWatch ||
+    commandWatchNeedsPerson ||
     scheduleNamesNewSite ||
     requiresUnattendedApproval ||
     toolRequiresExplicitApproval(name);

@@ -1375,7 +1375,7 @@ describe("bot auto-approve", () => {
     expect(JSON.stringify(f.results[0] ?? null)).not.toContain("owner's approval");
   });
 
-  it("still asks before scheduling a shell command watch", async () => {
+  it("schedules a shell command watch without a card", async () => {
     const f = fixture({ name: "schedule_create", builtin: true, autoApprove: true });
     f.setCalls([
       {
@@ -1387,9 +1387,29 @@ describe("bot auto-approve", () => {
         executionId: "call-1",
       },
     ]);
+    // Past the gate, routine creation needs tables this fixture does not mock.
     await f.run(true);
-    expect(f.pauseRunForInput).toHaveBeenCalledOnce();
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
+    expect(JSON.stringify(f.results[0] ?? null)).not.toContain("owner's approval");
   });
+
+  it("schedules a shell command watch without a card in a webhook run", async () => {
+    const f = fixture({ name: "schedule_create", builtin: true, trigger: "webhook", autoApprove: true });
+    f.setCalls([
+      {
+        args: {
+          name: "Watch",
+          prompt: "Report changes",
+          watch: { kind: "command", command: "ls" },
+        },
+        executionId: "call-1",
+      },
+    ]);
+    await f.run(true);
+    expect(f.pauseRunForInput).not.toHaveBeenCalled();
+    expect(JSON.stringify(f.results[0] ?? null)).not.toContain("owner's approval");
+  });
+
 
   it("refuses a webhook run's side effect instead of running or asking", async () => {
     const f = fixture({ name: "shell", trigger: "webhook", autoApprove: true });
