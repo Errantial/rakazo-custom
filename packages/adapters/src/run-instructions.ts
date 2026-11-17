@@ -18,6 +18,15 @@ export function voiceCallInstruction(disabled?: ReadonlySet<string>): string {
     : VOICE_CALL_BASE_INSTRUCTION;
 }
 
+/**
+ * The owner's turn reminder (a character card's post-history instructions). It rides after the
+ * newest message, like the current time, because direction there outweighs a long history.
+ */
+export function turnReminderInstruction(reminder: string | null | undefined): string | undefined {
+  const text = reminder?.trim();
+  return text ? `Reminder from your owner's instructions, for this reply:\n${text}` : undefined;
+}
+
 /** Cap the roster so a large Space cannot flood the prompt. */
 export const BOT_DIRECTORY_LIMIT = 40;
 

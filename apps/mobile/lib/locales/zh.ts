@@ -1,4 +1,7 @@
 export const ZH_MESSAGES: Record<string, string> = {
+  "Reminder after the conversation": "对话后提醒",
+  "Repeated after the newest message on every turn": "每一轮都会在最新消息之后重复",
+  "Replace from character card": "用角色卡替换",
   "How other bots see it": "其他机器人如何了解它",
   "Share to": "分享到",
   "{count} files": "{count} 个文件",

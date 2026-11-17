@@ -38,6 +38,8 @@ type RunHooks = {
   trigger?: string;
   /** A reply bound to this run as steering, claimed before any tool runs. */
   steeringBlocks?: MessageBlock[];
+  /** The bot's turn reminder, a character card's post-history instructions. */
+  turnReminder?: string;
 };
 
 function deferred<T>(): Deferred<T> {
@@ -165,6 +167,7 @@ async function runWithModel(
         computerId: "computer-1",
         computerSwitching: false,
         memoryScope: null,
+        turnReminder: hooks?.turnReminder ?? "",
         computer: { id: "computer-1", scope: "dedicated" },
       })),
       findMany: vi.fn(async () => []),
@@ -568,5 +571,26 @@ describe("screen lifecycle after run completion", () => {
       if (completed) await completed.execution;
       vi.useRealTimers();
     }
+  });
+});
+
+describe("turn reminder", () => {
+  it("follows the newest message instead of joining the instructions", async () => {
+    const { request } = await runWithModel(TEXT_ONLY_MODEL, undefined, false, false, true, {
+      turnReminder: "Chat: a person, not an intake form.",
+    });
+
+    expect(
+      request.prompt.endsWith(
+        "Reminder from your owner's instructions, for this reply:\nChat: a person, not an intake form.",
+      ),
+    ).toBe(true);
+    expect(request.instructions).not.toContain("intake form");
+  });
+
+  it("adds nothing for a bot without one", async () => {
+    const { request } = await runWithModel(TEXT_ONLY_MODEL);
+
+    expect(request.prompt).not.toContain("Reminder from your owner's instructions");
   });
 });

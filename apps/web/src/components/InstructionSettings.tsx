@@ -1,11 +1,12 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import { ORPCError } from "@orpc/client";
 import type { Bot } from "@rakazo/contracts";
-import { BOT_INSTRUCTIONS_MAX_LENGTH } from "@rakazo/contracts";
+import { BOT_INSTRUCTIONS_MAX_LENGTH, BOT_TURN_REMINDER_MAX_LENGTH } from "@rakazo/contracts";
+import { CHARACTER_CARD_FILE_MAX_BYTES, characterCardBot } from "@rakazo/core/bot-cards";
 import { Button, Disclosure, Textarea } from "@rakazo/ui-web";
 import { Popover, PopoverContent, PopoverTrigger } from "@rakazo/ui-web/components/ui/popover";
 import { History } from "lucide-react";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { rpc } from "../lib/rpc";
 import { errorText } from "../lib/user-error";
 
@@ -16,6 +17,8 @@ export function InstructionSettings({ bot }: { bot: Bot }) {
   const [current, setCurrent] = useState(bot);
   const [baseline, setBaseline] = useState(bot.instructions);
   const [instructions, setInstructions] = useState(bot.instructions);
+  const [turnReminder, setTurnReminder] = useState(bot.turnReminder ?? "");
+  const cardInput = useRef<HTMLInputElement>(null);
   const [pending, setPending] = useState(false);
   const [conflict, setConflict] = useState(false);
   const [error, setError] = useState("");
@@ -25,6 +28,7 @@ export function InstructionSettings({ bot }: { bot: Bot }) {
       setInstructions(bot.instructions);
       setBaseline(bot.instructions);
     }
+    if (turnReminder === (current.turnReminder ?? "")) setTurnReminder(bot.turnReminder ?? "");
     setCurrent(bot);
   }
   async function save(action: () => Promise<Bot>) {
@@ -36,11 +40,36 @@ export function InstructionSettings({ bot }: { bot: Bot }) {
       setCurrent(updated);
       setInstructions(updated.instructions);
       setBaseline(updated.instructions);
+      setTurnReminder(updated.turnReminder ?? "");
     } catch (err) {
       setError(errorText(err));
       setConflict((current) => current || (err instanceof ORPCError && err.code === "CONFLICT"));
     } finally {
       setPending(false);
+    }
+  }
+  /** The card replaces the profile it authored; the old instructions stay in history. */
+  async function replaceCard(file: File | undefined) {
+    if (!file) return;
+    setError("");
+    try {
+      const card =
+        file.size > CHARACTER_CARD_FILE_MAX_BYTES
+          ? undefined
+          : characterCardBot(new Uint8Array(await file.arrayBuffer()), { fallbackName: bot.name });
+      if (!card) {
+        setError(t`No character card found in this file`);
+        return;
+      }
+      await save(() =>
+        rpc.bots.applyCharacterCard({
+          botId: bot.id,
+          characterCard: card.characterCard,
+          expectedInstructions: current.instructions,
+        }),
+      );
+    } catch (err) {
+      setError(errorText(err));
     }
   }
   return (
@@ -111,6 +140,43 @@ export function InstructionSettings({ bot }: { bot: Bot }) {
             );
         }}
       />
+      <label
+        htmlFor={`${id}-turn-reminder`}
+        className="block pt-2 text-xs font-medium text-muted-foreground"
+      >
+        <Trans>Reminder after the conversation</Trans>
+      </label>
+      <Textarea
+        id={`${id}-turn-reminder`}
+        className="font-normal min-h-12 resize-none field-sizing-content text-foreground rounded-xl border-transparent bg-muted/50 p-4 shadow-none"
+        value={turnReminder}
+        maxLength={BOT_TURN_REMINDER_MAX_LENGTH}
+        disabled={pending}
+        placeholder={t`Repeated after the newest message on every turn`}
+        onChange={(event) => setTurnReminder(event.target.value)}
+        onBlur={() => {
+          if (turnReminder !== (current.turnReminder ?? ""))
+            void save(() => rpc.bots.update({ botId: bot.id, turnReminder }));
+        }}
+      />
+      <input
+        ref={cardInput}
+        type="file"
+        accept=".json,.png,application/json,image/png"
+        className="hidden"
+        data-testid="instruction-settings-card"
+        onChange={(event) => {
+          void replaceCard(event.target.files?.[0]);
+          event.target.value = "";
+        }}
+      />
+      <Button
+        variant="outline"
+        disabled={pending || conflict}
+        onClick={() => cardInput.current?.click()}
+      >
+        <Trans>Replace from character card</Trans>
+      </Button>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {conflict ? (
         <Button

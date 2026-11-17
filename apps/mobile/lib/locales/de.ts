@@ -1,4 +1,8 @@
 export const DE_MESSAGES: Record<string, string> = {
+  "Reminder after the conversation": "Erinnerung nach dem Gespräch",
+  "Repeated after the newest message on every turn":
+    "Wird bei jeder Antwort nach der neuesten Nachricht wiederholt",
+  "Replace from character card": "Aus Charakterkarte ersetzen",
   "How other bots see it": "So sehen andere Bots ihn",
   "Share to": "Teilen mit",
   "{count} files": "{count} Dateien",

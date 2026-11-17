@@ -1,4 +1,8 @@
 export const NL_MESSAGES: Record<string, string> = {
+  "Reminder after the conversation": "Herinnering na het gesprek",
+  "Repeated after the newest message on every turn":
+    "Wordt elke beurt na het nieuwste bericht herhaald",
+  "Replace from character card": "Vervangen door personagekaart",
   "How other bots see it": "Hoe andere bots deze zien",
   "Share to": "Delen met",
   "{count} files": "{count} bestanden",

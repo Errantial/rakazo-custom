@@ -189,6 +189,7 @@ export const fleetTools: ToolHandlers = {
       name: fields.name,
       description: fields.description,
       instructions: fields.instructions,
+      turnReminder: fields.turnReminder,
       greeting: fields.greeting,
       prompt: args.prompt ? String(args.prompt) : undefined,
       computerMode,

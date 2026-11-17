@@ -5620,6 +5620,81 @@ describe("bot creation from a character card", () => {
   });
 });
 
+describe("replacing a bot's character card", () => {
+  const actor = {
+    spaceId: "space-1",
+    userId: "user-1",
+    email: "user@rakazo.test",
+    isDeploymentOwner: true,
+  } satisfies Actor;
+
+  /** A stored bot, and the instruction row lock that runs before anything is written. */
+  function applyDeps(liveInstructions: string) {
+    const botUpdate = vi.fn();
+    const transaction = vi.fn(async (work: (client: object) => unknown) =>
+      work({
+        $queryRaw: vi.fn().mockResolvedValue([]),
+        bot: {
+          findUniqueOrThrow: vi.fn(async () => ({
+            id: "bot-1",
+            instructions: liveInstructions,
+            instructionHistory: [],
+          })),
+          update: botUpdate,
+        },
+      }),
+    );
+    const prisma = {
+      $transaction: transaction,
+      user: { findUnique: vi.fn(async () => ({ name: "Ada Lovelace" })) },
+      bot: {
+        findFirst: vi.fn(async () => ({
+          id: "bot-1",
+          name: "Mal0",
+          description: "Old one-liner.",
+          instructions: "Old canon.",
+          turnReminder: "Old reminder.",
+          thread: { id: "thread-1" },
+          computer: null,
+        })),
+      },
+    } as unknown as PrismaClient;
+    const deps = {
+      prisma,
+      env: { agentRuntime: "pi", webOrigin: "http://127.0.0.1:5173", sandboxProvider: "fake" },
+      dataDir: "/tmp/rakazo-router-test",
+    } as unknown as RouterDeps;
+    const client = createRouterClient(createRouter(deps), { context: { actor } as never });
+    return { client, transaction, botUpdate };
+  }
+
+  it("refuses a file with no usable card and changes nothing", async () => {
+    const { client, transaction } = applyDeps("Old canon.");
+
+    await expect(
+      client.bots.applyCharacterCard({
+        botId: "bot-1",
+        characterCard: { garbage: true },
+        expectedInstructions: "Old canon.",
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(transaction).not.toHaveBeenCalled();
+  });
+
+  it("refuses to overwrite instructions that changed since they were read", async () => {
+    const { client, botUpdate } = applyDeps("Edited elsewhere.");
+
+    await expect(
+      client.bots.applyCharacterCard({
+        botId: "bot-1",
+        characterCard: { name: "Mal0", description: "New canon." },
+        expectedInstructions: "Old canon.",
+      }),
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+    expect(botUpdate).not.toHaveBeenCalled();
+  });
+});
+
 describe("codex catalog auth", () => {
   const actor = {
     spaceId: "workspace-1",

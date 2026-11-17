@@ -27,6 +27,7 @@ export function botCreateFields(
       name: merged.name,
       description: merged.description,
       instructions: merged.instructions,
+      turnReminder: merged.turnReminder,
     },
     greeting: seed?.greeting,
     skipIntro: merged.skipIntro,

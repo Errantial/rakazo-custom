@@ -1,4 +1,8 @@
 export const RU_MESSAGES: Record<string, string> = {
+  "Reminder after the conversation": "Напоминание после разговора",
+  "Repeated after the newest message on every turn":
+    "Повторяется после последнего сообщения на каждом ходу",
+  "Replace from character card": "Заменить из карточки персонажа",
   "How other bots see it": "Как его видят другие боты",
   "Share to": "Отправить в",
   "{count} files": "Файлов: {count}",

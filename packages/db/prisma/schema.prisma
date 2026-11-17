@@ -647,6 +647,8 @@ model Bot {
   description       String            @default("")
   instructions      String            @default("")
   instructionHistory Json @default("[]")
+  /// Repeated after the newest message on every turn; a character card's post_history_instructions.
+  turnReminder      String            @default("")
   color             String
   avatarSet         String            @default("organic")
   notifyOnFinish    Boolean           @default(true)

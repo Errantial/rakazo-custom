@@ -88,6 +88,8 @@ export const BotSchema = z.object({
   description: z.string(),
   instructions: z.string(),
   instructionHistory: z.array(InstructionVersionSchema).optional(),
+  /** Repeated after the newest message on every turn, as a character card's post-history text. */
+  turnReminder: z.string().default(""),
   color: z.string(),
   avatarSet: BotAvatarSetSchema.optional(),
   notifyOnFinish: z.boolean(),
@@ -371,6 +373,7 @@ export type SpaceNavigation = z.infer<typeof SpaceNavigationSchema>;
 export const BOT_NAME_MAX_LENGTH = 80;
 export const BOT_DESCRIPTION_MAX_LENGTH = 4000;
 export const BOT_INSTRUCTIONS_MAX_LENGTH = 20000;
+export const BOT_TURN_REMINDER_MAX_LENGTH = 2000;
 
 export const CreateBotInput = z.object({
   /** Optional reserved identity so a creation preview uses the final bot seed. */
@@ -381,6 +384,7 @@ export const CreateBotInput = z.object({
   name: z.string().trim().min(1).max(BOT_NAME_MAX_LENGTH),
   description: z.string().max(BOT_DESCRIPTION_MAX_LENGTH).default(""),
   instructions: z.string().max(BOT_INSTRUCTIONS_MAX_LENGTH).default(""),
+  turnReminder: z.string().max(BOT_TURN_REMINDER_MAX_LENGTH).default(""),
   notifyOnFinish: z.boolean().default(true),
   fleetManagement: z.boolean().optional(),
   color: BotAvatarValueSchema.optional(),
@@ -395,6 +399,15 @@ export const CreateBotInput = z.object({
 });
 export type CreateBotInput = z.infer<typeof CreateBotInput>;
 
+export const ApplyCharacterCardInput = z.object({
+  botId: Id,
+  /** Untrusted character card that replaces the profile it authored; refused when unusable. */
+  characterCard: z.unknown(),
+  /** Apply only while the instructions are still these, as an instruction edit does. */
+  expectedInstructions: z.string().max(BOT_INSTRUCTIONS_MAX_LENGTH),
+});
+export type ApplyCharacterCardInput = z.infer<typeof ApplyCharacterCardInput>;
+
 export const UpdateBotInput = z
   .object({
     botId: Id,
@@ -402,6 +415,7 @@ export const UpdateBotInput = z
     description: z.string().trim().max(BOT_DESCRIPTION_MAX_LENGTH).optional(),
     instructions: z.string().trim().max(BOT_INSTRUCTIONS_MAX_LENGTH).optional(),
     expectedInstructions: z.string().max(BOT_INSTRUCTIONS_MAX_LENGTH).optional(),
+    turnReminder: z.string().trim().max(BOT_TURN_REMINDER_MAX_LENGTH).optional(),
     /** Ignored; installed mobile apps may still send it. */
     selfUpdateInstructions: z.boolean().optional(),
     notifyOnFinish: z.boolean().optional(),
