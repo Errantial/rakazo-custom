@@ -1,4 +1,8 @@
 export const RU_MESSAGES: Record<string, string> = {
+  "Check for updates": "Проверить обновления",
+  "Update to {version}": "Обновить до {version}",
+  "Up to date": "Актуальная версия",
+  "Could not check": "Не удалось проверить",
   "How other bots see it": "Как его видят другие боты",
   "Share to": "Отправить в",
   "{count} files": "Файлов: {count}",

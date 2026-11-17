@@ -1,4 +1,8 @@
 export const NL_MESSAGES: Record<string, string> = {
+  "Check for updates": "Controleren op updates",
+  "Update to {version}": "Bijwerken naar {version}",
+  "Up to date": "Up-to-date",
+  "Could not check": "Controle mislukt",
   "How other bots see it": "Hoe andere bots deze zien",
   "Share to": "Delen met",
   "{count} files": "{count} bestanden",

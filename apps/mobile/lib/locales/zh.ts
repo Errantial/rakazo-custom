@@ -1,4 +1,8 @@
 export const ZH_MESSAGES: Record<string, string> = {
+  "Check for updates": "检查更新",
+  "Update to {version}": "更新到 {version}",
+  "Up to date": "已是最新版本",
+  "Could not check": "无法检查",
   "How other bots see it": "其他机器人如何了解它",
   "Share to": "分享到",
   "{count} files": "{count} 个文件",

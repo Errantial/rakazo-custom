@@ -17,8 +17,11 @@ export type ClientKind = (typeof CLIENT_KINDS)[number];
 export type MinimumClientBuilds = Partial<Record<ClientKind, string>>;
 
 export const IOS_APP_STORE_URL = "https://apps.apple.com/app/rakazo/id6801531099";
-export const ANDROID_APK_URL =
-  "https://github.com/elie222/rakazo/releases/download/android/rakazo.apk";
+/** The rolling `android` release the APK workflow updates in place on every release tag. */
+const ANDROID_RELEASE_URL = "https://github.com/Errantial/rakazo-custom/releases/download/android";
+export const ANDROID_APK_URL = `${ANDROID_RELEASE_URL}/rakazo.apk`;
+/** `{ version, versionCode }` of the APK at ANDROID_APK_URL, published after the APK itself. */
+export const ANDROID_RELEASE_MANIFEST_URL = `${ANDROID_RELEASE_URL}/version.json`;
 
 const BUILD_ID = /^\d{14}$/;
 

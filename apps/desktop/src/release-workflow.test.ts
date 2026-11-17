@@ -91,7 +91,7 @@ describe("desktop release workflow", () => {
       `include: ${expression("fromJSON(needs.validate.outputs.platforms)")}`,
     );
     expect(workflow).toContain(
-      `include='[{"os":"macos-26","artifact":"macos"},{"os":"ubuntu-24.04","artifact":"linux"},{"os":"windows-2022","artifact":"windows"}]'`,
+      `include='{"os":"ubuntu-24.04","artifact":"linux"},{"os":"windows-2022","artifact":"windows"}'`,
     );
     expect(workflow.split("windows-2022")).toHaveLength(2);
     expect(workflow).toContain("test -f release-artifacts/latest.yml");
@@ -131,5 +131,18 @@ describe("desktop release workflow", () => {
     expect(workflow).toContain("latest-linux.yml");
     expect(workflow).toContain("--draft --generate-notes");
     expect(workflow).toContain("--draft=false --latest");
+  });
+
+  it("lets a fork without Apple credentials release from its own branch", () => {
+    expect(workflow).toContain(
+      `RELEASE_BRANCH: ${expression("vars.DESKTOP_RELEASE_BRANCH || 'main'")}`,
+    );
+    expect(workflow).toContain('git merge-base --is-ancestor "$tag_sha" "origin/$RELEASE_BRANCH"');
+    expect(workflow).toContain(`MAC_SIGNING: ${expression("secrets.DESKTOP_MAC_CSC_LINK != ''")}`);
+    expect(workflow).toContain(`include='{"os":"macos-26","artifact":"macos"},'"$include"`);
+    // The publish job requires the macOS feed exactly when macOS was built.
+    expect(workflow).toMatch(
+      /if \[\[ "\$MAC" == true \]\]; then\n\s+test -f release-artifacts\/latest-mac\.yml/,
+    );
   });
 });

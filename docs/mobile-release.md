@@ -77,6 +77,14 @@ through the over-the-air updates below without a new APK. A Google Play install
 is signed with Play's key, so switching from the APK to Play means uninstalling
 the APK first.
 
+This fork builds the APK without EAS instead: every release tag runs
+`android-apk`, which versions the APK from the tag (`v2026.11.1` is version
+`2026.11.1`, versionCode `20261101`), turns off over-the-air updates, and
+replaces `rakazo.apk` and `version.json` on the fork's rolling `android` release.
+On Android, **Settings → Check for updates** reads `version.json` and downloads
+the newer APK. It is signed with React Native's debug keystore, matching earlier
+sideloaded builds so it installs over them.
+
 ## Android push
 
 For Android push notifications, create a Firebase project and register the app's
