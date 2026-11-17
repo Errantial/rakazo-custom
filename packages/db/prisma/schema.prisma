@@ -678,6 +678,8 @@ model Bot {
   teamChatRules          String  @default("")
   crossSpaceCommunication Boolean @default(false)
   fleetManagement        Boolean @default(true)
+  /// What other bots may read; see BotPeerVisibilitySchema. Empty means every default.
+  peerVisibility         Json    @default("{}")
   routines          Routine[]
   scratchpadItems   ScratchpadItem[]
   taughtSkills      TaughtSkill[]
@@ -745,6 +747,8 @@ model ChatGroup {
   space      Space             @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   userId     String
   name       String
+  /// Authored scenario shared by every member and rendered ahead of the roster.
+  premise    String            @default("")
   pinned     Boolean           @default(false)
   sectionId  String?
   section    BotSection?       @relation(fields: [sectionId], references: [id], onDelete: SetNull)

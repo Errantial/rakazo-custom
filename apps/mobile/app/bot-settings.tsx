@@ -1,10 +1,18 @@
-import type { Bot, BotAvatarSet, ComputerMode, ThinkingLevel } from "@rakazo/contracts";
+import type {
+  Bot,
+  BotAvatarSet,
+  BotPeerAudience,
+  BotPeerVisibility,
+  ComputerMode,
+  ThinkingLevel,
+} from "@rakazo/contracts";
 import {
   BOT_AVATAR_SHAPE_COUNT,
   BOT_COLORS,
   BOT_DESCRIPTION_MAX_LENGTH,
   BOT_INSTRUCTIONS_MAX_LENGTH,
   BOT_NAME_MAX_LENGTH,
+  botPeerVisibility,
   resolveBotAvatarSet,
 } from "@rakazo/contracts";
 import {
@@ -90,6 +98,9 @@ export default function BotSettingsScreen() {
   const [autoApprove, setAutoApprove] = useState(false);
   const [crossSpaceCommunication, setCrossSpaceCommunication] = useState(false);
   const [fleetManagement, setFleetManagement] = useState(false);
+  const [peerVisibility, setPeerVisibility] = useState<BotPeerVisibility>(() =>
+    botPeerVisibility({}),
+  );
   const [credentials, setCredentials] = useState<MobileModelCredential[]>([]);
   const [catalog, setCatalog] = useState<MobileModel[]>([]);
   const [me, setMe] = useState<MobileMe | null>(null);
@@ -123,6 +134,18 @@ export default function BotSettingsScreen() {
           await rpc("bots/update", { botId, fleetManagement: value });
         },
         onChange: setFleetManagement,
+        onError: (err) => setError(errorText(err, t("Could not save bot"))),
+      }),
+    [botId, t],
+  );
+
+  const peerVisibilitySave = useMemo(
+    () =>
+      createQueuedSave<BotPeerVisibility>(botPeerVisibility({}), {
+        save: async (value) => {
+          await rpc("bots/update", { botId, peerVisibility: value });
+        },
+        onChange: setPeerVisibility,
         onError: (err) => setError(errorText(err, t("Could not save bot"))),
       }),
     [botId, t],
@@ -193,9 +216,12 @@ export default function BotSettingsScreen() {
         crossSpaceSave.reset(next.crossSpaceCommunication ?? false);
         setFleetManagement(next.fleetManagement);
         fleetSave.reset(next.fleetManagement);
+        const visibility = botPeerVisibility(next.peerVisibility);
+        setPeerVisibility(visibility);
+        peerVisibilitySave.reset(visibility);
       })
       .catch((err) => setError(errorText(err, t("Could not load bot"))));
-  }, [botId, crossSpaceSave, fleetSave, notifySave, nameSave, autoApproveSave]);
+  }, [botId, crossSpaceSave, fleetSave, notifySave, nameSave, autoApproveSave, peerVisibilitySave]);
 
   useEffect(() => {
     void Promise.all([rpc("me"), rpc("models/list"), rpc("models/credentials")])
@@ -255,6 +281,25 @@ export default function BotSettingsScreen() {
     ],
     [t, thinkingOptions],
   );
+
+  const peerAudienceChoices: MenuPickerChoice[] = useMemo(
+    () => [
+      { key: "owner", label: t("Only me") },
+      { key: "managers", label: t("Managers") },
+      { key: "teammates", label: t("Teammates") },
+    ],
+    [t],
+  );
+
+  // Who may read each part of this bot, in the order the settings section lists them.
+  const peerVisibilityRows = [
+    ["instructions", t("Instructions"), t("Who can see the instructions")],
+    ["description", t("Description"), t("Who can see the description")],
+    ["memory", t("Memory"), t("Who can see the memory")],
+    ["routines", t("Routines"), t("Who can see the routines")],
+    ["model", t("Model"), t("Who can see the model")],
+    ["tools", t("Tools"), t("Who can see the tools")],
+  ] as const;
 
   useEffect(() => {
     if (focus === "model") setAdvancedOpen(true);
@@ -429,6 +474,7 @@ export default function BotSettingsScreen() {
         autoApproveSave.flush(),
         notifySave.flush(),
         nameSave.flush(),
+        peerVisibilitySave.flush(),
       ]);
       router.back();
     } catch (err) {
@@ -701,6 +747,26 @@ export default function BotSettingsScreen() {
                   value={fleetManagement}
                 />
               </View>
+            </SettingsGroup>
+            <SettingsGroup label={t("How other bots see it")}>
+              {peerVisibilityRows.map(([field, label, accessibilityLabel]) => (
+                <MenuPicker
+                  key={field}
+                  plain
+                  accessibilityLabel={accessibilityLabel}
+                  choices={peerAudienceChoices}
+                  label={label}
+                  onChange={(value) => {
+                    if (!botId) return;
+                    setError(null);
+                    peerVisibilitySave.update({
+                      ...peerVisibility,
+                      [field]: value as BotPeerAudience,
+                    });
+                  }}
+                  value={peerVisibility[field]}
+                />
+              ))}
             </SettingsGroup>
             <View>
               <View

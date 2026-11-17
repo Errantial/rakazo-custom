@@ -28,6 +28,8 @@ import {
   looksLikeCredential,
   openAgentImportArchive,
 } from "@rakazo/core";
+import type { CharacterCardBot } from "@rakazo/core/bot-cards";
+import { CHARACTER_CARD_FILE_MAX_BYTES, characterCardBot } from "@rakazo/core/bot-cards";
 import {
   Button,
   Checkbox,
@@ -75,6 +77,7 @@ export function AgentImportForm({
   const ids = useId();
   const folderInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const cardInput = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<AgentImportFile[]>([]);
   const [source, setSource] = useState<AgentImportReader | null>(null);
   const [sourceFiles, setSourceFiles] = useState<{ path: string; home: string; content: string }[]>(
@@ -94,6 +97,7 @@ export function AgentImportForm({
   );
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [card, setCard] = useState<CharacterCardBot | null>(null);
   const [computerMode, setComputerMode] = useState<ComputerMode>("team");
   const [reply, setReply] = useState("");
   const [copied, setCopied] = useState(false);
@@ -322,6 +326,37 @@ export function AgentImportForm({
     }
   }
 
+  /** A card file stays on this device; only the fields it maps to leave with Create. */
+  async function pickCard(file: File | undefined) {
+    const read = ++latestRead.current;
+    if (!file) {
+      setBusy(false);
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      const bot =
+        file.size > CHARACTER_CARD_FILE_MAX_BYTES
+          ? undefined
+          : characterCardBot(new Uint8Array(await file.arrayBuffer()), {
+              fallbackName: "New Bot",
+            });
+      if (read !== latestRead.current) return;
+      if (!bot) {
+        setError(t`No character card found in this file`);
+        setBusy(false);
+        return;
+      }
+      setCard(bot);
+      setBusy(false);
+    } catch (err) {
+      if (read !== latestRead.current) return;
+      setError(readError(err));
+      setBusy(false);
+    }
+  }
+
   function stopReading() {
     ++latestRead.current;
     setBusy(false);
@@ -378,6 +413,26 @@ export function AgentImportForm({
           routines: chosen(plan.routines).map((item) => item.id),
           apiKeys: chosen(plan.apiKeys).map((item) => item.id),
         },
+      });
+      onCreated(bot);
+    } catch (err) {
+      failure(err, t`Could not create bot`);
+      setCreating(false);
+      setBusy(false);
+    }
+  }
+
+  async function createFromCard() {
+    if (!card || busy || creating) return;
+    setError(null);
+    setCreating(true);
+    setBusy(true);
+    try {
+      const bot = await rpc.bots.create({
+        name: card.name,
+        characterCard: card.characterCard,
+        notifyOnFinish: true,
+        computerMode,
       });
       onCreated(bot);
     } catch (err) {
@@ -505,6 +560,7 @@ export function AgentImportForm({
             onClick={() => {
               stopReading();
               if (plan) setPlan(null);
+              else if (card) setCard(null);
               else onClose();
             }}
           >
@@ -808,6 +864,25 @@ export function AgentImportForm({
             </Button>
           </div>
         </div>
+      ) : card ? (
+        <div data-testid="agent-import-card-preview">
+          <p className="text-[15px] text-foreground" dir="auto">
+            {card.name}
+          </p>
+          {card.description ? (
+            <p className="mt-1 text-[13px] text-muted-foreground" dir="auto">
+              {card.description}
+            </p>
+          ) : null}
+          <div className={sectionClass}>
+            <ComputerModePicker value={computerMode} onChange={setComputerMode} />
+          </div>
+          <div className="mt-5">
+            <Button disabled={busy} onClick={() => void createFromCard()}>
+              {creating ? <Trans>Creating…</Trans> : <Trans>Create</Trans>}
+            </Button>
+          </div>
+        </div>
       ) : (
         <div data-testid="agent-import-choose">
           <section>
@@ -911,6 +986,38 @@ export function AgentImportForm({
                 <Trans>Choose file</Trans>
               </Button>
             </div>
+          </section>
+          <section className={sectionClass}>
+            <h3 className={headingClass}>
+              <Trans>Character card</Trans>
+            </h3>
+            <input
+              ref={(node) => {
+                cardInput.current = node;
+                if (!node) return;
+                node.addEventListener("cancel", stopReading);
+                return () => {
+                  node.removeEventListener("cancel", stopReading);
+                  cardInput.current = null;
+                };
+              }}
+              type="file"
+              accept=".json,.png,application/json,image/png"
+              data-testid="agent-import-card"
+              className="hidden"
+              onChange={(event) => {
+                void pickCard(event.target.files?.[0]);
+                event.target.value = "";
+              }}
+            />
+            <Button
+              variant="outline"
+              className="mt-2"
+              disabled={busy}
+              onClick={() => cardInput.current?.click()}
+            >
+              <Trans>Choose card</Trans>
+            </Button>
           </section>
         </div>
       )}

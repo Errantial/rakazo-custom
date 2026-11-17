@@ -1,4 +1,5 @@
 export const ES_MESSAGES: Record<string, string> = {
+  Description: "Descripción",
   "How other bots see it": "Cómo lo ven otros bots",
   "Share to": "Compartir en",
   "{count} files": "{count} archivos",
@@ -401,6 +402,21 @@ export const ES_MESSAGES: Record<string, string> = {
   "Delete group": "Eliminar grupo",
   "Bots and their own chats stay.": "Los bots y sus propios chats se conservan.",
   "Group name": "Nombre del grupo",
+  Premise: "Premisa",
+  "Shared scene or world for every bot here":
+    "Escenario o mundo compartido por todos los bots de aquí",
+  "Bot from card": "Bot desde tarjeta",
+  "Only me": "Solo yo",
+  Managers: "Administradores",
+  Teammates: "Compañeros de equipo",
+  "Who can see the description": "Quién puede ver la descripción",
+  "Who can see the instructions": "Quién puede ver las instrucciones",
+  "Who can see the memory": "Quién puede ver la memoria",
+  "Who can see the model": "Quién puede ver el modelo",
+  "Who can see the routines": "Quién puede ver las rutinas",
+  "Who can see the tools": "Quién puede ver las herramientas",
+  "No character card found in this file":
+    "No se encontró ninguna tarjeta de personaje en este archivo",
   "Group not found": "No se encontró el grupo",
   "Could not create group": "No se pudo crear el grupo",
   "Creating…": "Creando…",

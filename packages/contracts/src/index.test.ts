@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  AccountExportRecordSchema,
   CLOUDFLARE_AI_GATEWAY_CONFIG_MESSAGE,
   CLOUDFLARE_AI_GATEWAY_PROVIDER_ID,
   CreateBotInput,
   CreateGroupInput,
   CreateRoutineInput,
   canReactToThreadMessage,
+  GROUP_PREMISE_MAX_LENGTH,
   McpServerConfigInput,
   MessageBlock,
   ModelConnectInputSchema,
@@ -288,6 +290,32 @@ describe("contracts", () => {
     );
   });
 
+  it("requires every field and a known audience in peer visibility", () => {
+    const shared = {
+      instructions: "owner",
+      description: "teammates",
+      memory: "owner",
+      routines: "owner",
+      model: "managers",
+      tools: "owner",
+    } as const;
+    expect(UpdateBotInput.parse({ botId: "bot-1", peerVisibility: shared }).peerVisibility).toEqual(
+      shared,
+    );
+    expect(
+      UpdateBotInput.safeParse({
+        botId: "bot-1",
+        peerVisibility: { instructions: "owner" },
+      }).success,
+    ).toBe(false);
+    expect(
+      UpdateBotInput.safeParse({
+        botId: "bot-1",
+        peerVisibility: { ...shared, memory: "everyone" },
+      }).success,
+    ).toBe(false);
+  });
+
   it("drops a title that installed apps still send", () => {
     expect(CreateBotInput.parse({ name: "Chief", title: "Lead" })).not.toHaveProperty("title");
     expect(UpdateBotInput.parse({ botId: "bot-1", title: "Lead" })).toEqual({ botId: "bot-1" });
@@ -336,6 +364,42 @@ describe("contracts", () => {
     const accepted = count >= 2 && count <= 10;
     expect(CreateGroupInput.safeParse({ name: "Draft team", botIds }).success).toBe(accepted);
     expect(UpdateGroupInput.safeParse({ groupId: "group-1", botIds }).success).toBe(accepted);
+  });
+
+  it("trims a group premise and caps it at the limit", () => {
+    const parsed = CreateGroupInput.parse({
+      name: "Draft team",
+      botIds: ["bot-1", "bot-2"],
+      premise: "  Stranded above a frozen moon.  ",
+    });
+    expect(parsed.premise).toBe("Stranded above a frozen moon.");
+    const withinLimit = "p".repeat(GROUP_PREMISE_MAX_LENGTH);
+    expect(UpdateGroupInput.safeParse({ groupId: "group-1", premise: withinLimit }).success).toBe(
+      true,
+    );
+    expect(
+      UpdateGroupInput.safeParse({ groupId: "group-1", premise: `${withinLimit}p` }).success,
+    ).toBe(false);
+  });
+
+  it("imports a group record from before premises existed and keeps authored ones", () => {
+    const group = {
+      type: "chat_group",
+      id: "group-1",
+      name: "Bridge crew",
+      pinned: false,
+      sectionId: null,
+      archivedAt: null,
+      botIds: ["bot-1", "bot-2"],
+      createdAt: "2026-01-02T03:04:05.000Z",
+    };
+    const older = AccountExportRecordSchema.parse(group);
+    expect(older).not.toHaveProperty("premise");
+    const authored = AccountExportRecordSchema.parse({
+      ...group,
+      premise: "Stranded above a moon.",
+    });
+    expect(authored).toMatchObject({ premise: "Stranded above a moon." });
   });
 
   it("keeps model OAuth start results mode-specific", () => {

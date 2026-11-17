@@ -5460,6 +5460,166 @@ describe("bot intro run", () => {
   });
 });
 
+describe("bot creation from a character card", () => {
+  const actor = {
+    spaceId: "space-1",
+    userId: "user-1",
+    email: "user@rakazo.test",
+    isDeploymentOwner: true,
+  } satisfies Actor;
+
+  const card = {
+    spec: "chara_card_v2",
+    data: {
+      name: "Mira",
+      description: "Keeper of the town's old maps.",
+      personality: "Patient and exact.",
+      first_mes: "Hello, {{user}}. I am {{char}}.",
+    },
+  };
+
+  /** The prisma surface createBot and the intro run touch, with one captured transaction. */
+  function creationDeps() {
+    const botCreate = vi.fn(async ({ data }: { data: Record<string, unknown> }) => ({
+      id: "bot-1",
+      ...data,
+    }));
+    const messageCreate = vi.fn(async ({ data }: { data: object }) => ({
+      id: "message-1",
+      ...data,
+    }));
+    const taskCreate = vi.fn(async ({ data }: { data: object }) => ({ id: "task-1", ...data }));
+    const runCreate = vi.fn(async ({ data }: { data: object }) => ({ id: "run-1", ...data }));
+    const enqueue = vi.fn().mockResolvedValue(undefined);
+    const createdAt = new Date("2026-01-01T00:00:00.000Z");
+    const tx = {
+      $queryRaw: vi.fn().mockResolvedValue([]),
+      spaceMember: {
+        findUnique: vi.fn(async () => ({
+          organizationId: "org-1",
+          space: { deletingAt: null },
+        })),
+      },
+      bot: {
+        aggregate: vi.fn(async () => ({ _max: { position: -1 } })),
+        findMany: vi.fn(async () => []),
+        create: botCreate,
+        findFirstOrThrow: vi.fn(async () => ({
+          id: "bot-1",
+          spaceId: actor.spaceId,
+          name: "Mira",
+          description: "",
+          instructions: "",
+          color: "blue",
+          avatarSet: "rakazo",
+          notifyOnFinish: true,
+          pinned: false,
+          sectionId: null,
+          archivedAt: null,
+          parentBotId: null,
+          memoryScope: null,
+          createdAt,
+          updatedAt: createdAt,
+          thread: { id: "thread-1", unread: false },
+          computer: { scope: "team" },
+        })),
+      },
+      computer: { upsert: vi.fn(async () => ({ id: "computer-1", scope: "team" })) },
+      thread: {
+        create: vi.fn(async () => ({ id: "thread-1", unread: false })),
+        update: vi.fn(async () => ({ nextMessageSeq: 1 })),
+      },
+      message: { create: messageCreate },
+      browserProfile: { create: vi.fn(async () => ({})) },
+      memoryDocument: { create: vi.fn(async () => ({})) },
+      task: { create: taskCreate },
+      run: { findFirst: vi.fn(async () => null), create: runCreate },
+    };
+    const prisma = {
+      $transaction: vi.fn(async (work: (client: typeof tx) => unknown) => work(tx)),
+      user: { findUnique: vi.fn(async () => ({ name: "Ada Lovelace" })) },
+      space: { findUnique: vi.fn(async () => ({ name: "Personal", isDefault: true })) },
+      deploymentSettings: { findUnique: vi.fn(async () => null) },
+      userModelPreference: { findFirst: vi.fn(async () => null) },
+    } as unknown as PrismaClient;
+    const deps = {
+      prisma,
+      jobs: { enqueue },
+      env: {
+        agentRuntime: "pi",
+        defaultProvider: "fake",
+        defaultModel: "fake-model",
+        deploymentModelConfigured: true,
+        webOrigin: "http://127.0.0.1:5173",
+        screenProxySecret: "fake-test-secret",
+        sandboxProvider: "fake",
+      },
+      dataDir: "/tmp/rakazo-router-test",
+    } as unknown as RouterDeps;
+    const client = createRouterClient(createRouter(deps), { context: { actor } as never });
+    return { client, botCreate, messageCreate, taskCreate, runCreate, enqueue };
+  }
+
+  it("seeds the card profile, posts its greeting first, and queues no intro", async () => {
+    const { client, botCreate, messageCreate, taskCreate, runCreate, enqueue } = creationDeps();
+
+    await client.bots.create({ name: "New Bot", characterCard: card });
+
+    const created = botCreate.mock.calls[0]?.[0].data as Record<string, unknown>;
+    expect(created.name).toBe("Mira");
+    expect(created.description).toBe("Keeper of the town's old maps.");
+    expect(created.instructions).toContain("## Canon");
+    expect(messageCreate).toHaveBeenCalledExactlyOnceWith({
+      data: expect.objectContaining({
+        threadId: "thread-1",
+        seq: 0,
+        role: "bot",
+        blocks: [{ kind: "text", text: "Hello, Ada Lovelace. I am Mira." }],
+      }),
+    });
+    expect(taskCreate).not.toHaveBeenCalled();
+    expect(runCreate).not.toHaveBeenCalled();
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it("still runs the intro when the card only names the bot", async () => {
+    const { client, botCreate, messageCreate, taskCreate, runCreate } = creationDeps();
+
+    await client.bots.create({ name: "New Bot", characterCard: { name: "Mira" } });
+
+    const created = botCreate.mock.calls[0]?.[0].data as Record<string, unknown>;
+    expect(created.name).toBe("Mira");
+    expect(created.instructions).toBe("");
+    expect(messageCreate).not.toHaveBeenCalled();
+    expect(taskCreate).toHaveBeenCalledOnce();
+    expect(runCreate).toHaveBeenCalledOnce();
+  });
+
+  it("creates an ordinary bot with the intro run when the card is malformed", async () => {
+    const { client, botCreate, messageCreate, taskCreate, runCreate, enqueue } = creationDeps();
+
+    await client.bots.create({ name: "New Bot", characterCard: { garbage: true } });
+
+    const created = botCreate.mock.calls[0]?.[0].data as Record<string, unknown>;
+    expect(created.name).toBe("New Bot");
+    expect(created.instructions).toBe("");
+    expect(messageCreate).not.toHaveBeenCalled();
+    const [taskCall] = taskCreate.mock.calls as Array<[{ data: { prompt?: string } }]>;
+    expect(taskCall?.[0].data.prompt).toBe(
+      botIntroPrompt({ userName: "Ada Lovelace", spaceName: null, disabledBuiltinTools: [] }),
+    );
+    expect(runCreate).toHaveBeenCalledOnce();
+    expect(runCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ threadId: "thread-1", trigger: "created" }),
+      }),
+    );
+    expect(enqueue).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ payload: { runId: "run-1" } }),
+    );
+  });
+});
+
 describe("codex catalog auth", () => {
   const actor = {
     spaceId: "workspace-1",
@@ -6631,6 +6791,25 @@ describe("bot model auth on save", () => {
       expect.objectContaining({
         data: expect.objectContaining({ autoApprove: true }),
       }),
+    );
+  });
+
+  it("saves what the bot shares with other bots", async () => {
+    const { botUpdate, handler } = saveDeps({ modelId: luna, preferences: () => null });
+    const peerVisibility = {
+      instructions: "owner",
+      description: "teammates",
+      memory: "owner",
+      routines: "managers",
+      model: "teammates",
+      tools: "owner",
+    } as const;
+
+    const response = await call(handler, "bots/update", { botId: "bot-1", peerVisibility });
+
+    expect(response.status).toBe(200);
+    expect(botUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ peerVisibility }) }),
     );
   });
 

@@ -3,6 +3,7 @@ import type { Actor, Group, MessageBlock } from "@rakazo/contracts";
 import {
   BOT_INSTRUCTIONS_MAX_LENGTH,
   BotSectionName,
+  botPeerVisibility,
   CreateGroupInput,
   CreateRoutineInput,
   canonicalPiProviderId,
@@ -17,6 +18,7 @@ import {
 import {
   CARD_TITLE_ESCAPED_CHARACTERS,
   ONCE_ROUTINE_CRON,
+  peerVisibilityAllowsField,
   redactSecrets,
   toolRequiresExplicitApproval,
 } from "@rakazo/core";
@@ -163,19 +165,35 @@ async function prepareCreateGroup(
   const members = await resolveBots(deps.prisma, run, { ids, names });
   if ("error" in members) return members;
   const groupName = singleLine(text(args.name) ?? "");
-  const credential = credentialField({ name: groupName }, secrets);
+  const typedPremise = args.premise;
+  if (typedPremise !== undefined && typedPremise !== null && typeof typedPremise !== "string") {
+    return refuse("premise must be a string.");
+  }
+  const premise = typeof typedPremise === "string" ? typedPremise.trim() : "";
+  const credential = credentialField({ name: groupName, premise }, secrets);
   if (credential) return refuse(credential);
+  const hidden = invisibleField({ premise });
+  if (hidden) return refuse(hidden);
   const parsed = CreateGroupInput.safeParse({
     name: groupName,
     botIds: members.map((member) => member.id),
+    ...(premise ? { premise } : {}),
   });
   if (!parsed.success) return refuse(issueMessage(parsed.error));
   return {
     ok: true,
-    canonical: { name: parsed.data.name, botIds: parsed.data.botIds, members },
+    canonical: {
+      name: parsed.data.name,
+      botIds: parsed.data.botIds,
+      members,
+      ...(parsed.data.premise ? { premise: parsed.data.premise } : {}),
+    },
     summary: {
       title: `Create group “${cardName(parsed.data.name)}”?`,
-      lines: [`Members: ${memberNames(members)}`],
+      lines: [
+        `Members: ${memberNames(members)}`,
+        ...(parsed.data.premise ? [`Shared scene: ${singleLine(parsed.data.premise)}`] : []),
+      ],
     },
   };
 }
@@ -210,10 +228,23 @@ async function prepareUpdateGroup(
 
   const typedName = text(args.name);
   const nextName = typedName === undefined ? undefined : singleLine(typedName);
-  const credential = credentialField({ name: nextName }, secrets);
+  const typedPremise = args.premise;
+  if (typedPremise !== undefined && typedPremise !== null && typeof typedPremise !== "string") {
+    return refuse("premise must be a string.");
+  }
+  // An explicit blank premise clears the scene; an omitted one leaves it unchanged.
+  const nextPremise = typeof typedPremise === "string" ? typedPremise.trim() : undefined;
+  const credential = credentialField({ name: nextName, premise: nextPremise }, secrets);
   if (credential) return refuse(credential);
+  if (nextPremise !== undefined) {
+    const hidden = invisibleField({ premise: nextPremise });
+    if (hidden) return refuse(hidden);
+  }
+  const premiseChanged = nextPremise !== undefined && nextPremise !== group.premise;
   const renamed = nextName !== undefined && nextName !== group.name;
-  if (!renamed && !added.length && !removed.length) return refuse("Nothing to change.");
+  if (!renamed && !added.length && !removed.length && !premiseChanged) {
+    return refuse("Nothing to change.");
+  }
 
   const next = [...current.filter((member) => !removeIds.includes(member.id)), ...added];
   if (next.length < GROUP_MEMBER_MIN || next.length > GROUP_MEMBER_MAX) {
@@ -224,6 +255,7 @@ async function prepareUpdateGroup(
     groupId: group.id,
     ...(renamed ? { name: nextName } : {}),
     ...(membershipChanged ? { botIds: next.map((member) => member.id) } : {}),
+    ...(premiseChanged ? { premise: nextPremise } : {}),
     expectedBotIds: current.map((member) => member.id),
   });
   if (!parsed.success) return refuse(issueMessage(parsed.error));
@@ -232,12 +264,20 @@ async function prepareUpdateGroup(
   if (parsed.data.name !== undefined) lines.push(`Rename to “${singleLine(parsed.data.name)}”`);
   if (added.length) lines.push(`Add: ${memberNames(added)}`);
   if (removed.length) lines.push(`Remove: ${memberNames(removed)}`);
+  if (parsed.data.premise !== undefined) {
+    lines.push(
+      parsed.data.premise
+        ? `Shared scene: ${singleLine(parsed.data.premise)}`
+        : "Clear the shared scene",
+    );
+  }
   return {
     ok: true,
     canonical: {
       groupId: group.id,
       groupName: group.name,
       ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
+      ...(parsed.data.premise !== undefined ? { premise: parsed.data.premise } : {}),
       expectedBotIds: parsed.data.expectedBotIds ?? [],
       ...(parsed.data.botIds ? { botIds: parsed.data.botIds } : {}),
       added,
@@ -300,6 +340,8 @@ async function prepareChildModel(
   ) {
     return refuse("That bot already uses this model.");
   }
+  // The card is the owner's, so it shows their bot's current model whatever the bot shares
+  // with other bots; the tool result is what the calling bot sees.
   const lines = [
     `From: ${modelLabel(previous.provider, previous.model)}`,
     `To: ${modelLabel(validated.provider, validated.model)}`,
@@ -472,8 +514,15 @@ export type FleetListing = {
   groups: FleetGroup[];
   sections: string[];
   truncated: boolean;
-  /** With `bot_id` of a bot the caller created: what an instruction edit must start from. */
-  bot?: { id: string; name: string; instructions: string; instructionsVersion: string };
+  /** With `bot_id`: that bot's instruction version, and its text when it shares it. */
+  bot?: {
+    id: string;
+    name: string;
+    /** Absent when this bot keeps its instructions from other bots. */
+    instructions?: string;
+    instructionsVersion: string;
+    instructionsShared: boolean;
+  };
 };
 
 /** The version an instruction edit must echo back: the newest history entry, or "initial". */
@@ -497,11 +546,19 @@ export async function listFleet(
       where: { id: child.id },
       select: { instructions: true, instructionHistory: true },
     });
+    // A bot that keeps its instructions to itself still hands out the version, so
+    // set_child_instructions can replace them without the text crossing bots.
+    const instructionsShared = peerVisibilityAllowsField(
+      botPeerVisibility(child.peerVisibility),
+      "instructions",
+      "manager",
+    );
     detail = {
       id: child.id,
       name: singleLine(child.name),
       instructionsVersion: instructionsVersionOf(row),
-      instructions: row.instructions,
+      instructionsShared,
+      ...(instructionsShared ? { instructions: row.instructions } : {}),
     };
   }
   if (detail) return { bot: detail, bots: [], groups: [], sections: [], truncated: false };
@@ -512,6 +569,7 @@ export async function listFleet(
         id: true,
         name: true,
         description: true,
+        peerVisibility: true,
         pinned: true,
         section: { select: { name: true } },
       },
@@ -541,7 +599,13 @@ export async function listFleet(
     bots: listedBots.map((bot) => ({
       id: bot.id,
       name: singleLine(bot.name),
-      description: bot.description,
+      description: peerVisibilityAllowsField(
+        botPeerVisibility(bot.peerVisibility),
+        "description",
+        "manager",
+      )
+        ? bot.description
+        : "",
       section: bot.section ? singleLine(bot.section.name) : null,
       pinned: bot.pinned,
       createdByMe: childIds.has(bot.id),
@@ -704,15 +768,20 @@ export async function createFleetGroup(
 ): Promise<
   { groupId: string; threadId: string; name: string; members: Member[] } | { error: string }
 > {
-  const parsed = CreateGroupInput.safeParse({ name: canonical.name, botIds: canonical.botIds });
+  const parsed = CreateGroupInput.safeParse({
+    name: canonical.name,
+    botIds: canonical.botIds,
+    premise: canonical.premise,
+  });
   if (!parsed.success) return { error: issueMessage(parsed.error) };
-  const { name, botIds } = parsed.data;
+  const { name, botIds, premise } = parsed.data;
   const wanted = new Set(botIds);
   const sameName = await deps.prisma.chatGroup.findMany({
     where: { spaceId: run.spaceId, userId: run.userId, archivedAt: null, name },
     select: {
       id: true,
       name: true,
+      premise: true,
       thread: { select: { id: true } },
       members: {
         where: { bot: { archivedAt: null } },
@@ -724,6 +793,7 @@ export async function createFleetGroup(
   const existing = sameName.find(
     (group) =>
       group.thread &&
+      group.premise === (premise ?? "") &&
       group.members.length === wanted.size &&
       group.members.every((member) => wanted.has(member.botId)),
   );
@@ -740,7 +810,11 @@ export async function createFleetGroup(
   }
   let group: Group;
   try {
-    group = await createGroupRepos(deps.prisma).createGroup(actorOf(run), { name, botIds });
+    group = await createGroupRepos(deps.prisma).createGroup(actorOf(run), {
+      name,
+      botIds,
+      premise,
+    });
   } catch (error) {
     return repoRefusal(error);
   }
@@ -765,6 +839,7 @@ export async function updateFleetGroup(
   const parsed = UpdateGroupInput.safeParse({
     groupId: canonical.groupId,
     name: canonical.name,
+    premise: canonical.premise,
     botIds: canonical.botIds,
     expectedBotIds: canonical.expectedBotIds,
   });
@@ -928,9 +1003,10 @@ export async function setChildBotModel(
       ok: true;
       botId: string;
       name: string;
-      provider: string | null;
-      model: string | null;
-      thinkingLevel: string | null;
+      /** Absent when this bot keeps its model from other bots. */
+      provider?: string | null;
+      model?: string | null;
+      thinkingLevel?: string | null;
     }
   | { error: string }
 > {
@@ -981,13 +1057,28 @@ export async function setChildBotModel(
       return { error: "That bot's model changed since you approved; ask again." };
     throw error;
   }
-  return {
-    ok: true,
-    botId: child.id,
-    name: singleLine(child.name),
+  return childModelResult(child, {
     provider: validated.provider,
     model: validated.model,
     thinkingLevel: validated.thinkingLevel,
+  });
+}
+
+/** A model change's tool result: the model itself only when the child shares it. */
+export function childModelResult(
+  child: { id: string; name: string; peerVisibility?: unknown },
+  model: { provider: string | null; model: string | null; thinkingLevel: string | null },
+) {
+  const shared = peerVisibilityAllowsField(
+    botPeerVisibility(child.peerVisibility),
+    "model",
+    "manager",
+  );
+  return {
+    ok: true as const,
+    botId: child.id,
+    name: singleLine(child.name),
+    ...(shared ? model : {}),
   };
 }
 
@@ -1027,13 +1118,23 @@ export async function createChildRoutine(
   });
   const target = { botId: child.id, botName: singleLine(child.name) };
   if (existing) {
+    // The routine belongs to the other bot; it returns only what that bot shares.
+    const shared = peerVisibilityAllowsField(
+      botPeerVisibility(child.peerVisibility),
+      "routines",
+      "manager",
+    );
     return {
       ok: true as const,
       routineId: existing.id,
-      name: singleLine(existing.name),
-      cron: existing.crons[0],
-      nextRunAt: existing.nextRunAt?.toISOString() ?? null,
       oneShot: Boolean(runAt),
+      ...(shared
+        ? {
+            name: singleLine(existing.name),
+            cron: existing.crons[0],
+            nextRunAt: existing.nextRunAt?.toISOString() ?? null,
+          }
+        : {}),
       ...target,
     };
   }
@@ -1094,10 +1195,11 @@ const botSelect = {
   modelProvider: true,
   modelId: true,
   thinkingLevel: true,
+  peerVisibility: true,
   thread: { select: { id: true } },
 } satisfies Prisma.BotSelect;
 
-function activeBotsWhere(run: FleetRun): Prisma.BotWhereInput {
+function activeBotsWhere(run: Pick<FleetRun, "spaceId" | "userId">): Prisma.BotWhereInput {
   return { ...managedBotsWhere(run), archivedAt: null };
 }
 
@@ -1136,7 +1238,11 @@ async function resolveBots(
 }
 
 /** One active bot in the current user’s space, by `bot_id` or exact `bot_name`. */
-async function resolveBot(prisma: PrismaClient, run: FleetRun, args: Record<string, unknown>) {
+export async function resolveBot(
+  prisma: PrismaClient,
+  run: Pick<FleetRun, "spaceId" | "userId">,
+  args: Record<string, unknown>,
+) {
   const id = text(args.bot_id);
   const name = text(args.bot_name);
   if (id && name) return refuse("Pass bot_id or bot_name, not both.");
@@ -1174,6 +1280,7 @@ async function resolveGroup(prisma: PrismaClient, run: FleetRun, args: Record<st
     select: {
       id: true,
       name: true,
+      premise: true,
       members: {
         orderBy: { createdAt: "asc" },
         select: { botId: true, bot: { select: { name: true, archivedAt: true } } },

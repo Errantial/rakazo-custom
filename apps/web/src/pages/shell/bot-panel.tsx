@@ -3,6 +3,8 @@ import type {
   AgentSkillCatalogEntry,
   Bot,
   BotAvatarSet,
+  BotPeerAudience,
+  BotPeerVisibility,
   ComputerMode,
   ModelCatalogEntry,
   ThinkingLevel,
@@ -12,6 +14,7 @@ import {
   BOT_DESCRIPTION_MAX_LENGTH,
   BOT_NAME_MAX_LENGTH,
   BUILTIN_TOOL_NAMES,
+  botPeerVisibility,
   isBuiltinToolName,
   resolveBotAvatarSet,
 } from "@rakazo/contracts";
@@ -59,6 +62,25 @@ const KnowledgeSection = lazyComponent(() =>
 );
 
 const rowLabelClass = "text-sm text-foreground";
+
+/** Every field the panel can save on its own, outside the one Save button's model/voice draft. */
+type BotPanelPatch = {
+  name?: string;
+  description?: string;
+  color?: string;
+  avatarSet?: BotAvatarSet;
+  notifyOnFinish?: boolean;
+  autoApprove?: boolean;
+  fleetManagement?: boolean;
+  crossSpaceCommunication?: boolean;
+  peerVisibility?: BotPeerVisibility;
+  disabledBuiltinTools?: string[];
+  /** The accepted list behind a disabled-tools edit, sent so a stale write can be detected. */
+  baseDisabledBuiltinTools?: string[];
+};
+
+/** The subset callers enqueue; the base list is added from the last accepted save. */
+type EnqueuedPatch = Omit<BotPanelPatch, "baseDisabledBuiltinTools">;
 
 /** The advanced fields one Save sends, in the order their saved snapshot keeps them. */
 function advancedValues(bot: Bot) {
@@ -137,6 +159,7 @@ export function BotSettings({
     autoApprove?: boolean;
     fleetManagement?: boolean;
     crossSpaceCommunication?: boolean;
+    peerVisibility?: BotPeerVisibility;
     voiceId?: string | null;
     modelProvider?: string | null;
     modelId?: string | null;
@@ -186,6 +209,8 @@ export function BotSettings({
   );
   const [fleetManagement, setFleetManagement] = useState(bot.fleetManagement);
   useEffect(() => setFleetManagement(bot.fleetManagement), [bot.fleetManagement]);
+  const [peerVisibility, setPeerVisibility] = useState(() => botPeerVisibility(bot.peerVisibility));
+  useEffect(() => setPeerVisibility(botPeerVisibility(bot.peerVisibility)), [bot.peerVisibility]);
   const [voiceId, setVoiceId] = useState(bot.voiceId ?? "");
   const [modelKey, setModelKey] = useState(
     bot.modelProvider && bot.modelId ? modelOptionKey(bot.modelProvider, bot.modelId) : "",
@@ -194,6 +219,15 @@ export function BotSettings({
   const [disabledBuiltinTools, setDisabledBuiltinTools] = useState<string[]>(
     bot.disabledBuiltinTools ?? [],
   );
+  // Who may read each part of this bot, in the order the settings section lists them.
+  const peerVisibilityRows = [
+    ["instructions", t`Instructions`, t`Who can see the instructions`],
+    ["description", t`Description`, t`Who can see the description`],
+    ["memory", t`Memory`, t`Who can see the memory`],
+    ["routines", t`Routines`, t`Who can see the routines`],
+    ["model", t`Model`, t`Who can see the model`],
+    ["tools", t`Tools`, t`Who can see the tools`],
+  ] as const;
   // The list on screen is updated before the save returns. This stays on the
   // last list the server accepted so a rejection can undo that preview.
   const persistedDisabledToolsRef = useRef(disabledBuiltinTools);
@@ -239,18 +273,7 @@ export function BotSettings({
   const saveQueueRef = useRef(Promise.resolve());
   const executeSaveRef = useRef<
     (
-      patchOverrides?: {
-        name?: string;
-        description?: string;
-        color?: string;
-        avatarSet?: BotAvatarSet;
-        notifyOnFinish?: boolean;
-        autoApprove?: boolean;
-        fleetManagement?: boolean;
-        crossSpaceCommunication?: boolean;
-        disabledBuiltinTools?: string[];
-        baseDisabledBuiltinTools?: string[];
-      },
+      patchOverrides?: BotPanelPatch,
       revisions?: { color: number; avatarSet: number; notifyOnFinish: number },
     ) => Promise<void>
   >(async () => undefined);
@@ -328,18 +351,7 @@ export function BotSettings({
   const defaultThinkingLevel = effectiveCredential?.thinkingLevel ?? "medium";
 
   async function executeSave(
-    patchOverrides?: {
-      name?: string;
-      description?: string;
-      color?: string;
-      avatarSet?: BotAvatarSet;
-      notifyOnFinish?: boolean;
-      autoApprove?: boolean;
-      fleetManagement?: boolean;
-      crossSpaceCommunication?: boolean;
-      disabledBuiltinTools?: string[];
-      baseDisabledBuiltinTools?: string[];
-    },
+    patchOverrides?: BotPanelPatch,
     revisions?: { color: number; avatarSet: number; notifyOnFinish: number },
   ) {
     try {
@@ -355,6 +367,10 @@ export function BotSettings({
       }
       if (patchOverrides?.fleetManagement !== undefined) {
         await onSave({ fleetManagement: patchOverrides.fleetManagement });
+        return;
+      }
+      if (patchOverrides?.peerVisibility !== undefined) {
+        await onSave({ peerVisibility: patchOverrides.peerVisibility });
         return;
       }
       const selected = selectedModel;
@@ -483,17 +499,7 @@ export function BotSettings({
     void enqueueSave({ disabledBuiltinTools: next });
   }
 
-  function enqueueSave(patchOverrides?: {
-    name?: string;
-    description?: string;
-    color?: string;
-    avatarSet?: BotAvatarSet;
-    notifyOnFinish?: boolean;
-    autoApprove?: boolean;
-    fleetManagement?: boolean;
-    crossSpaceCommunication?: boolean;
-    disabledBuiltinTools?: string[];
-  }) {
+  function enqueueSave(patchOverrides?: EnqueuedPatch) {
     // Serialize full-object auto-saves so an older in-flight request cannot
     // finish after a newer one and clobber fields. Always call through a ref so
     // queued work reads the latest field values, not a stale render closure.
@@ -783,6 +789,33 @@ export function BotSettings({
                 rows={2}
                 className="min-h-16 resize-none field-sizing-content"
               />
+              {peerVisibilityRows.map(([field, label, accessibleName]) => (
+                <label
+                  key={field}
+                  htmlFor={`${ids}-peer-${field}`}
+                  className="flex min-h-11 items-center justify-between gap-3 text-sm text-foreground"
+                >
+                  <span className={rowLabelClass}>{label}</span>
+                  <NativeSelect
+                    id={`${ids}-peer-${field}`}
+                    aria-label={accessibleName}
+                    className="max-w-2/3"
+                    value={peerVisibility[field]}
+                    onChange={(event) => {
+                      const next = {
+                        ...peerVisibility,
+                        [field]: event.target.value as BotPeerAudience,
+                      };
+                      setPeerVisibility(next);
+                      void enqueueSave({ peerVisibility: next });
+                    }}
+                  >
+                    <NativeSelectOption value="owner">{t`Only me`}</NativeSelectOption>
+                    <NativeSelectOption value="managers">{t`Managers`}</NativeSelectOption>
+                    <NativeSelectOption value="teammates">{t`Teammates`}</NativeSelectOption>
+                  </NativeSelect>
+                </label>
+              ))}
             </SettingsGroup>
             <SettingsGroup label={t`Tools`} plain>
               <section data-testid="bot-settings-tools">

@@ -1205,6 +1205,10 @@ msgstr "שינוי סיסמה"
 msgid "Changing…"
 msgstr "משנה…"
 
+#: src/pages/shell/agent-import.tsx
+msgid "Character card"
+msgstr "כרטיס דמות"
+
 #: src/pages/shell/message-cards.tsx
 msgid "Chart failed to render: {error}"
 msgstr "לא ניתן להציג את התרשים: {error}"
@@ -1303,6 +1307,10 @@ msgstr ""
 #: src/pages/shell/agent-import.tsx
 msgid "Choose backup"
 msgstr "בחירת גיבוי"
+
+#: src/pages/shell/agent-import.tsx
+msgid "Choose card"
+msgstr "בחירת כרטיס"
 
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
@@ -4019,6 +4027,10 @@ msgstr "ללא אימות"
 msgid "No bots match"
 msgstr "אין בוטים תואמים"
 
+#: src/pages/shell/agent-import.tsx
+msgid "No character card found in this file"
+msgstr "לא נמצא כרטיס דמות בקובץ הזה"
+
 #: src/components/AskCard.tsx
 msgid "No longer active"
 msgstr "כבר לא פעיל"
@@ -4496,6 +4508,10 @@ msgstr "POST אל"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Preferences"
 msgstr "העדפות"
+
+#: src/pages/GroupPanel.tsx
+msgid "Premise"
+msgstr ""
 
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
@@ -5344,6 +5360,10 @@ msgstr "משותף"
 #: src/pages/KnowledgeSection.tsx
 msgid "Shared memory"
 msgstr "זיכרון משותף"
+
+#: src/pages/GroupPanel.tsx
+msgid "Shared scene or world for every bot here"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Show"

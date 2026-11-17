@@ -1,4 +1,5 @@
 import type { AccountExportManifest, AccountExportRecord } from "@rakazo/contracts";
+import { botPeerVisibility } from "@rakazo/contracts";
 import type { Prisma, PrismaClient } from "./client.js";
 import { runAsTenant } from "./row-security.js";
 
@@ -167,6 +168,7 @@ async function* spaceRecords(
       teamChatRules: bot.teamChatRules,
       crossSpaceCommunication: bot.crossSpaceCommunication,
       fleetManagement: bot.fleetManagement,
+      peerVisibility: botPeerVisibility(bot.peerVisibility),
       createdAt: iso(bot.createdAt),
     };
 
@@ -182,6 +184,7 @@ async function* spaceRecords(
       type: "chat_group",
       id: group.id,
       name: group.name,
+      premise: group.premise,
       pinned: group.pinned,
       sectionId: group.sectionId,
       archivedAt: isoOrNull(group.archivedAt),

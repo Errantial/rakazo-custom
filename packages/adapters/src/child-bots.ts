@@ -14,6 +14,7 @@ import {
   GROUP_MEMBER_MIN,
 } from "@rakazo/contracts";
 import { ACTIVE_RUN_STATUSES } from "@rakazo/core";
+import { botCardSeed, mergeCardFields } from "@rakazo/core/bot-cards";
 import type { Prisma, PrismaClient } from "@rakazo/db";
 import {
   cancelRunsInTransaction,
@@ -50,6 +51,54 @@ export function confirmSpawnedBotName(confirmName: string, botName: string) {
   return { ok: true as const };
 }
 
+/**
+ * Whether the model passed a character card. Providers send an omitted optional field as null or
+ * blank, so either means no card.
+ */
+export function characterCardGiven(value: unknown): boolean {
+  return value !== undefined && value !== null && !(typeof value === "string" && !value.trim());
+}
+
+/**
+ * The bot `spawn_bot` creates. A character card seeds the name and profile through the same
+ * field-wise merge the creation route uses, and its first greeting opens the bot's chat. A card
+ * that arrived but cannot be used is refused instead of ignored: a model that passed one meant it.
+ */
+export function spawnBotFields(
+  args: Record<string, unknown>,
+  userName: string,
+):
+  | { name: string; description: string; instructions: string; greeting?: string }
+  | { error: string } {
+  const typed = {
+    name: String(args.name ?? ""),
+    description: args.description ? String(args.description) : "",
+    instructions: args.instructions ? String(args.instructions) : "",
+  };
+  const withCard = characterCardGiven(args.character_card);
+  const seed = withCard
+    ? botCardSeed(cardJson(args.character_card), { userName, fallbackName: typed.name })
+    : undefined;
+  if (withCard && !seed) return { error: "character_card is not a usable character card." };
+  const { name, description, instructions } = mergeCardFields(typed, seed);
+  return {
+    name,
+    description,
+    instructions,
+    ...(seed?.greeting ? { greeting: seed.greeting } : {}),
+  };
+}
+
+/** The card arrives as JSON text, though a serializer that already parsed it still maps. */
+function cardJson(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function spawnBot(
   deps: {
     prisma: PrismaClient;
@@ -67,6 +116,8 @@ export async function spawnBot(
     name: string;
     description?: string;
     instructions?: string;
+    /** The card's opening line, posted as the new bot's first message. */
+    greeting?: string;
     prompt?: string;
     computerMode?: ComputerMode;
   },
@@ -80,6 +131,7 @@ export async function spawnBot(
     email: "",
     isDeploymentOwner: false,
   };
+  const greeting = (input.greeting ?? "").trim();
   let duplicate = false;
   let created: Pick<Bot, "id" | "name" | "threadId">;
   try {
@@ -92,11 +144,17 @@ export async function spawnBot(
       parentBotId: input.spawnedBy.id,
       spawnKey: input.spawnKey,
       computerMode: input.computerMode,
-      initialMessage: {
-        role: "system",
-        blocks: [{ kind: "meta", text: `Created by ${input.spawnedBy.name}` }],
-        runId: input.runId,
-      },
+      initialMessages: [
+        {
+          role: "system" as const,
+          blocks: [{ kind: "meta" as const, text: `Created by ${input.spawnedBy.name}` }],
+          runId: input.runId,
+        },
+        // The card's own opening follows the provenance note, as the new bot's first message.
+        ...(greeting
+          ? [{ role: "bot" as const, blocks: [{ kind: "text" as const, text: greeting }] }]
+          : []),
+      ],
     });
   } catch (error) {
     const existing = await deps.prisma.bot.findUnique({

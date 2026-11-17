@@ -291,6 +291,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development workflow and test m
 - [Mobile releases](./docs/mobile-release.md)
 - [Performance testing](./docs/performance.md)
 - [Manage the bots it creates](./docs/fleet-management.md)
+- [What other bots can see](./docs/bot-visibility.md)
 
 ## How Rakazo compares
 

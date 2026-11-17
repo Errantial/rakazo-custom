@@ -1205,6 +1205,10 @@ msgstr "Change password"
 msgid "Changing…"
 msgstr "Changing…"
 
+#: src/pages/shell/agent-import.tsx
+msgid "Character card"
+msgstr "Character card"
+
 #: src/pages/shell/message-cards.tsx
 msgid "Chart failed to render: {error}"
 msgstr "Chart failed to render: {error}"
@@ -1303,6 +1307,10 @@ msgstr "Choose a provider"
 #: src/pages/shell/agent-import.tsx
 msgid "Choose backup"
 msgstr "Choose backup"
+
+#: src/pages/shell/agent-import.tsx
+msgid "Choose card"
+msgstr "Choose card"
 
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
@@ -4019,6 +4027,10 @@ msgstr "No authentication"
 msgid "No bots match"
 msgstr "No bots match"
 
+#: src/pages/shell/agent-import.tsx
+msgid "No character card found in this file"
+msgstr "No character card found in this file"
+
 #: src/components/AskCard.tsx
 msgid "No longer active"
 msgstr "No longer active"
@@ -4496,6 +4508,10 @@ msgstr "POST to"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Preferences"
 msgstr "Preferences"
+
+#: src/pages/GroupPanel.tsx
+msgid "Premise"
+msgstr "Premise"
 
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
@@ -5344,6 +5360,10 @@ msgstr "Shared"
 #: src/pages/KnowledgeSection.tsx
 msgid "Shared memory"
 msgstr "Shared memory"
+
+#: src/pages/GroupPanel.tsx
+msgid "Shared scene or world for every bot here"
+msgstr "Shared scene or world for every bot here"
 
 #: src/components/VaultSettings.tsx
 msgid "Show"

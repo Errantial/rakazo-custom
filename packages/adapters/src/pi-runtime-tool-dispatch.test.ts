@@ -947,6 +947,58 @@ describe("Pi connector tool dispatch", () => {
     );
   });
 
+  it("passes spawn_bot's character_card through to the executor", async () => {
+    const spawnBotTool = builtinAgentTools.find((tool) => tool.name === "spawn_bot");
+    if (!spawnBotTool) throw new Error("missing spawn_bot");
+    const characterCard = JSON.stringify({ name: "Mira", first_mes: "You're late." });
+    fakeAgentState.invoke = {
+      name: "use_tool",
+      args: {
+        name: "spawn_bot",
+        arguments: {
+          name: "Mira",
+          description: "Finds venues.",
+          instructions: "Ask before booking anything.",
+          character_card: characterCard,
+          computer_mode: "team",
+        },
+      },
+    };
+    const executeTool = vi.fn(async () => ({ ok: true }));
+    const runtime = new PiAgentRuntime();
+
+    for await (const _event of runtime.run(
+      {
+        botId: "b",
+        threadId: "t",
+        runId: "r",
+        prompt: "create a bot from this card",
+        instructions: "",
+        history: [],
+        tools: [spawnBotTool],
+        model: { provider: "test", id: "dispatch-test-model" },
+        executeTool,
+      },
+      {
+        operationId: "1",
+        traceId: "1",
+        spaceId: "w",
+        userId: "u",
+        signal: new AbortController().signal,
+      },
+    )) {
+      // Exhaust the runtime event stream so tool execution completes.
+    }
+
+    expect(executeTool).toHaveBeenCalledWith(
+      "spawn_bot",
+      expect.objectContaining({ name: "Mira", character_card: characterCard }),
+      JSON.stringify(["pi-tool", "main", "call-1"]),
+      undefined,
+      { onShellStillRunning: expect.any(Function) },
+    );
+  });
+
   it("runs schedule tools and remember sequentially", async () => {
     const executeTool = vi.fn(async () => ({ ok: true }));
     const runtime = new PiAgentRuntime();

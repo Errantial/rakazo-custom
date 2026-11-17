@@ -34,6 +34,14 @@ function bot(id = "bot-1"): Bot {
     teamChatAmbientEnabled: false,
     teamChatRules: "",
     fleetManagement: false,
+    peerVisibility: {
+      instructions: "owner",
+      description: "teammates",
+      memory: "owner",
+      routines: "owner",
+      model: "owner",
+      tools: "owner",
+    },
     disabledBuiltinTools: [],
     webhookConfigured: false,
     spawnKey: null,
@@ -50,6 +58,15 @@ describe("thread bot roster", () => {
       expect(retainUnchangedBotRoster(current, next)).toBe(current);
     },
   );
+
+  it("retains a bot whose nested privacy settings come back as a new object", () => {
+    const current = [{ ...bot(), peerVisibility: { ...bot().peerVisibility } }];
+    const next = JSON.parse(JSON.stringify(current)) as Bot[];
+    expect(next[0]!.peerVisibility).not.toBe(current[0]!.peerVisibility);
+    expect(retainUnchangedBotRoster(current, next)).toBe(current);
+    next[0]!.peerVisibility = { ...next[0]!.peerVisibility, memory: "teammates" };
+    expect(retainUnchangedBotRoster(current, next)).toBe(next);
+  });
 
   it("applies disabled tool content, length and ordering changes", () => {
     const current = [{ ...bot(), disabledBuiltinTools: ["web_search", "shell"] }];

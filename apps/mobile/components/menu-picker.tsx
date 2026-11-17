@@ -74,6 +74,7 @@ export function MenuPicker({
   divider = false,
   plain = false,
   showLabel = true,
+  accessibilityLabel,
 }: {
   label: string;
   choices: readonly MenuPickerChoice[];
@@ -83,13 +84,15 @@ export function MenuPicker({
   divider?: boolean;
   plain?: boolean;
   showLabel?: boolean;
+  /** Defaults to the visible label; name it after the section when that would repeat. */
+  accessibilityLabel?: string;
 }) {
   const styles = useThemedStyles(createStyles);
   const tokens = useMobileTokens();
   const rowStyle = [styles.row, plain && { paddingHorizontal: 0, minHeight: 44 }];
   const current = choices.find((choice) => choice.key === value)?.label ?? choices[0]?.label ?? "";
   const row = {
-    accessibilityLabel: label,
+    accessibilityLabel: accessibilityLabel ?? label,
     accessibilityRole: "button",
     accessibilityValue: { text: current },
     accessible: true,

@@ -1205,6 +1205,10 @@ msgstr "पासवर्ड बदलें"
 msgid "Changing…"
 msgstr "बदला जा रहा है…"
 
+#: src/pages/shell/agent-import.tsx
+msgid "Character card"
+msgstr "कैरेक्टर कार्ड"
+
 #: src/pages/shell/message-cards.tsx
 msgid "Chart failed to render: {error}"
 msgstr "चार्ट रेंडर नहीं हो सका: {error}"
@@ -1303,6 +1307,10 @@ msgstr ""
 #: src/pages/shell/agent-import.tsx
 msgid "Choose backup"
 msgstr "बैकअप चुनें"
+
+#: src/pages/shell/agent-import.tsx
+msgid "Choose card"
+msgstr "कार्ड चुनें"
 
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
@@ -4019,6 +4027,10 @@ msgstr "कोई प्रमाणीकरण नहीं"
 msgid "No bots match"
 msgstr ""
 
+#: src/pages/shell/agent-import.tsx
+msgid "No character card found in this file"
+msgstr "इस फ़ाइल में कोई कैरेक्टर कार्ड नहीं मिला"
+
 #: src/components/AskCard.tsx
 msgid "No longer active"
 msgstr "अब सक्रिय नहीं"
@@ -4496,6 +4508,10 @@ msgstr ""
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Preferences"
 msgstr "प्राथमिकताएँ"
+
+#: src/pages/GroupPanel.tsx
+msgid "Premise"
+msgstr ""
 
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
@@ -5344,6 +5360,10 @@ msgstr "साझा"
 #: src/pages/KnowledgeSection.tsx
 msgid "Shared memory"
 msgstr "साझा मेमोरी"
+
+#: src/pages/GroupPanel.tsx
+msgid "Shared scene or world for every bot here"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Show"

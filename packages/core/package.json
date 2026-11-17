@@ -14,6 +14,11 @@
       "development": "./src/user-error.ts",
       "default": "./src/user-error.ts"
     },
+    "./bot-cards": {
+      "types": "./src/bot-cards.ts",
+      "development": "./src/bot-cards.ts",
+      "default": "./src/bot-cards.ts"
+    },
     "./message-quote": {
       "types": "./src/message-quote.ts",
       "development": "./src/message-quote.ts",

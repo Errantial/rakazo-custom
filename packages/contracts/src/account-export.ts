@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { BotPeerVisibilitySchema } from "./bot-visibility.js";
 import { Id, IsoDate } from "./ids.js";
 
 /**
@@ -78,12 +79,16 @@ export const AccountExportRecordSchema = z.discriminatedUnion("type", [
     teamChatRules: z.string(),
     crossSpaceCommunication: z.boolean(),
     fleetManagement: z.boolean(),
+    /** Absent in exports from before bots could restrict this. */
+    peerVisibility: BotPeerVisibilitySchema.optional(),
     createdAt: IsoDate,
   }),
   z.object({
     type: z.literal("chat_group"),
     id: Id,
     name: z.string(),
+    /** Authored setting shared by every member; older exports predate it. */
+    premise: z.string().optional(),
     pinned: z.boolean(),
     sectionId: Id.nullable(),
     archivedAt: IsoDate.nullable(),

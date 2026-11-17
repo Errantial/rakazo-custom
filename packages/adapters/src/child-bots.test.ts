@@ -29,10 +29,12 @@ import { describe, expect, it, vi } from "vitest";
 import {
   archiveBot,
   archiveSpawnedBot,
+  characterCardGiven,
   confirmSpawnedBotName,
   destroyBot,
   managedBotsWhere,
   spawnBot,
+  spawnBotFields,
 } from "./child-bots.js";
 import { BrowserStoppedReleaseError } from "./computer-screens.js";
 import { LocalAgentHomeStore } from "./home.js";
@@ -180,6 +182,134 @@ describe("spawned bot creation", () => {
       threadId: "thread-2",
     });
     createReposSpy.mockRestore();
+  });
+
+  it("posts a character card's greeting as the bot's first message after the provenance note", async () => {
+    const createBot = vi.fn().mockResolvedValue({
+      id: "child-3",
+      name: "Mira",
+      threadId: "thread-3",
+    });
+    const createReposSpy = vi.spyOn(await import("@rakazo/db"), "createRepos").mockReturnValue({
+      createBot,
+    } as unknown as ReturnType<typeof createRepos>);
+
+    const result = await spawnBot(
+      {
+        prisma: {} as PrismaClient,
+        jobs: { enqueue: vi.fn() } as unknown as JobPublisher,
+      },
+      {
+        spawnedBy: {
+          id: "parent-1",
+          name: "Chief",
+          spaceId: "workspace-1",
+          userId: "user-1",
+        },
+        runId: "run-1",
+        spawnKey: "tool-call-3",
+        name: "Mira",
+        greeting: " Hello, the user. ",
+      },
+    );
+
+    expect(createBot).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: "user-1", spaceId: "workspace-1" }),
+      expect.objectContaining({
+        initialMessages: [
+          {
+            role: "system",
+            blocks: [{ kind: "meta", text: "Created by Chief" }],
+            runId: "run-1",
+          },
+          { role: "bot", blocks: [{ kind: "text", text: "Hello, the user." }] },
+        ],
+      }),
+    );
+    expect(result).toMatchObject({ ok: true, botId: "child-3" });
+    createReposSpy.mockRestore();
+  });
+});
+
+describe("spawn_bot fields", () => {
+  const cardFields = {
+    spec: "chara_card_v2",
+    data: {
+      name: "Mira",
+      description: "Mira keeps the town's old maps.",
+      first_mes: "Hello, {{user}}. I am {{char}}.",
+    },
+  };
+
+  it("seeds the name, profile and greeting from a card", () => {
+    const fields = spawnBotFields(
+      {
+        name: "New Bot",
+        description: "typed description",
+        instructions: "typed instructions",
+        character_card: JSON.stringify(cardFields),
+      },
+      "Ada Lovelace",
+    );
+
+    expect(fields).toEqual({
+      name: "Mira",
+      description: "Mira keeps the town's old maps.",
+      instructions: "## Canon\n\nMira keeps the town's old maps.",
+      greeting: "Hello, Ada Lovelace. I am Mira.",
+    });
+  });
+
+  it("keeps the typed fields a card does not author", () => {
+    const fields = spawnBotFields(
+      {
+        name: "Scout",
+        description: "typed description",
+        instructions: "typed instructions",
+        character_card: JSON.stringify({ name: "Mira" }),
+      },
+      "Ada",
+    );
+
+    expect(fields).toEqual({
+      name: "Mira",
+      description: "typed description",
+      instructions: "typed instructions",
+    });
+  });
+
+  it.each(["{not json", "{}", "[]", '"Mira"'])(
+    "refuses %s instead of creating a plain bot",
+    (card) => {
+      expect(spawnBotFields({ name: "Scout", character_card: card }, "Ada")).toEqual({
+        error: "character_card is not a usable character card.",
+      });
+    },
+  );
+
+  it("leaves the typed fields alone and greets as the user without a card", () => {
+    expect(spawnBotFields({ name: "Scout", character_card: "  " }, "")).toEqual({
+      name: "Scout",
+      description: "",
+      instructions: "",
+    });
+    expect(
+      spawnBotFields(
+        { name: "Scout", character_card: JSON.stringify({ name: "Mira", first_mes: "Hi." }) },
+        "",
+      ),
+    ).toEqual({ name: "Mira", description: "", instructions: "", greeting: "Hi." });
+  });
+});
+
+describe("character card presence", () => {
+  it.each([undefined, null, "", " \n "])("treats %p as no card", (value) => {
+    expect(characterCardGiven(value)).toBe(false);
+  });
+
+  it("counts any other value as a card", () => {
+    expect(characterCardGiven("{}")).toBe(true);
+    expect(characterCardGiven({ name: "Mira" })).toBe(true);
   });
 });
 describe("spawned bot archival", () => {

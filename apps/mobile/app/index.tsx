@@ -55,7 +55,7 @@ import { mobileTokens, resolveMobileAppearance } from "../lib/appearance";
 import { AvatarViewportScope, createAvatarViewport } from "../lib/avatar-life";
 import { isPaywallShown } from "../lib/billing";
 import type { CreateAction } from "../lib/create-chooser";
-import { createInboxBot } from "../lib/create-inbox-bot";
+import { createInboxBot, INBOX_BOT_NAME } from "../lib/create-inbox-bot";
 import { useDisplayMode } from "../lib/display-mode";
 import { useHeaderHeightIfAny } from "../lib/floating-header";
 import { useForegroundPoll } from "../lib/foreground-poll";
@@ -81,6 +81,7 @@ import { iosAtLeast } from "../lib/native-controls";
 import type { OrganizeTarget } from "../lib/organize-target";
 import { findOrganizeTarget } from "../lib/organize-target";
 import { offerPasskeyOnce } from "../lib/passkey";
+import { pickCharacterCard } from "../lib/pick-character-card";
 import { ACTIVITY_POLL_INTERVAL_MS, inboxPollIntervalMs } from "../lib/poll-cadence";
 import { registerPushToken } from "../lib/push";
 import { loadSavedInbox, saveInbox } from "../lib/saved-chats";
@@ -654,23 +655,40 @@ function Home({ embedded, onSelectSpace, onShareSelect }: InboxPaneProps & { emb
     [deleteInboxSpace, t],
   );
 
-  const createQuickBot = useCallback(async () => {
-    if (creatingBotRef.current || spaceActionRef.current.busy || spaceActionRef.current.recoveryId)
-      return;
-    creatingBotRef.current = true;
-    try {
-      await createInboxBot({ refreshBots, openChat });
-    } catch (err) {
-      setError(errorText(err, t("Could not create bot")));
-    } finally {
-      creatingBotRef.current = false;
-    }
-  }, [openChat, refreshBots, t]);
+  const createQuickBot = useCallback(
+    async (fromCard = false) => {
+      if (
+        creatingBotRef.current ||
+        spaceActionRef.current.busy ||
+        spaceActionRef.current.recoveryId
+      )
+        return;
+      creatingBotRef.current = true;
+      try {
+        if (!fromCard) {
+          await createInboxBot({ refreshBots, openChat });
+          return;
+        }
+        const picked = await pickCharacterCard(INBOX_BOT_NAME);
+        if (!picked) return;
+        if (picked.kind === "none") {
+          Alert.alert(t("No character card found in this file"));
+          return;
+        }
+        await createInboxBot({ refreshBots, openChat, card: picked });
+      } catch (err) {
+        setError(errorText(err, t("Could not create bot")));
+      } finally {
+        creatingBotRef.current = false;
+      }
+    },
+    [openChat, refreshBots, t],
+  );
 
   const runCreateAction = useCallback(
     (action: CreateAction) => {
       if (spaceActionRef.current.busy || spaceActionRef.current.recoveryId) return;
-      if (action === "bot") void createQuickBot();
+      if (action === "bot" || action === "card") void createQuickBot(action === "card");
       else if (action === "group") router.push("/new-group");
       else router.push("/new-space");
     },

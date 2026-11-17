@@ -1205,6 +1205,10 @@ msgstr "修改密码"
 msgid "Changing…"
 msgstr "正在修改…"
 
+#: src/pages/shell/agent-import.tsx
+msgid "Character card"
+msgstr "角色卡"
+
 #: src/pages/shell/message-cards.tsx
 msgid "Chart failed to render: {error}"
 msgstr "图表渲染失败：{error}"
@@ -1303,6 +1307,10 @@ msgstr "选择提供方"
 #: src/pages/shell/agent-import.tsx
 msgid "Choose backup"
 msgstr "选择备份"
+
+#: src/pages/shell/agent-import.tsx
+msgid "Choose card"
+msgstr "选择角色卡"
 
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
@@ -4019,6 +4027,10 @@ msgstr "无认证"
 msgid "No bots match"
 msgstr "没有匹配的 Bot"
 
+#: src/pages/shell/agent-import.tsx
+msgid "No character card found in this file"
+msgstr "此文件中未找到角色卡"
+
 #: src/components/AskCard.tsx
 msgid "No longer active"
 msgstr "已停用"
@@ -4496,6 +4508,10 @@ msgstr "POST 到"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Preferences"
 msgstr "偏好设置"
+
+#: src/pages/GroupPanel.tsx
+msgid "Premise"
+msgstr ""
 
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
@@ -5344,6 +5360,10 @@ msgstr "共享"
 #: src/pages/KnowledgeSection.tsx
 msgid "Shared memory"
 msgstr "共享记忆"
+
+#: src/pages/GroupPanel.tsx
+msgid "Shared scene or world for every bot here"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Show"

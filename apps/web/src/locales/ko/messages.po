@@ -1205,6 +1205,10 @@ msgstr "비밀번호 변경"
 msgid "Changing…"
 msgstr "변경 중…"
 
+#: src/pages/shell/agent-import.tsx
+msgid "Character card"
+msgstr "캐릭터 카드"
+
 #: src/pages/shell/message-cards.tsx
 msgid "Chart failed to render: {error}"
 msgstr "차트를 표시하지 못했습니다: {error}"
@@ -1303,6 +1307,10 @@ msgstr ""
 #: src/pages/shell/agent-import.tsx
 msgid "Choose backup"
 msgstr "백업 선택"
+
+#: src/pages/shell/agent-import.tsx
+msgid "Choose card"
+msgstr "카드 선택"
 
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
@@ -4019,6 +4027,10 @@ msgstr "인증 없음"
 msgid "No bots match"
 msgstr ""
 
+#: src/pages/shell/agent-import.tsx
+msgid "No character card found in this file"
+msgstr "이 파일에서 캐릭터 카드를 찾지 못했습니다"
+
 #: src/components/AskCard.tsx
 msgid "No longer active"
 msgstr "이미 종료된 요청입니다"
@@ -4496,6 +4508,10 @@ msgstr "POST 대상"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Preferences"
 msgstr "환경설정"
+
+#: src/pages/GroupPanel.tsx
+msgid "Premise"
+msgstr ""
 
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
@@ -5344,6 +5360,10 @@ msgstr "함께 사용"
 #: src/pages/KnowledgeSection.tsx
 msgid "Shared memory"
 msgstr "공유 기억"
+
+#: src/pages/GroupPanel.tsx
+msgid "Shared scene or world for every bot here"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Show"

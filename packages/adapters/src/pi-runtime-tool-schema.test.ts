@@ -376,13 +376,29 @@ describe("bot management tool parameters", () => {
   it.each([...FLEET_TOOL_NAMES, "update_bot"])(
     "%s leaves null and blank optional values out instead of sending text",
     (name) => {
-      const keys = Object.keys(wireFor(name).properties as object);
+      const keys = Object.keys(wireFor(name).properties as object).filter(
+        // A blank premise is kept: it clears the group's scene.
+        (key) => key !== "premise",
+      );
       for (const blank of [null, "", "  "]) {
         const raw = Object.fromEntries(keys.map((key) => [key, blank]));
         expect(prepareFleetArguments(name, raw), JSON.stringify(blank)).toEqual({});
       }
     },
   );
+
+  it("passes a group's scene through and keeps a blank one that clears it", () => {
+    expect(
+      prepareFleetArguments("create_group", { name: "Crew", premise: "A lighthouse crew." }),
+    ).toEqual({ name: "Crew", premise: "A lighthouse crew." });
+    expect(prepareFleetArguments("update_group", { group_name: "Launch", premise: "" })).toEqual({
+      group_name: "Launch",
+      premise: "",
+    });
+    expect(prepareFleetArguments("update_group", { group_name: "Launch" })).toEqual({
+      group_name: "Launch",
+    });
+  });
 
   it("keeps the instruction text exactly as sent", () => {
     const args = { bot_id: "b1", instructions: "  Keep\n spacing ", expected_version: "v1" };

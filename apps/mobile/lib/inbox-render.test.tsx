@@ -653,3 +653,23 @@ it("adds a bot made from the inbox's Create menu to the inbox roster before open
     `open ${JSON.stringify({ pathname: "/thread", params: { botId: bot.id, name: bot.name } })}`,
   ]);
 });
+
+it("creates a card bot with its card and leaves onboarding to the authored opening", async () => {
+  const bot = { id: "bot-card", name: "Mira", spaceId: "space-a" };
+  const characterCard = { name: "Mira", first_mes: "You're late." };
+  const calls: string[] = [];
+  ui.rpc.mockReset().mockImplementation(async (method: string) => {
+    calls.push(method);
+    return method === "bots/create" ? bot : [];
+  });
+  await createInboxBot({
+    refreshBots: async () => undefined,
+    openChat: () => undefined,
+    card: { name: "Mira", description: "", characterCard, skipIntro: true },
+  });
+  expect(ui.rpc).toHaveBeenCalledWith(
+    "bots/create",
+    expect.objectContaining({ name: "Mira", characterCard }),
+  );
+  expect(calls).toEqual(["bots/list", "bots/create"]);
+});

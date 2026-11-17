@@ -161,6 +161,14 @@ function bot(description = "Billing", overrides: Partial<Bot> = {}): Bot {
     teamChatAmbientEnabled: false,
     teamChatRules: "",
     fleetManagement: false,
+    peerVisibility: {
+      instructions: "owner",
+      description: "teammates",
+      memory: "owner",
+      routines: "owner",
+      model: "owner",
+      tools: "owner",
+    },
     disabledBuiltinTools: [],
     webhookConfigured: false,
     spawnKey: null,
@@ -455,6 +463,29 @@ describe("BotSettings bot management saves", () => {
     expect(onSave).toHaveBeenCalledExactlyOnceWith({ autoApprove: !enabled });
     await clickSave();
     expect(onSave.mock.lastCall?.[0]).not.toHaveProperty("autoApprove");
+  });
+
+  it("saves the whole visibility object when one part changes", async () => {
+    await render();
+    const select = container.querySelector<HTMLSelectElement>('select[id$="-peer-instructions"]');
+    if (!select) throw new Error("Missing privacy select");
+    expect(select.value).toBe("owner");
+    await act(async () => {
+      select.value = "managers";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    expect(onSave).toHaveBeenCalledExactlyOnceWith({
+      peerVisibility: {
+        instructions: "managers",
+        description: "teammates",
+        memory: "owner",
+        routines: "owner",
+        model: "owner",
+        tools: "owner",
+      },
+    });
+    await clickSave();
+    expect(onSave.mock.lastCall?.[0]).not.toHaveProperty("peerVisibility");
   });
 });
 
