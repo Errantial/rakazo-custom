@@ -91,9 +91,12 @@ jobs:
           set -euo pipefail
           apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
-          signer="$("$tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+          certs="$("$tools/apksigner" verify --print-certs "$apk")"
+          # Newer build-tools label the signer "Signer (minSdkVersion=..., ...)" rather than "Signer #1".
+          signer="$(sed -n 's/^Signer.* certificate SHA-256 digest: //p' <<< "$certs" | sed -n 1p)"
           if [[ "$signer" != "$APK_SIGNER_SHA256" ]]; then
-            echo "The APK is signed by $signer, so it would not install over the existing app." >&2
+            echo "The APK is signed by '$signer', so it would not install over the existing app:" >&2
+            echo "$certs" >&2
             exit 1
           fi
           # The whole dump, not `| head`: under pipefail a closed pipe would fail the step at random.
