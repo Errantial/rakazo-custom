@@ -256,6 +256,7 @@ describe("spawn_bot fields", () => {
       name: "Mira",
       description: "Mira keeps the town's old maps.",
       instructions: "## Canon\n\nMira keeps the town's old maps.",
+      turnReminder: "",
       greeting: "Hello, Ada Lovelace. I am Mira.",
     });
   });
@@ -275,6 +276,7 @@ describe("spawn_bot fields", () => {
       name: "Mira",
       description: "typed description",
       instructions: "typed instructions",
+      turnReminder: "",
     });
   });
 
@@ -292,13 +294,20 @@ describe("spawn_bot fields", () => {
       name: "Scout",
       description: "",
       instructions: "",
+      turnReminder: "",
     });
     expect(
       spawnBotFields(
         { name: "Scout", character_card: JSON.stringify({ name: "Mira", first_mes: "Hi." }) },
         "",
       ),
-    ).toEqual({ name: "Mira", description: "", instructions: "", greeting: "Hi." });
+    ).toEqual({
+      name: "Mira",
+      description: "",
+      instructions: "",
+      turnReminder: "",
+      greeting: "Hi.",
+    });
   });
 });
 

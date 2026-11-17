@@ -74,6 +74,7 @@ describe("bot creation from a character card", () => {
       name: "New Bot",
       description: "",
       instructions: "",
+      turnReminder: "",
       notifyOnFinish: true,
       computerMode: "team",
     });

@@ -41,6 +41,11 @@ const { element, account } = vi.hoisted(() => ({
 }));
 
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
+// The release check reads expo-application, which needs the native runtime.
+vi.mock("./android-update", () => ({
+  newerAndroidRelease: vi.fn(async () => null),
+  openAndroidRelease: vi.fn(),
+}));
 vi.mock("expo-notifications", () => ({
   getPermissionsAsync: vi.fn(async () => ({ status: "granted" })),
 }));
