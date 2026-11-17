@@ -4034,6 +4034,7 @@ msgstr "Geen authenticatie"
 msgid "No bots match"
 msgstr "Geen bots gevonden"
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "Geen personagekaart gevonden in dit bestand"
@@ -4769,6 +4770,10 @@ msgstr "Controle vrijgeven"
 msgid "Reload"
 msgstr "Herladen"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "Herinnering na het gesprek"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr "Wordt verlengd op {day}"
 msgid "Reopen"
 msgstr "Heropenen"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "Wordt elke beurt na het nieuwste bericht herhaald"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "API-sleutel vervangen"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "Vervangen door personagekaart"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

@@ -52,6 +52,8 @@ function deferredSave() {
 }
 
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
+// The card picker loads native document and file modules the settings tests never use.
+vi.mock("./pick-character-card", () => ({ pickCharacterCard: vi.fn() }));
 vi.mock("./bot-voices", () => ({
   voiceLabel: (voice: { language: string; name: string }) => `${voice.name} (${voice.language})`,
   deviceVoices: mocks.deviceVoices,

@@ -138,6 +138,7 @@ function bot(description = "Billing", overrides: Partial<Bot> = {}): Bot {
     title: "Helper",
     description,
     instructions: longInstructions,
+    turnReminder: "",
     color: "ink",
     notifyOnFinish: true,
     pinned: false,

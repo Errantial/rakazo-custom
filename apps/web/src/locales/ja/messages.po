@@ -4034,6 +4034,7 @@ msgstr "認証なし"
 msgid "No bots match"
 msgstr "一致するボットはありません"
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "このファイルにはキャラクターカードが見つかりませんでした"
@@ -4769,6 +4770,10 @@ msgstr "操作を戻す"
 msgid "Reload"
 msgstr "再読み込み"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "会話の後のリマインダー"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr "{day}に更新"
 msgid "Reopen"
 msgstr "再度開く"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "毎ターン、最新のメッセージの後に繰り返されます"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "APIキーを置き換え"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "キャラクターカードで置き換える"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

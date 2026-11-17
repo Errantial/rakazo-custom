@@ -4034,6 +4034,7 @@ msgstr "Keine Authentifizierung"
 msgid "No bots match"
 msgstr ""
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "In dieser Datei wurde keine Charakterkarte gefunden"
@@ -4769,6 +4770,10 @@ msgstr "Kontrolle abgeben"
 msgid "Reload"
 msgstr "Neu laden"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "Erinnerung nach dem Gespräch"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr ""
 msgid "Reopen"
 msgstr "Erneut öffnen"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "Wird bei jeder Antwort nach der neuesten Nachricht wiederholt"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "API-Schlüssel ersetzen"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "Aus Charakterkarte ersetzen"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx
