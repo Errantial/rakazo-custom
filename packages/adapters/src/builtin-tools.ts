@@ -6,6 +6,7 @@ import {
   botSecretDestinationSchema,
   FLEET_TOOL_NAMES,
   GenerateSecretInput,
+  GROUP_PREMISE_MAX_LENGTH,
   HISTORY_QUERIES_MAX_BYTES,
   LOGIN_FIELD_LIMIT,
   PAID_REQUEST_METHODS,
@@ -1423,6 +1424,11 @@ export const builtinAgentTools: ConnectorTool[] = [
           description:
             "Private operating instructions for the new bot. Only that bot sees them, as its system prompt.",
         },
+        character_card: {
+          type: "string",
+          description:
+            "Optional character card JSON (V1–V3). Seeds the bot's name, profile, and first message.",
+        },
         prompt: {
           type: "string",
           description: "Optional first task to run in the new bot's thread.",
@@ -1529,6 +1535,11 @@ export const builtinAgentTools: ConnectorTool[] = [
         name: { type: "string", minLength: 1 },
         bot_ids: { type: "array", items: { type: "string" } },
         bot_names: { type: "array", items: { type: "string" } },
+        premise: {
+          type: "string",
+          maxLength: GROUP_PREMISE_MAX_LENGTH,
+          description: "Shared scene or world every member sees.",
+        },
       },
       required: ["name"],
       additionalProperties: false,
@@ -1545,6 +1556,11 @@ export const builtinAgentTools: ConnectorTool[] = [
         name: { type: "string", minLength: 1, description: "New group name." },
         add_bot_ids: { type: "array", items: { type: "string" } },
         remove_bot_ids: { type: "array", items: { type: "string" } },
+        premise: {
+          type: "string",
+          maxLength: GROUP_PREMISE_MAX_LENGTH,
+          description: "Shared scene or world every member sees; an empty string clears it.",
+        },
       },
       additionalProperties: false,
     },

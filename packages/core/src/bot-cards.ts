@@ -21,6 +21,12 @@ export interface BotCardProfile {
   instructions: string;
 }
 
+/** A usable card, mapped onto a bot's identity and its opening message. */
+export interface BotCardSeed {
+  profile: BotCardProfile;
+  greeting?: string;
+}
+
 /** A greeting is the bot's opening message, so it stays well inside one readable reply. */
 export const BOT_CARD_GREETING_MAX_LENGTH = 2_000;
 
@@ -104,6 +110,9 @@ export function parseCharacterCard(raw: unknown): BotCardData | undefined {
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
+/** One decoder for every chunk: a decode call without streaming carries no state between calls. */
+const utf8 = new TextDecoder();
+
 /**
  * Read a character card file into untrusted JSON for `parseCharacterCard`: card JSON itself, or a
  * PNG carrying it base64-encoded in a `ccv3` (preferred) or `chara` text chunk. Anything else
@@ -112,7 +121,7 @@ const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 export function readCharacterCardFile(bytes: Uint8Array): unknown {
   const text = PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)
     ? pngCardText(bytes)
-    : new TextDecoder().decode(bytes);
+    : utf8.decode(bytes);
   if (text === undefined) return undefined;
   try {
     return JSON.parse(text) as unknown;
@@ -133,15 +142,13 @@ function pngCardText(bytes: Uint8Array): string | undefined {
     if (type === "IEND" || end + 4 > bytes.length) break;
     const chunk =
       type === "tEXt" || type === "iTXt" ? pngText(type, bytes.subarray(start, end)) : undefined;
-    if (chunk && (chunk.keyword === "ccv3" || chunk.keyword === "chara")) {
-      found.set(chunk.keyword, chunk.value);
-    }
+    if (chunk) found.set(chunk.keyword, chunk.value);
     offset = end + 4;
   }
   const encoded = found.get("ccv3") ?? found.get("chara");
   if (encoded === undefined) return undefined;
   try {
-    return new TextDecoder().decode(Uint8Array.from(atob(encoded.trim()), (c) => c.charCodeAt(0)));
+    return utf8.decode(Uint8Array.from(atob(encoded.trim()), (c) => c.charCodeAt(0)));
   } catch {
     return encoded;
   }
@@ -152,17 +159,18 @@ function pngText(
   data: Uint8Array,
 ): { keyword: string; value: string } | undefined {
   const keywordEnd = data.indexOf(0);
-  if (keywordEnd < 0) return undefined;
+  // PNG keywords are 1 to 79 bytes; a longer first NUL means the chunk carries no keyword.
+  if (keywordEnd < 1 || keywordEnd > 79) return undefined;
   const keyword = String.fromCharCode(...data.subarray(0, keywordEnd)).toLowerCase();
-  // Card payloads are base64, which reads the same as UTF-8 or Latin-1.
-  if (type === "tEXt")
-    return { keyword, value: new TextDecoder().decode(data.subarray(keywordEnd + 1)) };
+  // Other text chunks are not cards, so their value is never decoded.
+  if (keyword !== "ccv3" && keyword !== "chara") return undefined;
+  if (type === "tEXt") return { keyword, value: utf8.decode(data.subarray(keywordEnd + 1)) };
   // iTXt: compression flag and method, then NUL-terminated language tag and translated keyword.
   if (data[keywordEnd + 1] !== 0) return undefined;
   const languageEnd = data.indexOf(0, keywordEnd + 3);
   const translatedEnd = languageEnd < 0 ? -1 : data.indexOf(0, languageEnd + 1);
   if (translatedEnd < 0) return undefined;
-  return { keyword, value: new TextDecoder().decode(data.subarray(translatedEnd + 1)) };
+  return { keyword, value: utf8.decode(data.subarray(translatedEnd + 1)) };
 }
 
 /** Replace the card's identity macros; a card with no author names their person "the user". */
@@ -239,5 +247,82 @@ export function cardBotProfile(
         .join("\n\n"),
       BOT_INSTRUCTIONS_MAX_LENGTH,
     ),
+  };
+}
+
+/**
+ * Turn an untrusted character card into a bot seed: the profile creation stores, plus the
+ * opening line when the card authored one. A card with nothing usable maps to nothing, so
+ * creation can go on as a plain bot. The mapper is total over any parsed JSON value.
+ */
+export function botCardSeed(
+  raw: unknown,
+  options: { userName?: string; fallbackName?: string },
+): BotCardSeed | undefined {
+  const card = parseCharacterCard(raw);
+  if (!card) return undefined;
+  const profile = cardBotProfile(card, options);
+  if (!profile) return undefined;
+  const [firstGreeting] = card.greetings;
+  const greeting = firstGreeting
+    ? expandCardMacros(firstGreeting, { charName: profile.name, userName: options.userName }).trim()
+    : "";
+  return { profile, greeting: greeting || undefined };
+}
+
+/**
+ * The fields to create a bot with, from the typed ones and an optional seed. A usable card
+ * supplies the name, and its description and instructions replace the typed ones only where the
+ * card actually authored them, so a name-only card never wipes what the person wrote. The intro
+ * run is skipped only when the card wrote the bot's instructions or opening line; a card that
+ * only names the bot still gets the intro.
+ */
+export function mergeCardFields(
+  typed: { name: string; description: string; instructions: string },
+  seed: BotCardSeed | undefined,
+): { name: string; description: string; instructions: string; skipIntro: boolean } {
+  if (!seed) return { ...typed, skipIntro: false };
+  return {
+    name: seed.profile.name || typed.name,
+    description: seed.profile.description || typed.description,
+    instructions: seed.profile.instructions || typed.instructions,
+    skipIntro: Boolean(seed.profile.instructions || seed.greeting),
+  };
+}
+
+/** A card is text and a picture, never an archive; a picker reads nothing larger than this. */
+export const CHARACTER_CARD_FILE_MAX_BYTES = 8 * 1024 * 1024;
+
+/** The bot a picked card file creates, merged with the fields a new bot starts from. */
+export interface CharacterCardBot {
+  name: string;
+  description: string;
+  /** The card JSON to send as the create request's untrusted `characterCard`. */
+  characterCard: unknown;
+  /** The card wrote the bot's instructions or opening line, so the intro would compete. */
+  skipIntro: boolean;
+}
+
+/**
+ * Turn a picked card file into the bot to create, through the same seed and merge the server
+ * runs, so the preview names the bot the server will name. A file without a usable card reads as
+ * undefined.
+ */
+export function characterCardBot(
+  bytes: Uint8Array,
+  options: { fallbackName: string; userName?: string },
+): CharacterCardBot | undefined {
+  const characterCard = readCharacterCardFile(bytes);
+  const seed = botCardSeed(characterCard, options);
+  if (!seed) return undefined;
+  const merged = mergeCardFields(
+    { name: options.fallbackName, description: "", instructions: "" },
+    seed,
+  );
+  return {
+    name: merged.name,
+    description: merged.description,
+    characterCard,
+    skipIntro: merged.skipIntro,
   };
 }

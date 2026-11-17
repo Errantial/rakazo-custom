@@ -1,6 +1,6 @@
 import { CreateBotInput } from "@rakazo/contracts";
 import { describe, expect, it } from "vitest";
-import { botCardCreation, botCreateFields } from "./bot-card-create.js";
+import { botCreateFields } from "./bot-card-create.js";
 
 const card = {
   spec: "chara_card_v2",
@@ -15,33 +15,6 @@ const card = {
 };
 
 describe("bot creation from a character card", () => {
-  it("seeds the profile and opening line from the card", () => {
-    const seed = botCardCreation(card, { userName: "Ada Lovelace" });
-
-    expect(seed?.profile.name).toBe("Mira");
-    expect(seed?.profile.description).toBe("Mira keeps the town's old maps.");
-    expect(seed?.profile.instructions).toContain("## Personality\n\nPatient and exact.");
-    expect(seed?.profile.instructions).toContain("## Setting\n\nA map room after closing.");
-    expect(seed?.profile.instructions).toContain("Mira: The north one.");
-    expect(seed?.greeting).toBe("Hello, Ada Lovelace. I am Mira.");
-  });
-
-  it("returns nothing for a card with nothing usable", () => {
-    expect(botCardCreation({}, { userName: "Ada" })).toBeUndefined();
-    expect(botCardCreation("not a card", { userName: "Ada" })).toBeUndefined();
-    expect(botCardCreation({ description: "No name" }, { userName: "Ada" })).toBeUndefined();
-  });
-
-  it("keeps the typed name when the card has content but no name", () => {
-    const seed = botCardCreation(
-      { description: "A nameless stranger." },
-      { userName: "Ada", fallbackName: "New Bot" },
-    );
-
-    expect(seed?.profile.name).toBe("New Bot");
-    expect(seed?.profile.instructions).toBe("## Canon\n\nA nameless stranger.");
-  });
-
   it("creates with the card profile instead of the typed fields", () => {
     const input = CreateBotInput.parse({
       name: "New Bot",

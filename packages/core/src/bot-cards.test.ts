@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import type { BotCardData } from "./bot-cards.js";
 import {
   BOT_CARD_GREETING_MAX_LENGTH,
+  botCardSeed,
   cardBotProfile,
+  characterCardBot,
   expandCardMacros,
   parseCharacterCard,
   readCharacterCardFile,
@@ -226,6 +228,69 @@ describe("character card files", () => {
     expect(readCharacterCardFile(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBeUndefined();
     expect(readCharacterCardFile(new Uint8Array())).toBeUndefined();
   });
+
+  it("reads a long keyword as no text chunk instead of throwing", () => {
+    const long = png(text("k".repeat(200_000), "value"));
+    expect(() => readCharacterCardFile(long)).not.toThrow();
+    expect(readCharacterCardFile(long)).toBeUndefined();
+  });
+
+  it("skips a keyword longer than the PNG limit even beside a card chunk", () => {
+    const file = png(text("k".repeat(120_000), "value"), text("chara", base64('{"name":"Mira"}')));
+    expect(readCharacterCardFile(file)).toEqual({ name: "Mira" });
+  });
+
+  it("names the bot from a card that wrote instructions and a greeting, and skips the intro", () => {
+    const card = {
+      name: "Mira",
+      description: "A harbour pilot who reads the weather before anyone else.",
+      first_mes: "You're late, and the tide is already turning.",
+    };
+    expect(characterCardBot(utf8(JSON.stringify(card)), { fallbackName: "New Bot" })).toEqual({
+      name: "Mira",
+      description: "A harbour pilot who reads the weather before anyone else.",
+      characterCard: card,
+      skipIntro: true,
+    });
+  });
+
+  it("keeps the intro for a card that only names the bot", () => {
+    expect(
+      characterCardBot(utf8(JSON.stringify({ name: "Mira" })), { fallbackName: "New Bot" }),
+    ).toEqual({
+      name: "Mira",
+      description: "",
+      characterCard: { name: "Mira" },
+      skipIntro: false,
+    });
+  });
+
+  it("keeps the caller's name for a card that only wrote content", () => {
+    const card = { description: "A nameless stranger." };
+    expect(characterCardBot(utf8(JSON.stringify(card)), { fallbackName: "New Bot" })).toEqual({
+      name: "New Bot",
+      description: "A nameless stranger.",
+      characterCard: card,
+      skipIntro: true,
+    });
+  });
+
+  it("finds no bot in a file that holds no usable card", () => {
+    expect(
+      characterCardBot(utf8("name,age\nMira,30\n"), { fallbackName: "New Bot" }),
+    ).toBeUndefined();
+    expect(
+      characterCardBot(utf8(JSON.stringify({ hello: "world" })), { fallbackName: "New Bot" }),
+    ).toBeUndefined();
+  });
+
+  it("names the bot from a card inside a PNG", () => {
+    const file = png(text("chara", base64(JSON.stringify({ name: "Mira", first_mes: "Hi." }))));
+    expect(characterCardBot(file, { fallbackName: "New Bot" })).toMatchObject({
+      name: "Mira",
+      skipIntro: true,
+    });
+  });
 });
 
 describe("card macros", () => {
@@ -383,5 +448,50 @@ describe("card to bot profile", () => {
   it("clamps a long card name to the bot name limit", () => {
     const profile = cardBotProfile(card({ name: "n".repeat(200) }))!;
     expect(profile.name).toHaveLength(BOT_NAME_MAX_LENGTH);
+  });
+});
+
+describe("card to creation seed", () => {
+  it("seeds the profile and opening line from the card", () => {
+    const seed = botCardSeed(
+      {
+        name: "Mira",
+        description: "Mira keeps the town's old maps.",
+        personality: "Patient and exact.",
+        scenario: "A map room after closing.",
+        first_mes: "Hello, {{user}}. I am {{char}}.",
+        mes_example: "<START>\n{{user}}: Which road?\n{{char}}: The north one.\n<END>",
+      },
+      { userName: "Ada Lovelace" },
+    );
+
+    expect(seed?.profile.name).toBe("Mira");
+    expect(seed?.profile.description).toBe("Mira keeps the town's old maps.");
+    expect(seed?.profile.instructions).toContain("## Personality\n\nPatient and exact.");
+    expect(seed?.profile.instructions).toContain("## Setting\n\nA map room after closing.");
+    expect(seed?.profile.instructions).toContain("Mira: The north one.");
+    expect(seed?.greeting).toBe("Hello, Ada Lovelace. I am Mira.");
+  });
+
+  it("returns nothing for a card with nothing usable", () => {
+    expect(botCardSeed({}, { userName: "Ada" })).toBeUndefined();
+    expect(botCardSeed("not a card", { userName: "Ada" })).toBeUndefined();
+    expect(botCardSeed({ description: "No name" }, { userName: "Ada" })).toBeUndefined();
+  });
+
+  it("keeps the typed name when the card has content but no name", () => {
+    const seed = botCardSeed(
+      { description: "A nameless stranger." },
+      { userName: "Ada", fallbackName: "New Bot" },
+    );
+
+    expect(seed?.profile.name).toBe("New Bot");
+    expect(seed?.profile.instructions).toBe("## Canon\n\nA nameless stranger.");
+  });
+
+  it("names the person the user when the caller has no display name", () => {
+    const seed = botCardSeed({ name: "Mira", first_mes: "Hello, {{user}}." }, {});
+
+    expect(seed?.greeting).toBe("Hello, the user.");
   });
 });

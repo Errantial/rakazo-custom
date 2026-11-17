@@ -1,31 +1,5 @@
 import type { CreateBotInput } from "@rakazo/contracts";
-import type { BotCardProfile } from "@rakazo/core/bot-cards";
-import { cardBotProfile, expandCardMacros, parseCharacterCard } from "@rakazo/core/bot-cards";
-
-export interface BotCardSeed {
-  profile: BotCardProfile;
-  greeting?: string;
-}
-
-/**
- * Turn an untrusted character card into a bot profile and its opening line. A card with nothing
- * usable maps to nothing, so creation can go on as a plain bot. The mapper is total over any
- * parsed JSON value, so no card can fail a creation request.
- */
-export function botCardCreation(
-  raw: unknown,
-  options: { userName: string; fallbackName?: string },
-): BotCardSeed | undefined {
-  const card = parseCharacterCard(raw);
-  if (!card) return undefined;
-  const profile = cardBotProfile(card, options);
-  if (!profile) return undefined;
-  const [firstGreeting] = card.greetings;
-  const greeting = firstGreeting
-    ? expandCardMacros(firstGreeting, { charName: profile.name, userName: options.userName }).trim()
-    : "";
-  return { profile, greeting: greeting || undefined };
-}
+import { botCardSeed, mergeCardFields } from "@rakazo/core/bot-cards";
 
 /**
  * The fields to create a bot with. A usable card supplies the name, and its description and
@@ -45,16 +19,16 @@ export function botCreateFields(
   const seed =
     characterCard === undefined
       ? undefined
-      : botCardCreation(characterCard, { userName, fallbackName: typed.name });
-  if (!seed) return { fields: typed, greeting: undefined, skipIntro: false };
+      : botCardSeed(characterCard, { userName, fallbackName: typed.name });
+  const merged = mergeCardFields(typed, seed);
   return {
     fields: {
       ...typed,
-      name: seed.profile.name || typed.name,
-      description: seed.profile.description || typed.description,
-      instructions: seed.profile.instructions || typed.instructions,
+      name: merged.name,
+      description: merged.description,
+      instructions: merged.instructions,
     },
-    greeting: seed.greeting,
-    skipIntro: Boolean(seed.profile.instructions || seed.greeting),
+    greeting: seed?.greeting,
+    skipIntro: merged.skipIntro,
   };
 }

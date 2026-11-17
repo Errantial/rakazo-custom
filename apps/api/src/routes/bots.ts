@@ -279,10 +279,12 @@ export function botsRoutes(ctx: RouterContext) {
             // A card's greeting is the bot's own first message, written in creation's transaction.
             ...(greeting
               ? {
-                  initialMessage: {
-                    role: "bot" as const,
-                    blocks: [{ kind: "text" as const, text: greeting }],
-                  },
+                  initialMessages: [
+                    {
+                      role: "bot" as const,
+                      blocks: [{ kind: "text" as const, text: greeting }],
+                    },
+                  ],
                 }
               : {}),
           });

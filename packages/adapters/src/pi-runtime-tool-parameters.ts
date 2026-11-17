@@ -1,6 +1,10 @@
 import { Type } from "@earendil-works/pi-ai";
 import type { ConnectorTool } from "@rakazo/adapter-kit";
-import { BOT_INSTRUCTIONS_MAX_LENGTH, ThinkingLevelSchema } from "@rakazo/contracts";
+import {
+  BOT_INSTRUCTIONS_MAX_LENGTH,
+  GROUP_PREMISE_MAX_LENGTH,
+  ThinkingLevelSchema,
+} from "@rakazo/contracts";
 import { getLogger } from "@rakazo/logging";
 import {
   normalizeOpenAiToolParameters,
@@ -97,6 +101,7 @@ function builtinParameters(tool: ConnectorTool) {
       name: Type.String(),
       description: Type.Optional(Type.String()),
       instructions: Type.Optional(Type.String()),
+      character_card: Type.Optional(Type.String()),
       prompt: Type.Optional(Type.String()),
       computer_mode: Type.Optional(stringEnum(["team", "dedicated"], {})),
     });
@@ -123,6 +128,7 @@ function builtinParameters(tool: ConnectorTool) {
       name: Type.String({ minLength: 1 }),
       bot_ids: Type.Optional(Type.Array(Type.String())),
       bot_names: Type.Optional(Type.Array(Type.String())),
+      premise: Type.Optional(Type.String({ maxLength: GROUP_PREMISE_MAX_LENGTH })),
     });
   }
   if (tool.name === "update_group") {
@@ -132,6 +138,7 @@ function builtinParameters(tool: ConnectorTool) {
       name: Type.Optional(Type.String({ minLength: 1 })),
       add_bot_ids: Type.Optional(Type.Array(Type.String())),
       remove_bot_ids: Type.Optional(Type.Array(Type.String())),
+      premise: Type.Optional(Type.String({ maxLength: GROUP_PREMISE_MAX_LENGTH })),
     });
   }
   if (tool.name === "organize_bot") {
@@ -343,6 +350,12 @@ export function prepareFleetArguments(
     if (toolName === "update_bot" && key === "expected_version") continue;
     if (argumentGiven(raw[key])) out[key] = String(raw[key]);
   }
+  // A blank scene clears it, so a premise passes through whenever the model sent text.
+  if (
+    (toolName === "create_group" || toolName === "update_group") &&
+    typeof raw.premise === "string"
+  )
+    out.premise = raw.premise;
   for (const key of FLEET_LIST_ARGS) {
     if (Array.isArray(raw[key])) out[key] = raw[key].map(String);
   }

@@ -60,9 +60,8 @@ the pi runtime and must stay the single source of truth.
 
 ## Stages
 
-This change set ships backend groundwork. Stages 1, 3, and 4 are in place,
-stage 2 is partial, and the remaining work is deferred and named below so it is
-not mistaken for done.
+Stages 1 to 4 and 6 are shipped. Stage 5 was dropped; the reason is recorded
+below so it is not mistaken for unfinished work.
 
 1. **Mapper (pure, shipped):** `packages/core/src/bot-cards.ts`
    - `parseCharacterCard(raw)` accepts V1 flat objects and V2/V3 envelopes
@@ -74,12 +73,17 @@ not mistaken for done.
      limits (`BOT_NAME_MAX_LENGTH` 80, `BOT_DESCRIPTION_MAX_LENGTH` 4000,
      `BOT_INSTRUCTIONS_MAX_LENGTH` 20000) with deterministic section caps and
      boundary-safe truncation (`truncatePlainText`).
+   - `readCharacterCardFile(bytes)` reads card JSON, or a PNG carrying the card
+     base64-encoded in a `ccv3` (preferred) or `chara` text chunk, and reads
+     anything else as nothing rather than throwing. It uses only `TextDecoder`
+     and `atob` so web, desktop, and mobile share it.
    - Offline vitest suite next to it.
-2. **Import route (partially shipped):** `bots.create` takes an untrusted
+2. **Import route (shipped):** `bots.create` takes an untrusted
    `characterCard`, maps it, and merges field-wise: the card's name wins and its
    description/instructions replace the typed ones only where the card authored
-   them. Storing the raw card as an artifact, recording its origin, and
-   round-tripping cards through export are **deferred**.
+   them. The agent tool `spawn_bot` takes the same card as JSON text, maps it
+   through the same seed and merge in `packages/core/src/bot-cards.ts`, and
+   refuses a card it cannot use rather than creating a plain bot.
 3. **Greeting (shipped, replacing the intro branch):** the first greeting is
    posted as the bot's first thread message in creation's transaction. A bot
    whose card wrote its instructions or a greeting skips `enqueueBotIntroRun`
@@ -89,17 +93,26 @@ not mistaken for done.
    ordinary bot, keeps that intro unchanged.
 4. **Group premise (shipped):** additive migration
    `ChatGroup.premise String @default("")` (`NOT NULL DEFAULT ''`), accepted on
-   group create/update, copied when a group is duplicated, rendered at the top of
-   `renderGroupMembersContext()`, and carried through account export/import.
+   group create/update, including the `create_group` and `update_group` agent
+   tools (an empty `premise` clears it on update), copied when a group is
+   duplicated, rendered at the top of `renderGroupMembersContext()`, and carried
+   through account export/import.
    Multi-line premises render as literal `\n` in context lines so a premise
    cannot forge extra prompt lines.
-5. **Export (deferred):** include the composed sections plus the raw card so
-   cards round-trip. Group premises already round-trip through account
-   export/import; older exports without a premise import cleanly.
-
-Deferred beyond this PR: character cards and premises in the web, desktop, and
-mobile surfaces, and fleet tools that would create or edit bots from a card.
-This PR is the backend groundwork those surfaces need.
+5. **Raw card storage and export (dropped):** everything a card produces
+   already round-trips through account export: the name, description, and
+   instructions are bot fields, and the greeting is an ordinary message. Keeping
+   the raw card as well would be a second source of truth that drifts as soon
+   as the bot edits its own instructions, so the raw card is not stored. Revisit
+   only if an "export as character card" feature needs it.
+6. **Clients (shipped):** web and desktop (which hosts the web UI) import a card
+   from the import panel's "Character card" section; mobile adds "Bot from
+   card" to the Create menu. Both read the file through `characterCardBot()` in
+   core, so the name, fields, and intro decision match the server, and both cap
+   card files at `CHARACTER_CARD_FILE_MAX_BYTES` (8 MiB). Mobile skips its
+   onboarding focus prompt when the card authored instructions or a greeting,
+   so it does not talk over the card's opening. Group settings on web and
+   mobile edit the premise.
 
 ## Open product question
 
@@ -120,5 +133,8 @@ Whether cards should author a separate routing line is still open.
 Deterministic unit tests for parse/macros/composition/limits (mapper) plus
 mapper-to-route tests: a usable card seeds the profile, posts the greeting as
 the bot's first message, and queues no intro run, while a name-only card keeps
-the intro and a malformed card still creates an ordinary bot with the usual intro. Anything natural-language-judged
-follows the LLM-rubric rule; none is used here.
+the intro and a malformed card still creates an ordinary bot with the usual intro.
+Adapter tests cover the same seed and merge for `spawn_bot` (including a refused
+card) and the group premise on `create_group` / `update_group` (including a
+cleared one). Anything natural-language-judged follows the LLM-rubric rule; none
+is used here.

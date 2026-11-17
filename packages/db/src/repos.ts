@@ -536,11 +536,12 @@ export function createRepos(
         modelId?: string | null;
         thinkingLevel?: string | null;
         disabledBuiltinTools?: string[];
-        initialMessage?: {
+        /** Written in the creation transaction, in order, after the bot and its thread exist. */
+        initialMessages?: Array<{
           role: "user" | "bot" | "system";
           blocks: MessageBlock[];
           runId?: string;
-        };
+        }>;
         /** Adds content in the creation transaction, after the bot and its MEMORY.md exist. */
         seed?: (tx: Prisma.TransactionClient, botId: string) => Promise<void>;
         isolationLevel?: Prisma.TransactionIsolationLevel;
@@ -635,12 +636,14 @@ export function createRepos(
               userId: actor.userId,
             },
           });
-          if (input.initialMessage) {
-            await createThreadMessageInTransaction(tx, {
-              threadId: thread.id,
-              ...input.initialMessage,
-              markUnread: false,
-            });
+          if (input.initialMessages) {
+            for (const message of input.initialMessages) {
+              await createThreadMessageInTransaction(tx, {
+                threadId: thread.id,
+                ...message,
+                markUnread: false,
+              });
+            }
           }
           if (input.computerMode === "dedicated") {
             const dedicated = await ensureComputerRecord(tx, {

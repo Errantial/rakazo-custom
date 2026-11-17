@@ -488,7 +488,9 @@ describe("group premise context", () => {
 
   it("renders the group's authored setting once, above the roster", async () => {
     const context =
-      (await loadGroupContext(prismaWithGroup("Stranded above a frozen moon."), "group-1",
+      (await loadGroupContext(
+        prismaWithGroup("Stranded above a frozen moon."),
+        "group-1",
         { id: "bot-a", name: "Researcher" },
         "teammate",
       )) ?? "";
@@ -501,7 +503,9 @@ describe("group premise context", () => {
 
   it("leaves the setting out when the group has none", async () => {
     const context =
-      (await loadGroupContext(prismaWithGroup(""), "group-1",
+      (await loadGroupContext(
+        prismaWithGroup(""),
+        "group-1",
         { id: "bot-a", name: "Researcher" },
         "teammate",
       )) ?? "";

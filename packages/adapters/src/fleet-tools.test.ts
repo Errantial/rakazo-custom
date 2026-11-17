@@ -5,6 +5,7 @@ import type { FleetDeps, FleetPrepareDeps, FleetRun } from "./fleet-tools.js";
 import {
   childModelResult,
   createChildRoutine,
+  createFleetGroup,
   instructionsVersionOf,
   listFleet,
   organizeBot,
@@ -12,6 +13,7 @@ import {
   setChildBotModel,
   setChildInstructions,
   updateChildBot,
+  updateFleetGroup,
 } from "./fleet-tools.js";
 
 type FakeBot = {
@@ -38,6 +40,7 @@ type FakeGroup = {
   userId?: string;
   archivedAt?: Date | null;
   pinned?: boolean;
+  premise?: string;
   section?: { name: string } | null;
 };
 
@@ -136,6 +139,7 @@ function fakeFleet(input: {
           .map((group) => ({
             id: group.id,
             name: group.name,
+            premise: group.premise ?? "",
             pinned: group.pinned,
             section: group.section,
             thread: { id: `thread-${group.id}` },
@@ -325,6 +329,211 @@ describe("prepareFleetRequest update_group", () => {
         remove_bot_ids: ["bot-writer"],
       }),
     ).toEqual({ ok: false, error: "A group needs 2 to 10 bots." });
+  });
+});
+
+describe("group scene premise", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("creates a group with the scene the model wrote", async () => {
+    const { deps } = fakeFleet(fleet);
+    const prepared = await prepareFleetRequest(deps, run, "create_group", {
+      name: "Crew",
+      bot_ids: ["bot-scout", "bot-ops"],
+      premise: "  A lighthouse crew.\nNo one sleeps.  ",
+    });
+    expect(prepared).toMatchObject({
+      ok: true,
+      canonical: { premise: "A lighthouse crew.\nNo one sleeps." },
+      summary: {
+        lines: ["Members: Scout, Ops", "Shared scene: A lighthouse crew. No one sleeps."],
+      },
+    });
+  });
+
+  it("refuses a scene that is not text", async () => {
+    const { deps } = fakeFleet(fleet);
+    await expect(
+      prepareFleetRequest(deps, run, "create_group", {
+        name: "Crew",
+        bot_ids: ["bot-scout", "bot-ops"],
+        premise: 5,
+      }),
+    ).resolves.toEqual({ ok: false, error: "premise must be a string." });
+    await expect(
+      prepareFleetRequest(deps, run, "update_group", { group_name: "Launch", premise: true }),
+    ).resolves.toEqual({ ok: false, error: "premise must be a string." });
+  });
+
+  it("checks a group's scene like every other approved text", async () => {
+    const { deps } = fakeFleet(fleet);
+    const secrets = ["sk-fake-1"];
+    expect(
+      await prepareFleetRequest(
+        deps,
+        run,
+        "create_group",
+        {
+          name: "Crew",
+          bot_ids: ["bot-scout", "bot-ops"],
+          premise: "Use sk-fake-1 tonight.",
+        },
+        secrets,
+      ),
+    ).toEqual({ ok: false, error: "premise cannot contain credentials." });
+    expect(
+      await prepareFleetRequest(
+        deps,
+        run,
+        "update_group",
+        { group_name: "Launch", premise: "Use sk-fake-1 tonight." },
+        secrets,
+      ),
+    ).toEqual({ ok: false, error: "premise cannot contain credentials." });
+    expect(
+      await prepareFleetRequest(deps, run, "create_group", {
+        name: "Crew",
+        bot_ids: ["bot-scout", "bot-ops"],
+        premise: "A lighthouse\u202Acrew.",
+      }),
+    ).toEqual({ ok: false, error: "premise contains invisible characters." });
+    expect(
+      await prepareFleetRequest(deps, run, "update_group", {
+        group_name: "Launch",
+        premise: "A lighthouse\u2066crew.",
+      }),
+    ).toEqual({ ok: false, error: "premise contains invisible characters." });
+  });
+
+  it("clears a group's scene with an empty premise and only shows that change", async () => {
+    const { deps } = fakeFleet({
+      ...fleet,
+      groups: [
+        {
+          id: "group-launch",
+          name: "Launch",
+          memberIds: ["bot-self", "bot-scout", "bot-ops"],
+          premise: "A lighthouse crew.",
+        },
+      ],
+    });
+    expect(
+      await prepareFleetRequest(deps, run, "update_group", {
+        group_name: "Launch",
+        premise: "",
+      }),
+    ).toMatchObject({
+      ok: true,
+      canonical: { premise: "" },
+      summary: { lines: ["Clear the shared scene"] },
+    });
+    expect(
+      await prepareFleetRequest(deps, run, "update_group", {
+        group_name: "Launch",
+        premise: "A lighthouse crew.",
+      }),
+    ).toEqual({ ok: false, error: "Nothing to change." });
+  });
+
+  it("passes a new scene to the group repo and leaves an omitted one unchanged", async () => {
+    const { prisma } = fakeFleet({
+      ...fleet,
+      groups: [
+        {
+          id: "group-launch",
+          name: "Launch",
+          memberIds: ["bot-self", "bot-scout", "bot-ops"],
+          premise: "A lighthouse crew.",
+        },
+      ],
+    });
+    const updateGroup = vi.fn(async (_actor: unknown, input: { premise?: string }) => ({
+      group: {
+        id: "group-launch",
+        name: "Launch",
+        threadId: "thread-group-launch",
+        premise: input.premise ?? "A lighthouse crew.",
+        members: [],
+      },
+      cancelledRunIds: [],
+      computers: [],
+    }));
+    vi.spyOn(await import("@rakazo/db"), "createGroupRepos").mockReturnValue({
+      updateGroup,
+      releaseArchivedRunLeases: vi.fn(),
+    } as never);
+    const deps = writeDeps(prisma) as unknown as Parameters<typeof updateFleetGroup>[0];
+
+    await updateFleetGroup(deps, run, {
+      groupId: "group-launch",
+      expectedBotIds: ["bot-self", "bot-scout", "bot-ops"],
+      premise: "",
+    });
+    expect(updateGroup).toHaveBeenLastCalledWith(expect.anything(), {
+      groupId: "group-launch",
+      premise: "",
+      expectedBotIds: ["bot-self", "bot-scout", "bot-ops"],
+    });
+
+    await updateFleetGroup(deps, run, {
+      groupId: "group-launch",
+      expectedBotIds: ["bot-self", "bot-scout", "bot-ops"],
+    });
+    expect(updateGroup).toHaveBeenLastCalledWith(expect.anything(), {
+      groupId: "group-launch",
+      premise: undefined,
+      expectedBotIds: ["bot-self", "bot-scout", "bot-ops"],
+    });
+  });
+
+  it("reuses an active group only when its scene matches too", async () => {
+    const { prisma } = fakeFleet({
+      ...fleet,
+      groups: [
+        {
+          id: "group-crew",
+          name: "Crew",
+          memberIds: ["bot-scout", "bot-ops"],
+          premise: "A lighthouse crew.",
+        },
+      ],
+    });
+    const createGroup = vi.fn();
+    vi.spyOn(await import("@rakazo/db"), "createGroupRepos").mockReturnValue({
+      createGroup,
+    } as never);
+    const deps = writeDeps(prisma);
+
+    await expect(
+      createFleetGroup(deps, run, {
+        name: "Crew",
+        botIds: ["bot-scout", "bot-ops"],
+        premise: "A lighthouse crew.",
+      }),
+    ).resolves.toMatchObject({ groupId: "group-crew" });
+    expect(createGroup).not.toHaveBeenCalled();
+
+    createGroup.mockResolvedValue({
+      id: "group-new",
+      name: "Crew",
+      threadId: "thread-group-new",
+      premise: "Another night.",
+      members: [],
+    });
+    await expect(
+      createFleetGroup(deps, run, {
+        name: "Crew",
+        botIds: ["bot-scout", "bot-ops"],
+        premise: "Another night.",
+      }),
+    ).resolves.toMatchObject({ groupId: "group-new" });
+    expect(createGroup).toHaveBeenCalledWith(expect.anything(), {
+      name: "Crew",
+      botIds: ["bot-scout", "bot-ops"],
+      premise: "Another night.",
+    });
   });
 });
 

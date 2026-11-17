@@ -1,5 +1,5 @@
 import { BotSettingsValuesSchema } from "@rakazo/contracts";
-import { redactSecrets } from "@rakazo/core";
+import { displayName, redactSecrets } from "@rakazo/core";
 import {
   commitBotUpdate,
   createSpaceForMember,
@@ -11,7 +11,7 @@ import {
 } from "@rakazo/db";
 import { getLogger } from "@rakazo/logging";
 import { uncertainEffectResult } from "./approval-effect.js";
-import { archiveSpawnedBot, spawnBot } from "./child-bots.js";
+import { archiveSpawnedBot, characterCardGiven, spawnBot, spawnBotFields } from "./child-bots.js";
 import {
   createChildRoutine,
   createFleetGroup,
@@ -163,6 +163,20 @@ export const fleetTools: ToolHandlers = {
       }
       computerMode = value;
     }
+    // A card names the person it talks to; the creation route resolves the same name.
+    const userName = characterCardGiven(args.character_card)
+      ? displayName(
+          (
+            await deps.prisma.user.findUnique({
+              where: { id: run.userId },
+              select: { name: true },
+            })
+          )?.name,
+          "",
+        )
+      : "";
+    const fields = spawnBotFields(args, userName);
+    if ("error" in fields) return call.finish(fields);
     const spawned = await spawnBot(deps, {
       spawnedBy: {
         id: bot.id,
@@ -172,9 +186,10 @@ export const fleetTools: ToolHandlers = {
       },
       runId,
       spawnKey: effectKey,
-      name: String(args.name ?? ""),
-      description: args.description ? String(args.description) : undefined,
-      instructions: args.instructions ? String(args.instructions) : undefined,
+      name: fields.name,
+      description: fields.description,
+      instructions: fields.instructions,
+      greeting: fields.greeting,
       prompt: args.prompt ? String(args.prompt) : undefined,
       computerMode,
     });
