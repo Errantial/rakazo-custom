@@ -3,6 +3,10 @@ export const NL_MESSAGES: Record<string, string> = {
   "Repeated after the newest message on every turn":
     "Wordt elke beurt na het nieuwste bericht herhaald",
   "Replace from character card": "Vervangen door personagekaart",
+  "Check for updates": "Controleren op updates",
+  "Update to {version}": "Bijwerken naar {version}",
+  "Up to date": "Up-to-date",
+  "Could not check": "Controle mislukt",
   "How other bots see it": "Hoe andere bots deze zien",
   "Share to": "Delen met",
   "{count} files": "{count} bestanden",

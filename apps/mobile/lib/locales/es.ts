@@ -3,6 +3,10 @@ export const ES_MESSAGES: Record<string, string> = {
   "Repeated after the newest message on every turn":
     "Se repite después del mensaje más reciente en cada turno",
   "Replace from character card": "Reemplazar con tarjeta de personaje",
+  "Check for updates": "Buscar actualizaciones",
+  "Update to {version}": "Actualizar a {version}",
+  "Up to date": "Al día",
+  "Could not check": "No se pudo comprobar",
   Description: "Descripción",
   "How other bots see it": "Cómo lo ven otros bots",
   "Share to": "Compartir en",

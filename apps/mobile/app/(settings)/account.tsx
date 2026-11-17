@@ -33,6 +33,7 @@ import {
   useStackedSettings,
 } from "../../components/settings-group";
 import { createAccountNameEditor } from "../../lib/account-name-editor";
+import { newerAndroidRelease, openAndroidRelease } from "../../lib/android-update";
 import type { MobileMe } from "../../lib/api";
 import {
   currentApiBase,
@@ -200,6 +201,9 @@ export default function Account() {
   const versionInfo = getAppVersionInfo();
   const updateLabel = formatUpdateLabel(versionInfo.update, t);
   const versionAccessibility = [versionInfo.nativeLabel, updateLabel].filter(Boolean).join(". ");
+  const [androidUpdate, setAndroidUpdate] = useState<
+    { kind: "idle" | "checking" | "current" | "failed" } | { kind: "available"; version: string }
+  >({ kind: "idle" });
   const approvals = useApprovalSettings(ACCOUNT_SETTINGS);
   const settingsLink = ({ title, href }: { title: string; href: Extract<Href, string> }) => (
     <SettingsRow
@@ -317,6 +321,18 @@ export default function Account() {
       };
     }, []),
   );
+
+  async function checkAndroidUpdate() {
+    setAndroidUpdate({ kind: "checking" });
+    try {
+      const release = await newerAndroidRelease();
+      setAndroidUpdate(
+        release ? { kind: "available", version: release.version } : { kind: "current" },
+      );
+    } catch {
+      setAndroidUpdate({ kind: "failed" });
+    }
+  }
 
   async function handleSignOut() {
     setPending(true);
@@ -810,6 +826,37 @@ export default function Account() {
               onPress={() => router.push("/archived-bots")}
               title={t("Archived")}
               value={String(archivedCount)}
+            />
+          </SettingsGroup>
+        ) : null}
+
+        {Platform.OS === "android" ? (
+          <SettingsGroup>
+            <SettingsRow
+              accessibilityRole="button"
+              disabled={androidUpdate.kind === "checking"}
+              onPress={() =>
+                void (androidUpdate.kind === "available"
+                  ? openAndroidRelease()
+                  : checkAndroidUpdate())
+              }
+              title={
+                androidUpdate.kind === "available"
+                  ? t("Update to {version}", { version: androidUpdate.version })
+                  : t("Check for updates")
+              }
+              value={
+                androidUpdate.kind === "current"
+                  ? t("Up to date")
+                  : androidUpdate.kind === "failed"
+                    ? t("Could not check")
+                    : undefined
+              }
+              trailing={
+                androidUpdate.kind === "checking" ? (
+                  <MotionSpinner color={mobileTokens().mutedForeground} />
+                ) : undefined
+              }
             />
           </SettingsGroup>
         ) : null}

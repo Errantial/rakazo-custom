@@ -24,6 +24,7 @@ jobs:
       sha: ${{ steps.release.outputs.sha }}
       platforms: ${{ steps.platforms.outputs.include }}
       windows_signed: ${{ steps.platforms.outputs.windows_signed }}
+      mac: ${{ steps.platforms.outputs.mac }}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -35,6 +36,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}
           RELEASE_REF_TYPE: ${{ github.ref_type }}
+          # A fork that releases from its own deploy branch names it here.
+          RELEASE_BRANCH: ${{ vars.DESKTOP_RELEASE_BRANCH || 'main' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -58,9 +61,9 @@ jobs:
             echo "The workflow revision does not match the tagged commit." >&2
             exit 1
           fi
-          git fetch --no-tags origin main
-          if ! git merge-base --is-ancestor "$tag_sha" origin/main; then
-            echo "Desktop releases must point to a commit already on main." >&2
+          git fetch --no-tags origin "$RELEASE_BRANCH"
+          if ! git merge-base --is-ancestor "$tag_sha" "origin/$RELEASE_BRANCH"; then
+            echo "Desktop releases must point to a commit already on $RELEASE_BRANCH." >&2
             exit 1
           fi
           if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
@@ -90,12 +93,18 @@ jobs:
         env:
           # Windows ships unsigned until Azure Artifact Signing is configured.
           WINDOWS_SIGNING: ${{ secrets.DESKTOP_WIN_AZURE_CLIENT_ID != '' }}
+          # macOS only ships signed and notarized, so a repository without Apple credentials skips it.
+          MAC_SIGNING: ${{ secrets.DESKTOP_MAC_CSC_LINK != '' }}
         shell: bash
         run: |
           set -euo pipefail
-          include='[{"os":"macos-26","artifact":"macos"},{"os":"ubuntu-24.04","artifact":"linux"},{"os":"windows-2022","artifact":"windows"}]'
-          echo "include=$include" >> "$GITHUB_OUTPUT"
+          include='{"os":"ubuntu-24.04","artifact":"linux"},{"os":"windows-2022","artifact":"windows"}'
+          if [[ "$MAC_SIGNING" == true ]]; then
+            include='{"os":"macos-26","artifact":"macos"},'"$include"
+          fi
+          echo "include=[$include]" >> "$GITHUB_OUTPUT"
           echo "windows_signed=$WINDOWS_SIGNING" >> "$GITHUB_OUTPUT"
+          echo "mac=$MAC_SIGNING" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build ${{ matrix.artifact }} artifacts
@@ -433,6 +442,7 @@ jobs:
           RELEASE_SHA: ${{ needs.validate.outputs.sha }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+          MAC: ${{ needs.validate.outputs.mac }}
         shell: bash
         run: |
           set -euo pipefail
@@ -442,18 +452,20 @@ jobs:
             exit 1
           fi
 
-          test -f release-artifacts/latest-mac.yml
           test -f release-artifacts/latest-linux.yml
-          compgen -G 'release-artifacts/*.dmg' >/dev/null
-          compgen -G 'release-artifacts/*.zip' >/dev/null
           compgen -G 'release-artifacts/*.AppImage' >/dev/null
           test -f release-artifacts/latest.yml
           compgen -G 'release-artifacts/*.exe' >/dev/null
           feeds=(
-            release-artifacts/latest-mac.yml
             release-artifacts/latest-linux.yml
             release-artifacts/latest.yml
           )
+          if [[ "$MAC" == true ]]; then
+            test -f release-artifacts/latest-mac.yml
+            compgen -G 'release-artifacts/*.dmg' >/dev/null
+            compgen -G 'release-artifacts/*.zip' >/dev/null
+            feeds+=(release-artifacts/latest-mac.yml)
+          fi
           for feed in "${feeds[@]}"; do
             grep -Fqx "version: $RELEASE_VERSION" "$feed"
           done

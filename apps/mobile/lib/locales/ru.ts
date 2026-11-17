@@ -3,6 +3,10 @@ export const RU_MESSAGES: Record<string, string> = {
   "Repeated after the newest message on every turn":
     "Повторяется после последнего сообщения на каждом ходу",
   "Replace from character card": "Заменить из карточки персонажа",
+  "Check for updates": "Проверить обновления",
+  "Update to {version}": "Обновить до {version}",
+  "Up to date": "Актуальная версия",
+  "Could not check": "Не удалось проверить",
   "How other bots see it": "Как его видят другие боты",
   "Share to": "Отправить в",
   "{count} files": "Файлов: {count}",
