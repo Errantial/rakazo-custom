@@ -6,6 +6,7 @@ import {
   cardBotProfile,
   expandCardMacros,
   parseCharacterCard,
+  readCharacterCardFile,
 } from "./bot-cards.js";
 
 const v2Card = {
@@ -156,6 +157,74 @@ describe("character card parsing", () => {
       alternate_greetings: [sameFirst, "short one", long],
     });
     expect(parsed?.greetings).toEqual(["g".repeat(BOT_CARD_GREETING_MAX_LENGTH), "short one"]);
+  });
+});
+
+describe("character card files", () => {
+  const utf8 = (text: string) => new TextEncoder().encode(text);
+  const base64 = (text: string) => btoa(String.fromCharCode(...utf8(text)));
+
+  function chunk(type: string, data: Uint8Array): Uint8Array {
+    const out = new Uint8Array(12 + data.length);
+    new DataView(out.buffer).setUint32(0, data.length);
+    out.set(utf8(type), 4);
+    out.set(data, 8);
+    return out;
+  }
+
+  function png(...chunks: Uint8Array[]): Uint8Array {
+    const parts = [
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      chunk("IHDR", new Uint8Array(13)),
+      ...chunks,
+      chunk("IEND", new Uint8Array()),
+    ];
+    const out = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+    let offset = 0;
+    for (const part of parts) {
+      out.set(part, offset);
+      offset += part.length;
+    }
+    return out;
+  }
+
+  const text = (keyword: string, value: string) => chunk("tEXt", utf8(`${keyword}\0${value}`));
+
+  it("reads card JSON, with or without a byte-order mark", () => {
+    expect(readCharacterCardFile(utf8('{"name":"Mira"}'))).toEqual({ name: "Mira" });
+    expect(readCharacterCardFile(utf8('﻿{"name":"Mira"}'))).toEqual({ name: "Mira" });
+  });
+
+  it("reads the base64 card from a PNG chara chunk", () => {
+    const file = png(text("chara", base64('{"name":"Mïra ✦"}')));
+    expect(readCharacterCardFile(file)).toEqual({ name: "Mïra ✦" });
+  });
+
+  it("prefers the V3 chunk when a PNG carries both", () => {
+    const file = png(
+      text("chara", base64('{"name":"Old"}')),
+      text("ccv3", base64('{"name":"New"}')),
+    );
+    expect(readCharacterCardFile(file)).toEqual({ name: "New" });
+  });
+
+  it("reads an uncompressed iTXt chunk and skips a compressed one", () => {
+    const itxt = (flag: number) =>
+      chunk(
+        "iTXt",
+        new Uint8Array([...utf8("chara"), 0, flag, 0, 0, 0, ...utf8(base64('{"name":"Mira"}'))]),
+      );
+    expect(readCharacterCardFile(png(itxt(0)))).toEqual({ name: "Mira" });
+    expect(readCharacterCardFile(png(itxt(1)))).toBeUndefined();
+  });
+
+  it("reads nothing from a PNG without a card, a truncated PNG, or other bytes", () => {
+    const withCard = png(text("chara", base64('{"name":"Mira"}')));
+    expect(readCharacterCardFile(png(text("Comment", "hello")))).toBeUndefined();
+    expect(readCharacterCardFile(withCard.subarray(0, 40))).toBeUndefined();
+    expect(readCharacterCardFile(utf8("not a card"))).toBeUndefined();
+    expect(readCharacterCardFile(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBeUndefined();
+    expect(readCharacterCardFile(new Uint8Array())).toBeUndefined();
   });
 });
 

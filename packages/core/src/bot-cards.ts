@@ -102,6 +102,69 @@ export function parseCharacterCard(raw: unknown): BotCardData | undefined {
   return card.name || hasContent(card) ? card : undefined;
 }
 
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+
+/**
+ * Read a character card file into untrusted JSON for `parseCharacterCard`: card JSON itself, or a
+ * PNG carrying it base64-encoded in a `ccv3` (preferred) or `chara` text chunk. Anything else
+ * reads as `undefined` rather than throwing.
+ */
+export function readCharacterCardFile(bytes: Uint8Array): unknown {
+  const text = PNG_SIGNATURE.every((byte, index) => bytes[index] === byte)
+    ? pngCardText(bytes)
+    : new TextDecoder().decode(bytes);
+  if (text === undefined) return undefined;
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Card tools write uncompressed `tEXt`; compressed `iTXt` is skipped rather than inflated. */
+function pngCardText(bytes: Uint8Array): string | undefined {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const found = new Map<string, string>();
+  let offset = PNG_SIGNATURE.length;
+  while (offset + 12 <= bytes.length) {
+    const start = offset + 8;
+    const end = start + view.getUint32(offset);
+    const type = String.fromCharCode(...bytes.subarray(offset + 4, start));
+    if (type === "IEND" || end + 4 > bytes.length) break;
+    const chunk =
+      type === "tEXt" || type === "iTXt" ? pngText(type, bytes.subarray(start, end)) : undefined;
+    if (chunk && (chunk.keyword === "ccv3" || chunk.keyword === "chara")) {
+      found.set(chunk.keyword, chunk.value);
+    }
+    offset = end + 4;
+  }
+  const encoded = found.get("ccv3") ?? found.get("chara");
+  if (encoded === undefined) return undefined;
+  try {
+    return new TextDecoder().decode(Uint8Array.from(atob(encoded.trim()), (c) => c.charCodeAt(0)));
+  } catch {
+    return encoded;
+  }
+}
+
+function pngText(
+  type: "tEXt" | "iTXt",
+  data: Uint8Array,
+): { keyword: string; value: string } | undefined {
+  const keywordEnd = data.indexOf(0);
+  if (keywordEnd < 0) return undefined;
+  const keyword = String.fromCharCode(...data.subarray(0, keywordEnd)).toLowerCase();
+  // Card payloads are base64, which reads the same as UTF-8 or Latin-1.
+  if (type === "tEXt")
+    return { keyword, value: new TextDecoder().decode(data.subarray(keywordEnd + 1)) };
+  // iTXt: compression flag and method, then NUL-terminated language tag and translated keyword.
+  if (data[keywordEnd + 1] !== 0) return undefined;
+  const languageEnd = data.indexOf(0, keywordEnd + 3);
+  const translatedEnd = languageEnd < 0 ? -1 : data.indexOf(0, languageEnd + 1);
+  if (translatedEnd < 0) return undefined;
+  return { keyword, value: new TextDecoder().decode(data.subarray(translatedEnd + 1)) };
+}
+
 /** Replace the card's identity macros; a card with no author names their person "the user". */
 export function expandCardMacros(
   text: string,
