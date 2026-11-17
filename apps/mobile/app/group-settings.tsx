@@ -1,4 +1,9 @@
-import { GROUP_MEMBER_MAX, GROUP_MEMBER_MIN, GROUP_NAME_MAX_LENGTH } from "@rakazo/contracts";
+import {
+  GROUP_MEMBER_MAX,
+  GROUP_MEMBER_MIN,
+  GROUP_NAME_MAX_LENGTH,
+  GROUP_PREMISE_MAX_LENGTH,
+} from "@rakazo/contracts";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, TextInput } from "react-native";
@@ -23,9 +28,16 @@ export default function GroupSettingsScreen() {
   const [group, setGroup] = useState<MobileGroup | null>(null);
   const [bots, setBots] = useState<MobileBot[]>([]);
   const [name, setName] = useState("");
+  const [premise, setPremise] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  const memberIds = group?.members.map((member) => member.botId).join(",") ?? "";
+  const changed =
+    name.trim() !== (group?.name ?? "") ||
+    premise.trim() !== (group?.premise ?? "") ||
+    selected.join(",") !== memberIds;
 
   useEffect(() => {
     if (!groupId) return;
@@ -37,6 +49,7 @@ export default function GroupSettingsScreen() {
         if (!nextGroup) throw new Error(t("Group not found"));
         setGroup(nextGroup);
         setName(nextGroup.name);
+        setPremise(nextGroup.premise ?? "");
         setSelected(nextGroup.members.map((member) => member.botId));
         setBots(nextBots.filter((bot) => !bot.archivedAt));
       })
@@ -48,11 +61,14 @@ export default function GroupSettingsScreen() {
     setPending(true);
     setError(null);
     try {
-      const input: { groupId: string; name?: string; botIds?: string[] } = { groupId };
+      const input: { groupId: string; name?: string; botIds?: string[]; premise?: string } = {
+        groupId,
+      };
       if (name.trim() !== group.name) input.name = name.trim();
-      const memberIds = group.members.map((member) => member.botId).join(",");
       if (selected.join(",") !== memberIds) input.botIds = selected;
-      if (input.name || input.botIds) await rpc("groups/update", input);
+      // Empty clears the premise, so a removed scene is saved like an edited one.
+      if (premise.trim() !== (group.premise ?? "")) input.premise = premise.trim();
+      if (changed) await rpc("groups/update", input);
       router.back();
     } catch (err) {
       setError(errorText(err, t("Could not save group")));
@@ -97,6 +113,28 @@ export default function GroupSettingsScreen() {
             fontSize: 16,
           }}
         />
+        <Text style={{ color: tokens.mutedForeground, fontSize: 14, marginTop: 24 }}>
+          {t("Premise")}
+        </Text>
+        <TextInput
+          value={premise}
+          onChangeText={setPremise}
+          multiline
+          maxLength={GROUP_PREMISE_MAX_LENGTH}
+          accessibilityLabel={t("Premise")}
+          placeholder={t("Shared scene or world for every bot here")}
+          placeholderTextColor={tokens.mutedForeground}
+          textAlignVertical="top"
+          style={{
+            marginTop: 8,
+            minHeight: 96,
+            backgroundColor: native.fill,
+            borderRadius: 11,
+            padding: 14,
+            color: tokens.foreground,
+            fontSize: 16,
+          }}
+        />
         {group ? (
           <BotMemberPicker
             key={group.id}
@@ -112,6 +150,7 @@ export default function GroupSettingsScreen() {
         {error ? <Text style={{ color: tokens.destructive, marginTop: 12 }}>{error}</Text> : null}
         <NativeActionButton
           disabled={
+            !changed ||
             !name.trim() ||
             selected.length < GROUP_MEMBER_MIN ||
             selected.length > GROUP_MEMBER_MAX ||

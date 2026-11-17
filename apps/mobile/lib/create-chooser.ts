@@ -1,7 +1,7 @@
 import type { MenuAction } from "@expo/ui/community/menu";
 import { materialIcons } from "./material-icons";
 
-export type CreateAction = "bot" | "group" | "space";
+export type CreateAction = "bot" | "card" | "group" | "space";
 
 export const createMenuItems = [
   {
@@ -9,6 +9,12 @@ export const createMenuItems = [
     label: "New bot",
     sfSymbol: "person.crop.circle.badge.plus",
     materialIcon: "person_add",
+  },
+  {
+    id: "card",
+    label: "Bot from card",
+    sfSymbol: "person.text.rectangle",
+    materialIcon: "contact_page",
   },
   { id: "group", label: "New group chat", sfSymbol: "person.2", materialIcon: "group" },
   {

@@ -608,8 +608,9 @@ describe("chat settings model row", () => {
   it("opens the searchable model list when there are too many models for a menu", async () => {
     mocks.params = { botId: "bot-fixture" };
     await render();
-    expect(container.querySelector('[data-menu="Model"]')).toBeNull();
     const row = container.querySelector<HTMLButtonElement>('button[aria-label="Model"]');
+    // The visibility row has its own Model menu, so only this row must stay a button.
+    expect(row?.closest('[data-menu="Model"]')).toBeNull();
     expect(row?.getAttribute("aria-valuetext")).toBe("Space default (Model 1)");
     act(() => row!.click());
     expect(mocks.push).toHaveBeenCalledExactlyOnceWith({

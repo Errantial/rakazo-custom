@@ -1161,6 +1161,7 @@ export type MobileGroup = Pick<
   Group,
   | "id"
   | "name"
+  | "premise"
   | "preview"
   | "pinned"
   | "sectionId"
