@@ -161,6 +161,7 @@ export function truncateReplyQuote(value: string): string {
 export const GROUP_MEMBER_MIN = 2;
 export const GROUP_MEMBER_MAX = 10;
 export const GROUP_NAME_MAX_LENGTH = 80;
+export const GROUP_PREMISE_MAX_LENGTH = 500;
 
 /** Preserve pick order and the group name limit without splitting a surrogate pair. */
 export function defaultGroupName(names: readonly string[]): string {
@@ -173,6 +174,8 @@ export const GroupSchema = z.object({
   id: Id,
   spaceId: Id,
   name: z.string(),
+  /** The scenario every member shares; empty when the group has none. */
+  premise: z.string().optional(),
   pinned: z.boolean(),
   sectionId: Id.nullable(),
   archivedAt: z.string().nullable(),
@@ -194,6 +197,7 @@ const GroupBotIds = z
 export const CreateGroupInput = z.object({
   name: z.string().trim().min(1).max(GROUP_NAME_MAX_LENGTH),
   botIds: GroupBotIds,
+  premise: z.string().trim().max(GROUP_PREMISE_MAX_LENGTH).optional(),
 });
 export type CreateGroupInput = z.infer<typeof CreateGroupInput>;
 
@@ -201,6 +205,8 @@ export const UpdateGroupInput = z.object({
   groupId: Id,
   name: z.string().trim().min(1).max(GROUP_NAME_MAX_LENGTH).optional(),
   botIds: GroupBotIds.optional(),
+  /** Available to every member, so an ensemble cast shares one scenario. Empty clears it. */
+  premise: z.string().trim().max(GROUP_PREMISE_MAX_LENGTH).optional(),
   /** Reject a membership replacement when another client changed the active roster. */
   expectedBotIds: z.array(Id).max(GROUP_MEMBER_MAX).optional(),
   pinned: z.boolean().optional(),
@@ -381,6 +387,8 @@ export const CreateBotInput = z.object({
   computerMode: ComputerModeSchema.default("team"),
   /** Idempotency key within a space (unique with spaceId). */
   spawnKey: z.string().trim().min(1).max(120).optional(),
+  /** Untrusted character card whose canon seeds this bot's profile; ignored when unusable. */
+  characterCard: z.unknown().optional(),
 });
 export type CreateBotInput = z.infer<typeof CreateBotInput>;
 

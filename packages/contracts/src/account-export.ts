@@ -84,6 +84,8 @@ export const AccountExportRecordSchema = z.discriminatedUnion("type", [
     type: z.literal("chat_group"),
     id: Id,
     name: z.string(),
+    /** Authored setting shared by every member; older exports predate it. */
+    premise: z.string().optional(),
     pinned: z.boolean(),
     sectionId: Id.nullable(),
     archivedAt: IsoDate.nullable(),

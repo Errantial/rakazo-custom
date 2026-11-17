@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@rakazo/db";
 import { RunHistoryWriteError } from "@rakazo/db";
 import { describe, expect, it, vi } from "vitest";
-import { handoffToGroupBot, loadBotGroupDirectory } from "./group-handoff.js";
+import { handoffToGroupBot, loadBotGroupDirectory, loadGroupContext } from "./group-handoff.js";
 
 const run = {
   id: "run-a",
@@ -462,4 +462,45 @@ it("discovers only active groups the bot belongs to under the same owner and spa
       },
     }),
   );
+});
+
+describe("group premise context", () => {
+  function prismaWithGroup(premise: string) {
+    return {
+      chatGroup: {
+        findUnique: vi.fn(async () => ({
+          id: "group-1",
+          name: "Bridge crew",
+          premise,
+          members: [
+            { bot: { id: "bot-a", name: "Researcher", description: "Investigates sources" } },
+            { bot: { id: "bot-b", name: "Analyst", description: null } },
+          ],
+        })),
+      },
+    } as unknown as PrismaClient;
+  }
+
+  it("renders the group's authored setting once, above the roster", async () => {
+    const context =
+      (await loadGroupContext(prismaWithGroup("Stranded above a frozen moon."), "group-1", {
+        id: "bot-a",
+        name: "Researcher",
+      })) ?? "";
+    expect(context).toContain("The group's setting: Stranded above a frozen moon.");
+    expect(context.indexOf("The group's setting:")).toBeLessThan(
+      context.indexOf("<group_members>"),
+    );
+    expect(context.match(/The group's setting:/g)).toHaveLength(1);
+  });
+
+  it("leaves the setting out when the group has none", async () => {
+    const context =
+      (await loadGroupContext(prismaWithGroup(""), "group-1", {
+        id: "bot-a",
+        name: "Researcher",
+      })) ?? "";
+    expect(context).toContain('You are in the group chat "Bridge crew".');
+    expect(context).not.toContain("The group's setting:");
+  });
 });

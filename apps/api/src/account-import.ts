@@ -528,6 +528,7 @@ class AccountImporter implements ArchiveSink {
             spaceId,
             userId,
             name: record.name,
+            premise: record.premise ?? "",
             pinned: record.pinned,
             sectionId: space.optional(record.sectionId),
             archivedAt: date(record.archivedAt),

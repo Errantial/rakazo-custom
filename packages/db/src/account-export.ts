@@ -182,6 +182,7 @@ async function* spaceRecords(
       type: "chat_group",
       id: group.id,
       name: group.name,
+      premise: group.premise,
       pinned: group.pinned,
       sectionId: group.sectionId,
       archivedAt: isoOrNull(group.archivedAt),

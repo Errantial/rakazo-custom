@@ -45,6 +45,7 @@ import { getLogger } from "@rakazo/logging";
 import type { AgentImportServices } from "../agent-import.js";
 import { agentImportSetupState, createImportedBot, previewAgentImport } from "../agent-import.js";
 import { deleteAgentSecret, listAgentSecrets, putAgentSecret } from "../agent-secrets.js";
+import { botCreateFields } from "../bot-card-create.js";
 import { changedBotSettings } from "../bot-setting-analytics.js";
 import { requireIdentityConfirmation } from "../identity-confirmation.js";
 import type { RouterDeps } from "../router.js";
@@ -192,8 +193,11 @@ export function botIntroPrompt(input: {
 
 /**
  * Creating a bot asks only for a name and a look, so one hidden-prompt turn greets the user and
- * asks what the bot is for. The executor limits the "created" trigger to that question and the
- * bot's own profile, and answering resumes the run as the user's turn.
+ * asks what the bot is for. A bot whose character card wrote its instructions or a greeting skips
+ * this: its profile or greeting is already authored, and the greeting is its first real message.
+ * A card that only names the bot still gets this intro. The executor limits the
+ * "created" trigger to that question and the bot's own profile, and answering resumes the run as
+ * the user's turn.
  */
 export async function enqueueBotIntroRun(deps: RouterDeps, actor: Actor, bot: Bot): Promise<void> {
   const threadId = bot.threadId;
@@ -259,15 +263,39 @@ export function botsRoutes(ctx: RouterContext) {
         return found;
       }),
       create: authed.bots.create.handler(async ({ context, input }) => {
+        let cardOwner = "";
+        if (input.characterCard !== undefined) {
+          const user = await deps.prisma.user.findUnique({
+            where: { id: context.actor.userId },
+            select: { name: true },
+          });
+          cardOwner = displayName(user?.name, "");
+        }
+        const { fields, greeting, skipIntro } = botCreateFields(input, cardOwner);
         let bot: Bot;
         try {
-          bot = await repos.createBot(context.actor, input);
+          bot = await repos.createBot(context.actor, {
+            ...fields,
+            // A card's greeting is the bot's own first message, written in creation's transaction.
+            ...(greeting
+              ? {
+                  initialMessage: {
+                    role: "bot" as const,
+                    blocks: [{ kind: "text" as const, text: greeting }],
+                  },
+                }
+              : {}),
+          });
         } catch (error) {
           throw mapSpaceLifecycleError(error);
         }
-        await enqueueBotIntroRun(deps, context.actor, bot).catch((error) => {
-          getLogger().error("bot intro run enqueue", error);
-        });
+        // A card that wrote the bot's instructions or opening line needs no hidden run asking
+        // what it is for.
+        if (!skipIntro) {
+          await enqueueBotIntroRun(deps, context.actor, bot).catch((error) => {
+            getLogger().error("bot intro run enqueue", error);
+          });
+        }
         return bot;
       }),
       importPreview: authed.bots.importPreview.handler(async ({ context, input }) =>
@@ -631,6 +659,7 @@ export function botsRoutes(ctx: RouterContext) {
           return await groupRepos.createGroup(context.actor, {
             name: duplicateBotName(source.name),
             botIds: source.members.map((member) => member.bot.id),
+            premise: source.premise,
           });
         } catch (error) {
           throw mapSpaceLifecycleError(error);

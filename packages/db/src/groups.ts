@@ -21,6 +21,7 @@ type GroupRecord = {
   spaceId: string;
   userId: string;
   name: string;
+  premise: string;
   pinned: boolean;
   sectionId: string | null;
   archivedAt: Date | null;
@@ -69,6 +70,7 @@ function mapGroup(group: GroupRecord): Group {
     id: group.id,
     spaceId: group.spaceId,
     name: group.name,
+    premise: group.premise,
     pinned: group.pinned,
     sectionId: group.sectionId,
     archivedAt: group.archivedAt?.toISOString() ?? null,
@@ -411,7 +413,10 @@ export function createGroupRepos(prisma: PrismaClient) {
       return group;
     },
 
-    async createGroup(actor: Actor, input: { name: string; botIds: string[] }): Promise<Group> {
+    async createGroup(
+      actor: Actor,
+      input: { name: string; botIds: string[]; premise?: string },
+    ): Promise<Group> {
       const members = await assertOwnedBots(prisma, actor, input.botIds);
       const created = await prisma.$transaction(async (tx) => {
         await lockSpaceForContentCreation(tx, {
@@ -423,6 +428,7 @@ export function createGroupRepos(prisma: PrismaClient) {
             spaceId: actor.spaceId,
             userId: actor.userId,
             name: displayName(input.name, ""),
+            premise: input.premise,
           },
         });
         await tx.chatGroupMember.createMany({
@@ -452,6 +458,7 @@ export function createGroupRepos(prisma: PrismaClient) {
       input: {
         groupId: string;
         name?: string;
+        premise?: string;
         botIds?: string[];
         expectedBotIds?: string[];
         pinned?: boolean;
@@ -535,6 +542,7 @@ export function createGroupRepos(prisma: PrismaClient) {
           where: { id: input.groupId },
           data: {
             updatedAt: new Date(),
+            premise: input.premise,
             pinned: input.pinned,
             sectionId: input.sectionId,
           },

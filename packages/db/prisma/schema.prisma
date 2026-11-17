@@ -745,6 +745,8 @@ model ChatGroup {
   space      Space             @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   userId     String
   name       String
+  /// Authored scenario shared by every member and rendered ahead of the roster.
+  premise    String            @default("")
   pinned     Boolean           @default(false)
   sectionId  String?
   section    BotSection?       @relation(fields: [sectionId], references: [id], onDelete: SetNull)
