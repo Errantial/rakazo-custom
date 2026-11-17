@@ -12,6 +12,7 @@ import {
   BOT_DESCRIPTION_MAX_LENGTH,
   BOT_INSTRUCTIONS_MAX_LENGTH,
   BOT_NAME_MAX_LENGTH,
+  BOT_TURN_REMINDER_MAX_LENGTH,
   botPeerVisibility,
   resolveBotAvatarSet,
 } from "@rakazo/contracts";
@@ -64,6 +65,7 @@ import { COMPUTER_LIFECYCLE_TIMEOUT_MS } from "../lib/computer";
 import { loadDeviceVoiceEnabled } from "../lib/device-voice";
 import { useI18n } from "../lib/i18n";
 import { native, useMobileTokens } from "../lib/native";
+import { pickCharacterCard } from "../lib/pick-character-card";
 import { createQueuedSave } from "../lib/queued-save";
 import { useSideInsets } from "../lib/side-insets";
 import { thinkingLevelLabel } from "../lib/thinking-level";
@@ -86,6 +88,7 @@ export default function BotSettingsScreen() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [instructions, setInstructions] = useState("");
+  const [turnReminder, setTurnReminder] = useState("");
   const [color, setColor] = useState<string>(BOT_COLORS[0]);
   const [computerMode, setComputerMode] = useState<ComputerMode>("team");
   const [avatarSet, setAvatarSet] = useState<BotAvatarSet>("organic");
@@ -199,6 +202,7 @@ export default function BotSettingsScreen() {
         notifySave.reset(next.notifyOnFinish ?? true);
         setDescription(next.description ?? "");
         setInstructions(next.instructions ?? "");
+        setTurnReminder(next.turnReminder ?? "");
         setColor(next.color);
         setAvatarSet(resolveBotAvatarSet(next.avatarSet));
         setComputerMode(next.computerMode);
@@ -410,6 +414,36 @@ export default function BotSettingsScreen() {
     }
   }
 
+  /** The card replaces the profile it authored; the old instructions stay in history. */
+  async function replaceCard() {
+    if (!bot || pending) return;
+    setError(null);
+    try {
+      const picked = await pickCharacterCard(bot.name);
+      if (!picked) return;
+      if (picked.kind === "none") {
+        Alert.alert(t("No character card found in this file"));
+        return;
+      }
+      setPending(true);
+      const updated = await rpc("bots/applyCharacterCard", {
+        botId: bot.id,
+        characterCard: picked.characterCard,
+        expectedInstructions: bot.instructions,
+      });
+      setBot(updated);
+      setName(updated.name);
+      nameSave.reset(updated.name);
+      setDescription(updated.description ?? "");
+      setInstructions(updated.instructions ?? "");
+      setTurnReminder(updated.turnReminder ?? "");
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function save() {
     if (!botId || !bot || pending) return;
     setPending(true);
@@ -422,6 +456,7 @@ export default function BotSettingsScreen() {
         description?: string;
         instructions?: string;
         expectedInstructions?: string;
+        turnReminder?: string;
         color?: string;
         avatarSet?: BotAvatarSet;
         modelProvider?: string | null;
@@ -436,6 +471,8 @@ export default function BotSettingsScreen() {
         input.instructions = instructions;
         input.expectedInstructions = bot.instructions;
       }
+      if (turnReminder.trim() !== (bot.turnReminder ?? ""))
+        input.turnReminder = turnReminder.trim();
       if (color !== bot.color) input.color = color;
       if (avatarSet !== resolveBotAvatarSet(bot.avatarSet)) input.avatarSet = avatarSet;
       const modelChanged =
@@ -488,6 +525,7 @@ export default function BotSettingsScreen() {
     bot &&
     (description.trim() !== (bot.description ?? "") ||
       instructions !== (bot.instructions ?? "") ||
+      turnReminder.trim() !== (bot.turnReminder ?? "") ||
       color !== bot.color ||
       avatarSet !== resolveBotAvatarSet(bot.avatarSet) ||
       computerMode !== bot.computerMode ||
@@ -844,6 +882,16 @@ export default function BotSettingsScreen() {
                 backgroundColor={native.fill}
               />
             </View>
+            <SettingsGroup label={t("Reminder after the conversation")}>
+              <GrowingTextInput
+                label={t("Reminder after the conversation")}
+                value={turnReminder}
+                maxLength={BOT_TURN_REMINDER_MAX_LENGTH}
+                onChangeText={setTurnReminder}
+                placeholder={t("Repeated after the newest message on every turn")}
+                inset={0}
+              />
+            </SettingsGroup>
             <SettingsGroup label={t("How other bots see it")}>
               <GrowingTextInput
                 label={t("How other bots see it")}
@@ -857,8 +905,28 @@ export default function BotSettingsScreen() {
             <View style={{ paddingHorizontal: 16, borderRadius: 12, backgroundColor: native.fill }}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t("Export")}
+                accessibilityLabel={t("Replace from character card")}
                 style={styles.row}
+                disabled={pending || instructions !== bot?.instructions}
+                onPress={() => void replaceCard()}
+              >
+                <Text style={{ color: tokens.foreground, fontSize: 14 }}>
+                  {t("Replace from character card")}
+                </Text>
+                <NativeSymbol
+                  ios="person.text.rectangle"
+                  android="id-card-outline"
+                  size={18}
+                  color={tokens.mutedForeground}
+                />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t("Export")}
+                style={[
+                  styles.row,
+                  { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: native.separator },
+                ]}
                 onPress={() => {
                   void rpc("export/bot", { botId })
                     .then((manifest) => Share.share({ message: JSON.stringify(manifest, null, 2) }))

@@ -70,6 +70,7 @@ function inboxBot(): Bot {
     title: "Sorts the demo inbox",
     description: "Files routine mail for ada@example.test and leaves the rest for review.",
     instructions: "File routine mail. Ask before sending anything.",
+    turnReminder: "",
     color: "ink",
     notifyOnFinish: true,
     pinned: false,

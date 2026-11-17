@@ -11,6 +11,7 @@ import type { Actor, Bot, ComputerMode } from "@rakazo/contracts";
 import {
   BOT_DESCRIPTION_MAX_LENGTH,
   BOT_INSTRUCTIONS_MAX_LENGTH,
+  BOT_TURN_REMINDER_MAX_LENGTH,
   GROUP_MEMBER_MIN,
 } from "@rakazo/contracts";
 import { ACTIVE_RUN_STATUSES } from "@rakazo/core";
@@ -68,7 +69,13 @@ export function spawnBotFields(
   args: Record<string, unknown>,
   userName: string,
 ):
-  | { name: string; description: string; instructions: string; greeting?: string }
+  | {
+      name: string;
+      description: string;
+      instructions: string;
+      turnReminder: string;
+      greeting?: string;
+    }
   | { error: string } {
   const typed = {
     name: String(args.name ?? ""),
@@ -80,11 +87,12 @@ export function spawnBotFields(
     ? botCardSeed(cardJson(args.character_card), { userName, fallbackName: typed.name })
     : undefined;
   if (withCard && !seed) return { error: "character_card is not a usable character card." };
-  const { name, description, instructions } = mergeCardFields(typed, seed);
+  const { name, description, instructions, turnReminder } = mergeCardFields(typed, seed);
   return {
     name,
     description,
     instructions,
+    turnReminder,
     ...(seed?.greeting ? { greeting: seed.greeting } : {}),
   };
 }
@@ -116,6 +124,8 @@ export async function spawnBot(
     name: string;
     description?: string;
     instructions?: string;
+    /** The card's post-history instructions, repeated after the newest message each turn. */
+    turnReminder?: string;
     /** The card's opening line, posted as the new bot's first message. */
     greeting?: string;
     prompt?: string;
@@ -139,6 +149,7 @@ export async function spawnBot(
       name,
       description: (input.description ?? "").trim().slice(0, BOT_DESCRIPTION_MAX_LENGTH),
       instructions: (input.instructions ?? "").trim().slice(0, BOT_INSTRUCTIONS_MAX_LENGTH),
+      turnReminder: (input.turnReminder ?? "").trim().slice(0, BOT_TURN_REMINDER_MAX_LENGTH),
       notifyOnFinish: true,
       // Creation provenance only; bots remain peers in the roster.
       parentBotId: input.spawnedBy.id,

@@ -35,7 +35,8 @@ not a separate "preset" kind of bot.
 | `scenario` | `instructions` → `## Setting`; optionally seeds memory docs |
 | `first_mes`, `alternate_greetings` | the bot's own first thread message, posted as it is created (only the first greeting is used for now) |
 | `mes_example` | `instructions` → `## Example exchanges`, normalized (strip `<START>`/`<END>`) |
-| `system_prompt`, `post_history_instructions` | `instructions` → `## Standing direction` (folded in) |
+| `system_prompt` | `instructions` → `## Standing direction` (folded in) |
+| `post_history_instructions` | `Bot.turnReminder`, sent after the newest message on every turn (see below) |
 | world bible shared by several bots | new `premise` on `ChatGroup` (`String @default("")`), rendered ahead of `<group_members>` in `renderGroupMembersContext()` |
 | relationship state per person | bot-scope memory docs (`people/<name>.md` style paths); no prompt-state meters |
 | `creator_notes`, `tags`, art assets | import metadata only; never enter prompts |
@@ -58,9 +59,20 @@ The card's `system_prompt` is folded into instructions rather than plumbed as a
 per-run system override: run-instructions composes one ordered system string for
 the pi runtime and must stay the single source of truth.
 
+`post_history_instructions` is the exception, because its whole point is where it
+sits: card authors write it to land after the chat history, where it outweighs a
+long conversation. It is stored as the bot's `turnReminder` (up to
+`BOT_TURN_REMINDER_MAX_LENGTH`, 2,000 characters) and the executor appends it to
+the run's prompt after the newest message, next to the current time
+(`turnReminderInstruction()` in `run-instructions.ts`). Like the timestamp it is
+per-turn text, so the cacheable system prefix is unchanged. It is never written
+to the thread, so later turns see it only once, after their own newest message.
+Owners can edit it in bot settings on web and mobile, and it travels with
+duplication and account export.
+
 ## Stages
 
-Stages 1 to 4 and 6 are shipped. Stage 5 was dropped; the reason is recorded
+Stages 1 to 4, 6 and 7 are shipped. Stage 5 was dropped; the reason is recorded
 below so it is not mistaken for unfinished work.
 
 1. **Mapper (pure, shipped):** `packages/core/src/bot-cards.ts`
@@ -113,6 +125,19 @@ below so it is not mistaken for unfinished work.
    onboarding focus prompt when the card authored instructions or a greeting,
    so it does not talk over the card's opening. Group settings on web and
    mobile edit the premise.
+
+7. **Replacing a card (shipped):** `bots.applyCharacterCard` maps a new card
+   through the same seed and merge onto an existing bot, with the bot's stored
+   name, description, instructions and turn reminder as the typed fields. The
+   card's reminder replaces the old one whenever the card wrote instructions or
+   a reminder, so a reminder from a previous card does not outlive it. The
+   instruction write takes `expectedInstructions` and records a "Character card"
+   version, so the previous instructions can be restored from history. The bot
+   keeps its thread, memory, computer and settings, and the greeting is not
+   posted again. Unlike creation, an unusable card is refused instead of
+   falling back. Web bot settings ("Replace from character card" under the
+   instructions) and mobile bot settings both read the file through
+   `characterCardBot()`.
 
 ## Open product question
 

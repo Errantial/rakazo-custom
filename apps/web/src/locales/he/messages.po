@@ -4034,6 +4034,7 @@ msgstr "ללא אימות"
 msgid "No bots match"
 msgstr "אין בוטים תואמים"
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "לא נמצא כרטיס דמות בקובץ הזה"
@@ -4769,6 +4770,10 @@ msgstr "שחרור השליטה"
 msgid "Reload"
 msgstr "טעינה מחדש"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "תזכורת אחרי השיחה"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr "מתחדש ב-{day}"
 msgid "Reopen"
 msgstr "פתיחה מחדש"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "חוזרת אחרי ההודעה האחרונה בכל תור"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "החלפת מפתח API"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "החלפה מכרטיס דמות"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

@@ -133,6 +133,7 @@ import {
   persistentComputerInstruction,
   runIdentityInstruction,
   threadContextForRun,
+  turnReminderInstruction,
   userTurnInstructions,
   voiceCallInstruction,
 } from "./run-instructions.js";
@@ -1401,6 +1402,7 @@ export function createRunExecutor(executorDeps: ExecutorDeps) {
           // Per-turn, not in the system prompt: the timestamp changes every call and would break the cacheable prefix.
           formatCurrentTimeInstruction(new Date(), userTimeZone),
           lateRoutineNote,
+          turnReminderInstruction(bot.turnReminder),
         ]
           .filter(Boolean)
           .join("\n\n");

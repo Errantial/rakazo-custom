@@ -4034,6 +4034,7 @@ msgstr "Нет аутентификации"
 msgid "No bots match"
 msgstr "Ни один бот не подходит"
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "В этом файле не найдена карточка персонажа"
@@ -4769,6 +4770,10 @@ msgstr "Передать управление"
 msgid "Reload"
 msgstr "Перезагрузить"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "Напоминание после разговора"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr ""
 msgid "Reopen"
 msgstr "Открыть заново"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "Повторяется после последнего сообщения на каждом ходу"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "Заменить ключ API"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "Заменить из карточки персонажа"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

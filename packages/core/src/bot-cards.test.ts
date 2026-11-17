@@ -1,4 +1,8 @@
-import { BOT_INSTRUCTIONS_MAX_LENGTH, BOT_NAME_MAX_LENGTH } from "@rakazo/contracts";
+import {
+  BOT_INSTRUCTIONS_MAX_LENGTH,
+  BOT_NAME_MAX_LENGTH,
+  BOT_TURN_REMINDER_MAX_LENGTH,
+} from "@rakazo/contracts";
 import { describe, expect, it } from "vitest";
 import type { BotCardData } from "./bot-cards.js";
 import {
@@ -7,6 +11,7 @@ import {
   cardBotProfile,
   characterCardBot,
   expandCardMacros,
+  mergeCardFields,
   parseCharacterCard,
   readCharacterCardFile,
 } from "./bot-cards.js";
@@ -341,9 +346,10 @@ describe("card to bot profile", () => {
     const positions = headings.map((heading) => profile.instructions.indexOf(heading));
     expect(positions.every((position) => position >= 0)).toBe(true);
     expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-    expect(sectionBody(profile.instructions, "Standing direction")).toBe(
-      "Stay in character.\n\nNever write the user's lines.",
-    );
+    expect(sectionBody(profile.instructions, "Standing direction")).toBe("Stay in character.");
+    // Post-history instructions follow the conversation each turn, not the instructions.
+    expect(profile.instructions).not.toContain("Never write");
+    expect(profile.turnReminder).toBe("Never write the user's lines.");
   });
 
   it("omits empty sections", () => {
@@ -367,7 +373,7 @@ describe("card to bot profile", () => {
     expect(profile.instructions).toContain("Sam: Hello?");
     expect(profile.instructions).toContain("Mira: Come in.");
     expect(profile.instructions).toContain("Speak as Mira.");
-    expect(profile.instructions).toContain("Never write Sam's lines.");
+    expect(profile.turnReminder).toBe("Never write Sam's lines.");
   });
 
   it("returns undefined without a name or a fallback", () => {
@@ -442,6 +448,7 @@ describe("card to bot profile", () => {
     expect(sectionBody(profile.instructions, "Setting")).toHaveLength(2_500);
     expect(sectionBody(profile.instructions, "Example exchanges")).toHaveLength(5_000);
     expect(sectionBody(profile.instructions, "Standing direction")).toHaveLength(1_500);
+    expect(profile.turnReminder).toHaveLength(BOT_TURN_REMINDER_MAX_LENGTH);
     expect(profile.instructions.length).toBeLessThanOrEqual(BOT_INSTRUCTIONS_MAX_LENGTH);
   });
 
@@ -493,5 +500,41 @@ describe("card to creation seed", () => {
     const seed = botCardSeed({ name: "Mira", first_mes: "Hello, {{user}}." }, {});
 
     expect(seed?.greeting).toBe("Hello, the user.");
+  });
+});
+
+describe("card merge", () => {
+  const stored = {
+    name: "Mal0",
+    description: "Old one-liner.",
+    instructions: "## Canon\n\nOld canon.",
+    turnReminder: "Old reminder.",
+  };
+
+  it("replaces the reminder with the one a card wrote alongside new instructions", () => {
+    const seed = botCardSeed(
+      { name: "Mal0", description: "New canon.", post_history_instructions: "New reminder." },
+      {},
+    );
+    expect(mergeCardFields(stored, seed)).toMatchObject({
+      instructions: "## Canon\n\nNew canon.",
+      turnReminder: "New reminder.",
+    });
+  });
+
+  it("clears a reminder the replacing card does not carry", () => {
+    const seed = botCardSeed({ name: "Mal0", description: "New canon." }, {});
+    expect(mergeCardFields(stored, seed).turnReminder).toBe("");
+  });
+
+  it("keeps the stored instructions and reminder for a card that only names the bot", () => {
+    const seed = botCardSeed({ name: "Mira" }, {});
+    expect(mergeCardFields(stored, seed)).toEqual({
+      name: "Mira",
+      description: stored.description,
+      instructions: stored.instructions,
+      turnReminder: stored.turnReminder,
+      skipIntro: false,
+    });
   });
 });

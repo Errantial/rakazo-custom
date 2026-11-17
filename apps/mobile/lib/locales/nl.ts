@@ -1,4 +1,8 @@
 export const NL_MESSAGES: Record<string, string> = {
+  "Reminder after the conversation": "Herinnering na het gesprek",
+  "Repeated after the newest message on every turn":
+    "Wordt elke beurt na het nieuwste bericht herhaald",
+  "Replace from character card": "Vervangen door personagekaart",
   "Check for updates": "Controleren op updates",
   "Update to {version}": "Bijwerken naar {version}",
   "Up to date": "Up-to-date",

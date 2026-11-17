@@ -4035,6 +4035,7 @@ msgstr "無驗證"
 msgid "No bots match"
 msgstr "沒有符合的機器人"
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "此檔案中找不到角色卡"
@@ -4770,6 +4771,10 @@ msgstr "交還控制權"
 msgid "Reload"
 msgstr "重新載入"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "對話後提醒"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4870,9 +4875,17 @@ msgstr "於 {day} 續訂"
 msgid "Reopen"
 msgstr "重新開啟"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "每一輪都會在最新訊息之後重複"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "替換 API 金鑰"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "用角色卡取代"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

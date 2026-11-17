@@ -4034,6 +4034,7 @@ msgstr "Kimlik doğrulaması yok"
 msgid "No bots match"
 msgstr ""
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "Bu dosyada karakter kartı bulunamadı"
@@ -4769,6 +4770,10 @@ msgstr "Kontrolü bırak"
 msgid "Reload"
 msgstr "Yeniden yükle"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "Konuşmadan sonra hatırlatma"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr ""
 msgid "Reopen"
 msgstr "Yeniden aç"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "Her turda en yeni mesajdan sonra tekrarlanır"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "API anahtarını değiştir"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "Karakter kartından değiştir"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

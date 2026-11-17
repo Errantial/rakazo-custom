@@ -1,4 +1,8 @@
 export const DE_MESSAGES: Record<string, string> = {
+  "Reminder after the conversation": "Erinnerung nach dem Gespräch",
+  "Repeated after the newest message on every turn":
+    "Wird bei jeder Antwort nach der neuesten Nachricht wiederholt",
+  "Replace from character card": "Aus Charakterkarte ersetzen",
   "Check for updates": "Nach Updates suchen",
   "Update to {version}": "Auf {version} aktualisieren",
   "Up to date": "Aktuell",

@@ -4034,6 +4034,7 @@ msgstr "No authentication"
 msgid "No bots match"
 msgstr "No bots match"
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "No character card found in this file"
@@ -4769,6 +4770,10 @@ msgstr "Release control"
 msgid "Reload"
 msgstr "Reload"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "Reminder after the conversation"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr "Renews {day}"
 msgid "Reopen"
 msgstr "Reopen"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "Repeated after the newest message on every turn"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "Replace API key"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "Replace from character card"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

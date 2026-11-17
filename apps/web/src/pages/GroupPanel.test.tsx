@@ -82,6 +82,7 @@ function fakeBot(id: string, name: string): Bot {
     title: "",
     description: "",
     instructions: "",
+    turnReminder: "",
     color: "blue",
     notifyOnFinish: true,
     pinned: false,

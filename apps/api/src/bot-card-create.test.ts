@@ -20,7 +20,10 @@ describe("bot creation from a character card", () => {
       name: "New Bot",
       description: "typed description",
       instructions: "typed instructions",
-      characterCard: card,
+      characterCard: {
+        ...card,
+        data: { ...card.data, post_history_instructions: "Stay {{char}}." },
+      },
     });
 
     const { fields, greeting, skipIntro } = botCreateFields(input, "Ada Lovelace");
@@ -28,6 +31,7 @@ describe("bot creation from a character card", () => {
     expect(fields.name).toBe("Mira");
     expect(fields.description).toBe("Mira keeps the town's old maps.");
     expect(fields.instructions).toContain("## Canon");
+    expect(fields.turnReminder).toBe("Stay Mira.");
     expect(fields).not.toHaveProperty("characterCard");
     expect(greeting).toBe("Hello, Ada Lovelace. I am Mira.");
     expect(skipIntro).toBe(true);

@@ -766,6 +766,7 @@ class AccountImporter implements ArchiveSink {
             autoApprove: record.autoApprove ?? false,
             teamChatAmbientEnabled: record.teamChatAmbientEnabled,
             teamChatRules: record.teamChatRules,
+            turnReminder: record.turnReminder ?? "",
             crossSpaceCommunication: record.crossSpaceCommunication,
             peerVisibility: record.peerVisibility
               ? botPeerVisibility(record.peerVisibility)

@@ -4034,6 +4034,7 @@ msgstr "인증 없음"
 msgid "No bots match"
 msgstr ""
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "이 파일에서 캐릭터 카드를 찾지 못했습니다"
@@ -4769,6 +4770,10 @@ msgstr "제어권 넘기기"
 msgid "Reload"
 msgstr "새로고침"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "대화 뒤 알림"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr ""
 msgid "Reopen"
 msgstr "다시 열기"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "매 턴마다 최신 메시지 뒤에 반복됩니다"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "API 키 교체"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "캐릭터 카드로 바꾸기"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

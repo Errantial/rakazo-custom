@@ -26,6 +26,7 @@ import type {
 } from "@rakazo/contracts";
 import { BotSecretAuth, botPeerVisibility, resolveBotAvatarSet } from "@rakazo/contracts";
 import { ACTIVE_RUN_STATUSES, displayName } from "@rakazo/core";
+import { botCardSeed, mergeCardFields } from "@rakazo/core/bot-cards";
 import type { Prisma } from "@rakazo/db";
 import {
   BotSectionNameConflictError,
@@ -199,6 +200,15 @@ export function botIntroPrompt(input: {
  * "created" trigger to that question and the bot's own profile, and answering resumes the run as
  * the user's turn.
  */
+/** The name a card's {{user}} becomes: the person applying it, when they have one. */
+async function cardOwnerName(deps: RouterDeps, actor: Actor): Promise<string> {
+  const user = await deps.prisma.user.findUnique({
+    where: { id: actor.userId },
+    select: { name: true },
+  });
+  return displayName(user?.name, "");
+}
+
 export async function enqueueBotIntroRun(deps: RouterDeps, actor: Actor, bot: Bot): Promise<void> {
   const threadId = bot.threadId;
   if (!threadId) return;
@@ -263,14 +273,8 @@ export function botsRoutes(ctx: RouterContext) {
         return found;
       }),
       create: authed.bots.create.handler(async ({ context, input }) => {
-        let cardOwner = "";
-        if (input.characterCard !== undefined) {
-          const user = await deps.prisma.user.findUnique({
-            where: { id: context.actor.userId },
-            select: { name: true },
-          });
-          cardOwner = displayName(user?.name, "");
-        }
+        const cardOwner =
+          input.characterCard === undefined ? "" : await cardOwnerName(deps, context.actor);
         const { fields, greeting, skipIntro } = botCreateFields(input, cardOwner);
         let bot: Bot;
         try {
@@ -323,6 +327,7 @@ export function botsRoutes(ctx: RouterContext) {
             name: duplicateBotName(source.name),
             description: source.description,
             instructions: source.instructions,
+            turnReminder: source.turnReminder,
             notifyOnFinish: source.notifyOnFinish,
             color: source.color,
             avatarSet: resolveBotAvatarSet(source.avatarSet),
@@ -398,6 +403,7 @@ export function botsRoutes(ctx: RouterContext) {
             name: input.name,
             description: input.description,
             instructions: input.instructions,
+            turnReminder: input.turnReminder,
             notifyOnFinish: input.notifyOnFinish,
             color: input.color,
             avatarSet: input.avatarSet,
@@ -489,6 +495,39 @@ export function botsRoutes(ctx: RouterContext) {
             emitBotUpdated: true,
             expectedInstructions: input.expectedInstructions,
             instructionRestore: { versionId: input.versionId, undo: input.undo },
+          });
+        } catch (error) {
+          if (!(error instanceof InstructionConflictError)) throw error;
+          throw new ORPCError("CONFLICT", { message: error.message });
+        }
+        return (await repos.listBots(context.actor)).find((bot) => bot.id === input.botId)!;
+      }),
+      applyCharacterCard: authed.bots.applyCharacterCard.handler(async ({ context, input }) => {
+        const bot = await repos.getBot(context.actor, input.botId);
+        if (!bot.thread) throw new IsolationError();
+        const seed = botCardSeed(input.characterCard, {
+          userName: await cardOwnerName(deps, context.actor),
+          fallbackName: bot.name,
+        });
+        // Creation falls back to a plain bot; here an unusable card would only erase the profile.
+        if (!seed) {
+          throw new ORPCError("BAD_REQUEST", {
+            message: "That file has no character card Rakazo can use.",
+          });
+        }
+        // The bot keeps its thread, memory and settings; its greeting is not posted again.
+        const { name, description, instructions, turnReminder } = mergeCardFields(bot, seed);
+        try {
+          await commitBotUpdate({
+            prisma: deps.prisma,
+            notify: (threadId, seq) => deps.events.notify(threadId, seq),
+            spaceId: context.actor.spaceId,
+            threadId: bot.thread.id,
+            botId: bot.id,
+            data: { name, description, instructions, turnReminder },
+            emitBotUpdated: true,
+            expectedInstructions: input.expectedInstructions,
+            reason: "Character card",
           });
         } catch (error) {
           if (!(error instanceof InstructionConflictError)) throw error;

@@ -1,4 +1,8 @@
 export const JA_MESSAGES: Record<string, string> = {
+  "Reminder after the conversation": "会話の後のリマインダー",
+  "Repeated after the newest message on every turn":
+    "毎ターン、最新のメッセージの後に繰り返されます",
+  "Replace from character card": "キャラクターカードで置き換える",
   "Check for updates": "アップデートを確認",
   "Update to {version}": "{version} にアップデート",
   "Up to date": "最新です",

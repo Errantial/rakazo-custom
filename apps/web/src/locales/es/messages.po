@@ -4034,6 +4034,7 @@ msgstr "Sin autenticación"
 msgid "No bots match"
 msgstr "Ningún bot coincide"
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "No se encontró ninguna tarjeta de personaje en este archivo"
@@ -4769,6 +4770,10 @@ msgstr "Ceder el control"
 msgid "Reload"
 msgstr "Recargar"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "Recordatorio tras la conversación"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr "Se renueva el {day}"
 msgid "Reopen"
 msgstr "Reabrir"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "Se repite después del mensaje más reciente en cada turno"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "Reemplazar clave de API"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "Reemplazar con tarjeta de personaje"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

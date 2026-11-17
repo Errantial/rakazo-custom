@@ -86,6 +86,7 @@ function mapBot(
     description: string;
     instructions: string;
     instructionHistory?: unknown;
+    turnReminder?: string;
     color: string;
     avatarSet?: string;
     notifyOnFinish: boolean;
@@ -130,6 +131,7 @@ function mapBot(
     description: bot.description,
     instructions: bot.instructions,
     instructionHistory: InstructionVersionSchema.array().parse(bot.instructionHistory ?? []),
+    turnReminder: bot.turnReminder ?? "",
     color: bot.color,
     avatarSet: resolveBotAvatarSet(bot.avatarSet),
     notifyOnFinish: bot.notifyOnFinish,
@@ -524,6 +526,7 @@ export function createRepos(
         name: string;
         description: string;
         instructions: string;
+        turnReminder?: string;
         notifyOnFinish: boolean;
         fleetManagement?: boolean;
         color?: string;
@@ -615,6 +618,7 @@ export function createRepos(
               name: displayName(input.name, ""),
               description: input.description,
               instructions: input.instructions,
+              turnReminder: input.turnReminder ?? "",
               notifyOnFinish: input.notifyOnFinish,
               fleetManagement: input.fleetManagement,
               color: avatar.color,

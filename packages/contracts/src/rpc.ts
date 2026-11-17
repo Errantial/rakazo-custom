@@ -52,6 +52,7 @@ import {
   AgentSkillCatalogEntrySchema,
   AgentSkillSchema,
   AppBootstrapSchema,
+  ApplyCharacterCardInput,
   ApprovalModeSchema,
   ApprovalRulePreviewSchema,
   ArtifactSchema,
@@ -450,6 +451,7 @@ export const appContract = {
     duplicate: oc.input(botId).output(BotSchema),
     reorder: oc.input(ReorderBotsInput).output(z.object({ ok: z.literal(true) })),
     update: oc.input(UpdateBotInput).output(BotSchema),
+    applyCharacterCard: oc.input(ApplyCharacterCardInput).output(BotSchema),
     restoreInstructions: oc
       .input(
         z.object({

@@ -59,6 +59,8 @@ export const AccountExportRecordSchema = z.discriminatedUnion("type", [
     name: z.string(),
     description: z.string(),
     instructions: z.string(),
+    /** Older exports predate it. */
+    turnReminder: z.string().optional(),
     color: z.string(),
     avatarSet: z.string(),
     notifyOnFinish: z.boolean(),

@@ -1,4 +1,8 @@
-import { BOT_INSTRUCTIONS_MAX_LENGTH, BOT_NAME_MAX_LENGTH } from "@rakazo/contracts";
+import {
+  BOT_INSTRUCTIONS_MAX_LENGTH,
+  BOT_NAME_MAX_LENGTH,
+  BOT_TURN_REMINDER_MAX_LENGTH,
+} from "@rakazo/contracts";
 import { displayName } from "./display-name.js";
 import { truncatePlainText } from "./markdown-plain.js";
 
@@ -19,6 +23,8 @@ export interface BotCardProfile {
   name: string;
   description: string;
   instructions: string;
+  /** The card's post-history instructions, repeated after the newest message on every turn. */
+  turnReminder: string;
 }
 
 /** A usable card, mapped onto a bot's identity and its opening message. */
@@ -228,9 +234,8 @@ export function cardBotProfile(
   const personality = expand(card.personality);
   const scenario = expand(card.scenario);
   const examples = expand(card.exampleMessages.join("\n\n"));
-  const direction = [expand(card.systemPrompt), expand(card.postHistoryInstructions)]
-    .filter(Boolean)
-    .join("\n\n");
+  const direction = expand(card.systemPrompt);
+  const turnReminder = expand(card.postHistoryInstructions);
 
   const warnOverBudget = (section: string, text: string, limit: number): void => {
     if (text.length > limit) {
@@ -244,6 +249,7 @@ export function cardBotProfile(
   warnOverBudget("Setting", scenario, SECTION_LIMITS.scenario);
   warnOverBudget("Example exchanges", examples, SECTION_LIMITS.examples);
   warnOverBudget("Standing direction", direction, SECTION_LIMITS.direction);
+  warnOverBudget("Turn reminder", turnReminder, BOT_TURN_REMINDER_MAX_LENGTH);
 
   return {
     name,
@@ -260,6 +266,7 @@ export function cardBotProfile(
         .join("\n\n"),
       BOT_INSTRUCTIONS_MAX_LENGTH,
     ),
+    turnReminder: truncatePlainText(turnReminder, BOT_TURN_REMINDER_MAX_LENGTH),
   };
 }
 
@@ -284,22 +291,33 @@ export function botCardSeed(
 }
 
 /**
- * The fields to create a bot with, from the typed ones and an optional seed. A usable card
- * supplies the name, and its description and instructions replace the typed ones only where the
- * card actually authored them, so a name-only card never wipes what the person wrote. The intro
- * run is skipped only when the card wrote the bot's instructions or opening line; a card that
- * only names the bot still gets the intro.
+ * The fields to create or update a bot with, from the typed or stored ones and an optional seed. A
+ * usable card supplies the name, and its description and instructions replace the typed ones only
+ * where the card actually authored them, so a name-only card never wipes what the person wrote.
+ * The turn reminder belongs with the instructions it repeats, so a card that wrote either replaces
+ * it, clearing a reminder the card does not carry. The intro run is skipped only when the card
+ * wrote the bot's instructions or opening line; a card that only names the bot still gets the intro.
  */
 export function mergeCardFields(
-  typed: { name: string; description: string; instructions: string },
+  typed: { name: string; description: string; instructions: string; turnReminder?: string },
   seed: BotCardSeed | undefined,
-): { name: string; description: string; instructions: string; skipIntro: boolean } {
-  if (!seed) return { ...typed, skipIntro: false };
+): {
+  name: string;
+  description: string;
+  instructions: string;
+  turnReminder: string;
+  skipIntro: boolean;
+} {
+  const typedReminder = typed.turnReminder ?? "";
+  if (!seed) return { ...typed, turnReminder: typedReminder, skipIntro: false };
+  const { profile } = seed;
   return {
-    name: seed.profile.name || typed.name,
-    description: seed.profile.description || typed.description,
-    instructions: seed.profile.instructions || typed.instructions,
-    skipIntro: Boolean(seed.profile.instructions || seed.greeting),
+    name: profile.name || typed.name,
+    description: profile.description || typed.description,
+    instructions: profile.instructions || typed.instructions,
+    turnReminder:
+      profile.instructions || profile.turnReminder ? profile.turnReminder : typedReminder,
+    skipIntro: Boolean(profile.instructions || seed.greeting),
   };
 }
 

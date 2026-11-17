@@ -4034,6 +4034,7 @@ msgstr "कोई प्रमाणीकरण नहीं"
 msgid "No bots match"
 msgstr ""
 
+#: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
 msgid "No character card found in this file"
 msgstr "इस फ़ाइल में कोई कैरेक्टर कार्ड नहीं मिला"
@@ -4769,6 +4770,10 @@ msgstr "नियंत्रण छोड़ें"
 msgid "Reload"
 msgstr "फिर से लोड करें"
 
+#: src/components/InstructionSettings.tsx
+msgid "Reminder after the conversation"
+msgstr "बातचीत के बाद रिमाइंडर"
+
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
 #: src/components/integrations/plugin-marketplace.tsx
@@ -4869,9 +4874,17 @@ msgstr ""
 msgid "Reopen"
 msgstr "पुनः खोलें"
 
+#: src/components/InstructionSettings.tsx
+msgid "Repeated after the newest message on every turn"
+msgstr "हर बारी में सबसे नए संदेश के बाद दोहराया जाता है"
+
 #: src/pages/model-settings/connection-controls.tsx
 msgid "Replace API key"
 msgstr "API कुंजी बदलें"
+
+#: src/components/InstructionSettings.tsx
+msgid "Replace from character card"
+msgstr "कैरेक्टर कार्ड से बदलें"
 
 #: src/pages/shell/composer-error.tsx
 #: src/pages/VoiceSettingsOverlay.tsx

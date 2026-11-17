@@ -87,6 +87,8 @@ const catalog = Array.from({ length: 11 }, (_, index) => ({
 
 vi.mock("./display-mode", () => ({ useDisplayMode: () => "standard" }));
 vi.mock("./side-insets", () => ({ useSideInsets: () => ({}) }));
+// The card picker loads native document and file modules the settings tests never use.
+vi.mock("./pick-character-card", () => ({ pickCharacterCard: vi.fn() }));
 vi.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ bottom: 34 }),
   SafeAreaView: ({ children }: { children: ReactNode }) => createElement("div", {}, children),

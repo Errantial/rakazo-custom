@@ -1,4 +1,7 @@
 export const ZH_MESSAGES: Record<string, string> = {
+  "Reminder after the conversation": "对话后提醒",
+  "Repeated after the newest message on every turn": "每一轮都会在最新消息之后重复",
+  "Replace from character card": "用角色卡替换",
   "Check for updates": "检查更新",
   "Update to {version}": "更新到 {version}",
   "Up to date": "已是最新版本",
