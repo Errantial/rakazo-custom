@@ -162,4 +162,3 @@ describe("readPeerProfile", () => {
     ).toEqual({ error: 'No bot with id "bot-target". Call list_fleet for ids.' });
   });
 });
-
