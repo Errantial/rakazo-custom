@@ -50,6 +50,20 @@ describe("Android release check", () => {
     await expect(newerAndroidRelease(11, manifest({ version: "x" }))).rejects.toThrow("malformed");
   });
 
+  it("gives up on a manifest request that never answers", async () => {
+    vi.useFakeTimers();
+    try {
+      const stalled = vi.fn(
+        () => new Promise<Response>(() => undefined),
+      ) as unknown as typeof fetch;
+      const check = expect(newerAndroidRelease(11, stalled)).rejects.toThrow("timed out");
+      await vi.advanceTimersByTimeAsync(10_000);
+      await check;
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("reads the installed versionCode from the native build version", () => {
     application.nativeBuildVersion = "20261101";
     expect(installedVersionCode()).toBe(20261101);

@@ -75,7 +75,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Generate the native Android project
         working-directory: apps/mobile
-        run: pnpm exec expo prebuild --platform android --no-install
+        run: |
+          pnpm exec expo prebuild --platform android --no-install
+          # R8 on a release build outgrows the template's Metaspace, as in mobile-android-screenshots.
+          sed -i 's/MaxMetaspaceSize=512m/MaxMetaspaceSize=1g/' android/gradle.properties
       - name: Build the arm64 release APK
         working-directory: apps/mobile/android
         run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
@@ -92,7 +95,8 @@ jobs:
             echo "The APK is signed by $signer, so it would not install over the existing app." >&2
             exit 1
           fi
-          badging="$("$tools/aapt2" dump badging "$apk" | head -n 1)"
+          # The whole dump, not `| head`: under pipefail a closed pipe would fail the step at random.
+          badging="$("$tools/aapt2" dump badging "$apk")"
           grep -Fq "versionCode='$CODE'" <<< "$badging"
           grep -Fq "versionName='$VERSION'" <<< "$badging"
           mkdir -p "$RUNNER_TEMP/android"
@@ -112,5 +116,6 @@ jobs:
           # The APK goes first so the manifest never announces a build that is not downloadable.
           gh release upload android -R "$GITHUB_REPOSITORY" "$RUNNER_TEMP/android/rakazo.apk" --clobber
           gh release upload android -R "$GITHUB_REPOSITORY" "$RUNNER_TEMP/android/version.json" --clobber
-          gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/android" -f sha="$GITHUB_SHA" -F force=true > /dev/null
+          # The `android` tag is left where it is: GITHUB_TOKEN may not move a ref across workflow
+          # changes, and the download URLs name the release, not a commit.
           gh release edit android -R "$GITHUB_REPOSITORY" --title "$title" --latest=false
