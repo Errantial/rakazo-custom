@@ -1,7 +1,12 @@
 import type { PrismaClient } from "@rakazo/db";
 import { RunHistoryWriteError } from "@rakazo/db";
 import { describe, expect, it, vi } from "vitest";
-import { handoffToGroupBot, loadBotGroupDirectory, loadGroupContext } from "./group-handoff.js";
+import {
+  handoffToGroupBot,
+  loadBotGroupDirectory,
+  loadGroupContext,
+  sharedBotAddress,
+} from "./group-handoff.js";
 
 const run = {
   id: "run-a",
@@ -483,10 +488,10 @@ describe("group premise context", () => {
 
   it("renders the group's authored setting once, above the roster", async () => {
     const context =
-      (await loadGroupContext(prismaWithGroup("Stranded above a frozen moon."), "group-1", {
-        id: "bot-a",
-        name: "Researcher",
-      })) ?? "";
+      (await loadGroupContext(prismaWithGroup("Stranded above a frozen moon."), "group-1",
+        { id: "bot-a", name: "Researcher" },
+        "teammate",
+      )) ?? "";
     expect(context).toContain("The group's setting: Stranded above a frozen moon.");
     expect(context.indexOf("The group's setting:")).toBeLessThan(
       context.indexOf("<group_members>"),
@@ -496,11 +501,35 @@ describe("group premise context", () => {
 
   it("leaves the setting out when the group has none", async () => {
     const context =
-      (await loadGroupContext(prismaWithGroup(""), "group-1", {
-        id: "bot-a",
-        name: "Researcher",
-      })) ?? "";
+      (await loadGroupContext(prismaWithGroup(""), "group-1",
+        { id: "bot-a", name: "Researcher" },
+        "teammate",
+      )) ?? "";
     expect(context).toContain('You are in the group chat "Bridge crew".');
     expect(context).not.toContain("The group's setting:");
+  });
+});
+
+describe("shared bot address", () => {
+  const bot = { id: "bot-b", name: "Researcher", description: "Finds sources." };
+
+  it("shows a description shared with every teammate", () => {
+    for (const viewer of ["manager", "teammate"] as const) {
+      expect(sharedBotAddress(bot, viewer)).toEqual(bot);
+      expect(
+        sharedBotAddress({ ...bot, peerVisibility: { description: "teammates" } }, viewer),
+      ).toEqual(bot);
+    }
+  });
+
+  it("shows a description shared only with managers to a manager", () => {
+    const shared = { ...bot, peerVisibility: { description: "managers" } };
+    expect(sharedBotAddress(shared, "manager")).toEqual(bot);
+    expect(sharedBotAddress(shared, "teammate")).toEqual({ id: bot.id, name: bot.name });
+  });
+
+  it("drops a description a bot keeps to itself and keeps the name for routing", () => {
+    const hidden = { ...bot, peerVisibility: { description: "owner" } };
+    expect(sharedBotAddress(hidden, "manager")).toEqual({ id: "bot-b", name: "Researcher" });
   });
 });

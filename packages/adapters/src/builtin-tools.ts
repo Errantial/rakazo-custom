@@ -93,6 +93,7 @@ export const DELEGATION_TOOL_NAMES = new Set<string>([
   "delete_bot",
   "handoff_to_bot",
   "message_bot",
+  "read_bot_profile",
   ...FLEET_TOOL_NAMES,
 ]);
 
@@ -1666,6 +1667,22 @@ export const builtinAgentTools: ConnectorTool[] = [
         message: { type: "string", description: "What the receiving bot should do next." },
       },
       required: ["message"],
+    },
+  },
+  {
+    name: "read_bot_profile",
+    description:
+      "Read what another of the user's bots shares with you: its description, instructions, memory, routines, model and connected apps. Fields it keeps to itself come back under hidden with no value — never try to get those another way. Use this instead of asking a teammate to describe itself.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        bot_id: { type: "string", description: "Target bot id from your teammate list." },
+        bot_name: {
+          type: "string",
+          description: "Exact name of the target bot when bot_id is omitted.",
+        },
+      },
+      additionalProperties: false,
     },
   },
   {

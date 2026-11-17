@@ -22,6 +22,7 @@ const SETTINGS: Partial<Record<Field, AnalyticsBotSetting>> = {
   crossSpaceCommunication: "cross_space",
   fleetManagement: "fleet_management",
   disabledBuiltinTools: "tools",
+  peerVisibility: "peer_visibility",
 };
 
 /** Settings an update actually changes; clients resend unchanged fields with every save. */

@@ -1,6 +1,7 @@
 import * as z from "zod";
 import { AGENT_SECRET_NAME_PATTERN } from "./agent-secret-name.js";
 import { BotAvatarSetSchema, BotAvatarValueSchema } from "./bot-avatar.js";
+import { BOT_PEER_VISIBILITY_DEFAULTS, BotPeerVisibilitySchema } from "./bot-visibility.js";
 import { DisabledBuiltinToolsSchema } from "./builtin-tools.js";
 import {
   cloudflareGatewayRoutingId,
@@ -114,6 +115,8 @@ export const BotSchema = z.object({
   teamChatRules: z.string(),
   crossSpaceCommunication: z.boolean().optional(),
   fleetManagement: z.boolean().default(false),
+  /** What other bots may read about this one. */
+  peerVisibility: BotPeerVisibilitySchema.default(BOT_PEER_VISIBILITY_DEFAULTS),
   disabledBuiltinTools: z.array(z.string()).default([]),
   webhookConfigured: z.boolean(),
   /** Present when created with an idempotency key (e.g. onboarding:first). */
@@ -417,6 +420,8 @@ export const UpdateBotInput = z
     teamChatRules: z.string().max(TEAM_CHAT_RULES_MAX_LENGTH).optional(),
     crossSpaceCommunication: z.boolean().optional(),
     fleetManagement: z.boolean().optional(),
+    /** Replaces the whole object; the owner's settings always send every field. */
+    peerVisibility: BotPeerVisibilitySchema.optional(),
     disabledBuiltinTools: DisabledBuiltinToolsSchema.optional(),
     /** Write only while these settings still hold, as an undo does. */
     expectedSettings: BotSettingsValuesSchema.optional(),

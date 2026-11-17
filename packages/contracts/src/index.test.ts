@@ -290,6 +290,32 @@ describe("contracts", () => {
     );
   });
 
+  it("requires every field and a known audience in peer visibility", () => {
+    const shared = {
+      instructions: "owner",
+      description: "teammates",
+      memory: "owner",
+      routines: "owner",
+      model: "managers",
+      tools: "owner",
+    } as const;
+    expect(UpdateBotInput.parse({ botId: "bot-1", peerVisibility: shared }).peerVisibility).toEqual(
+      shared,
+    );
+    expect(
+      UpdateBotInput.safeParse({
+        botId: "bot-1",
+        peerVisibility: { instructions: "owner" },
+      }).success,
+    ).toBe(false);
+    expect(
+      UpdateBotInput.safeParse({
+        botId: "bot-1",
+        peerVisibility: { ...shared, memory: "everyone" },
+      }).success,
+    ).toBe(false);
+  });
+
   it("drops a title that installed apps still send", () => {
     expect(CreateBotInput.parse({ name: "Chief", title: "Lead" })).not.toHaveProperty("title");
     expect(UpdateBotInput.parse({ botId: "bot-1", title: "Lead" })).toEqual({ botId: "bot-1" });

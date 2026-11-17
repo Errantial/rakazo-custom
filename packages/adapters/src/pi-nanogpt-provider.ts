@@ -290,7 +290,9 @@ export function nanoGptProvider(): Provider {
  * A registry without `setProvider` (a read-only or minimal one) is returned unchanged.
  */
 export function registerNanoGptProvider(models: MutableModels): MutableModels {
-  if (typeof models.setProvider !== "function") return models;
-  if (!models.getProvider?.(NANOGPT_PROVIDER_ID)) models.setProvider(nanoGptProvider());
+  // A catalog that cannot look a provider up or accept one is a reduced double (some tests pass
+  // one); there is nothing to register into and no way to tell whether it is already there.
+  if (!models.getProvider || typeof models.setProvider !== "function") return models;
+  if (!models.getProvider(NANOGPT_PROVIDER_ID)) models.setProvider(nanoGptProvider());
   return models;
 }

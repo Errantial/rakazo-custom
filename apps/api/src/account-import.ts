@@ -22,6 +22,7 @@ import {
   AccountExportManifestSchema,
   AccountExportRecordSchema,
   attachmentSizeLabel,
+  botPeerVisibility,
   resolveBotAvatarSet,
 } from "@rakazo/contracts";
 import { organicAvatarFamily } from "@rakazo/core";
@@ -766,6 +767,9 @@ class AccountImporter implements ArchiveSink {
             teamChatAmbientEnabled: record.teamChatAmbientEnabled,
             teamChatRules: record.teamChatRules,
             crossSpaceCommunication: record.crossSpaceCommunication,
+            peerVisibility: record.peerVisibility
+              ? botPeerVisibility(record.peerVisibility)
+              : botPeerVisibility({}),
             createdAt: new Date(record.createdAt),
           },
         });

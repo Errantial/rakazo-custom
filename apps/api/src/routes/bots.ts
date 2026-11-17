@@ -24,7 +24,7 @@ import type {
   SettingsScope,
   VaultPutInput,
 } from "@rakazo/contracts";
-import { BotSecretAuth, resolveBotAvatarSet } from "@rakazo/contracts";
+import { BotSecretAuth, botPeerVisibility, resolveBotAvatarSet } from "@rakazo/contracts";
 import { ACTIVE_RUN_STATUSES, displayName } from "@rakazo/core";
 import type { Prisma } from "@rakazo/db";
 import {
@@ -419,6 +419,7 @@ export function botsRoutes(ctx: RouterContext) {
             ...(input.fleetManagement !== undefined
               ? { fleetManagement: input.fleetManagement }
               : {}),
+            ...(input.peerVisibility !== undefined ? { peerVisibility: input.peerVisibility } : {}),
             ...(input.disabledBuiltinTools !== undefined
               ? { disabledBuiltinTools: input.disabledBuiltinTools }
               : {}),
@@ -448,6 +449,24 @@ export function botsRoutes(ctx: RouterContext) {
               autoApprove: input.autoApprove,
             },
           });
+        }
+        if (input.peerVisibility !== undefined) {
+          const before = botPeerVisibility(existing.peerVisibility);
+          const changed = Object.entries(botPeerVisibility(input.peerVisibility)).filter(
+            ([field, audience]) => audience !== before[field as keyof typeof before],
+          );
+          if (changed.length > 0) {
+            await recordSecurityEvent({
+              type: "bot.privacy.changed",
+              userId: context.actor.userId,
+              spaceId: context.actor.spaceId,
+              metadata: {
+                procedure: "bots.update",
+                botId: input.botId,
+                ...Object.fromEntries(changed),
+              },
+            });
+          }
         }
         const bots = await repos.listBots(context.actor);
         const bot = bots.find((b) => b.id === input.botId);

@@ -678,6 +678,8 @@ model Bot {
   teamChatRules          String  @default("")
   crossSpaceCommunication Boolean @default(false)
   fleetManagement        Boolean @default(true)
+  /// What other bots may read; see BotPeerVisibilitySchema. Empty means every default.
+  peerVisibility         Json    @default("{}")
   routines          Routine[]
   scratchpadItems   ScratchpadItem[]
   taughtSkills      TaughtSkill[]

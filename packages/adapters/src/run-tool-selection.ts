@@ -15,6 +15,7 @@ export const READ_ONLY_AGENT_TOOLS = new Set([
   "computer_observe",
   "list_files",
   "list_fleet",
+  "read_bot_profile",
   "read_file",
   "read_history",
   "search_history",

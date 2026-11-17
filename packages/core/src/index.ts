@@ -67,6 +67,7 @@ export * from "./password-policy.js";
 export * from "./peer-exchanges.js";
 export * from "./peer-history.js";
 export * from "./peer-messages.js";
+export * from "./peer-visibility.js";
 export * from "./plugin-catalog.js";
 export * from "./product-analytics.js";
 export * from "./prompt-data.js";

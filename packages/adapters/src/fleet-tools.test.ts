@@ -3,6 +3,7 @@ import type { PrismaClient, ThreadEvents } from "@rakazo/db";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FleetDeps, FleetPrepareDeps, FleetRun } from "./fleet-tools.js";
 import {
+  childModelResult,
   createChildRoutine,
   instructionsVersionOf,
   listFleet,
@@ -28,6 +29,7 @@ type FakeBot = {
   section?: { name: string } | null;
   instructions?: string;
   instructionHistory?: Array<{ id: string }>;
+  peerVisibility?: Record<string, string>;
 };
 type FakeGroup = {
   id: string;
@@ -77,6 +79,7 @@ function fakeFleet(input: {
     section: null,
     instructions: "",
     instructionHistory: [],
+    peerVisibility: {},
     ...bot,
     thread: { id: `thread-${bot.id}` },
   }));
@@ -903,7 +906,7 @@ describe("prepareFleetRequest keeps the card whole and honest", () => {
 });
 
 describe("listFleet", () => {
-  it("returns full requested instructions and version separately from a large roster", async () => {
+  it("returns full instructions when the bot shares them, separately from a large roster", async () => {
     const instructions = "x".repeat(20_000);
     const { deps } = fakeFleet({
       bots: [
@@ -913,6 +916,7 @@ describe("listFleet", () => {
           parentBotId: "bot-self",
           instructions,
           instructionHistory: [{ id: "v2" }],
+          peerVisibility: { instructions: "managers" },
         },
         ...Array.from({ length: 210 }, (_, i) => ({
           id: `peer-${i}`,
@@ -921,7 +925,13 @@ describe("listFleet", () => {
       ],
     });
     expect(await listFleet(deps, run, { bot_id: "child" })).toEqual({
-      bot: { id: "child", name: "Child", instructionsVersion: "v2", instructions },
+      bot: {
+        id: "child",
+        name: "Child",
+        instructionsVersion: "v2",
+        instructionsShared: true,
+        instructions,
+      },
       bots: [],
       groups: [],
       sections: [],
@@ -995,7 +1005,7 @@ describe("listFleet", () => {
     });
   });
 
-  it("returns instructions and versions for created bots and peers", async () => {
+  it("returns a bot's instruction version, and its text only when it shares it", async () => {
     const { deps } = fakeFleet({
       bots: [
         { id: "bot-self", name: "Designer" },
@@ -1008,18 +1018,65 @@ describe("listFleet", () => {
         },
         { id: "bot-fresh", name: "Fresh", parentBotId: "bot-self", instructions: "Start." },
         { id: "bot-peer", name: "Peer", instructions: "Secret plan." },
+        {
+          id: "bot-open",
+          name: "Open",
+          instructions: "Share this.",
+          peerVisibility: { instructions: "managers" },
+        },
       ],
     });
-    expect(await listFleet(deps, run, { bot_id: "bot-child" })).toMatchObject({
-      bot: { id: "bot-child", instructions: "Research venues.", instructionsVersion: "version-2" },
+    // The owner's fleet never reads another bot's instructions unless that bot shares them.
+    expect(await listFleet(deps, run, { bot_id: "bot-child" })).toEqual({
+      bot: {
+        id: "bot-child",
+        name: "Child",
+        instructionsVersion: "version-2",
+        instructionsShared: false,
+      },
+      bots: [],
+      groups: [],
+      sections: [],
+      truncated: false,
     });
     expect(await listFleet(deps, run, { bot_id: "bot-fresh" })).toMatchObject({
-      bot: { id: "bot-fresh", instructions: "Start.", instructionsVersion: "initial" },
+      bot: { instructionsVersion: "initial", instructionsShared: false },
     });
     expect(await listFleet(deps, run, { bot_id: "bot-peer" })).toMatchObject({
-      bot: { id: "bot-peer", instructions: "Secret plan.", instructionsVersion: "initial" },
+      bot: { instructionsVersion: "initial", instructionsShared: false },
     });
-    expect(JSON.stringify(await listFleet(deps, run, {}))).not.toContain("Secret plan.");
+    expect(await listFleet(deps, run, { bot_id: "bot-open" })).toMatchObject({
+      bot: {
+        instructions: "Share this.",
+        instructionsVersion: "initial",
+        instructionsShared: true,
+      },
+    });
+    const roster = JSON.stringify(await listFleet(deps, run, {}));
+    expect(roster).not.toContain("Secret plan.");
+    expect(roster).not.toContain("Share this.");
+  });
+
+  it("keeps a description out of the roster when its owner shares it with nobody", async () => {
+    const { deps } = fakeFleet({
+      bots: [
+        { id: "bot-self", name: "Designer" },
+        { id: "bot-private", name: "Private", description: "Board-only notes." },
+        {
+          id: "bot-closed",
+          name: "Closed",
+          description: "Team-only notes.",
+          peerVisibility: { description: "owner" },
+        },
+      ],
+    });
+    const listing = (await listFleet(deps, run, {})) as {
+      bots: Array<{ id: string; description: string }>;
+    };
+    expect(listing.bots.find((bot) => bot.id === "bot-private")?.description).toBe(
+      "Board-only notes.",
+    );
+    expect(listing.bots.find((bot) => bot.id === "bot-closed")?.description).toBe("");
   });
 
   it("bounds oversized roster output without cutting JSON entries", async () => {
@@ -1514,6 +1571,22 @@ describe("setChildBotModel", () => {
     expect(result).toEqual({ error: "Connect that model provider first" });
     expect(prisma.$transaction).not.toHaveBeenCalled();
   });
+
+  it("reports the new model only when the child shares it", () => {
+    const child = { id: "bot-scout", name: "Scout" };
+    const model = { provider: "custom", model: "my-model", thinkingLevel: null };
+    expect(childModelResult(child, model)).toEqual({
+      ok: true,
+      botId: "bot-scout",
+      name: "Scout",
+    });
+    expect(childModelResult({ ...child, peerVisibility: { model: "teammates" } }, model)).toEqual({
+      ok: true,
+      botId: "bot-scout",
+      name: "Scout",
+      ...model,
+    });
+  });
 });
 
 describe("createChildRoutine", () => {
@@ -1538,6 +1611,9 @@ describe("createChildRoutine", () => {
   it("returns the existing routine on an identical retry", async () => {
     const { prisma } = fakeFleet({
       ...fleet,
+      bots: fleet.bots.map((bot) =>
+        bot.id === "bot-writer" ? { ...bot, peerVisibility: { routines: "managers" } } : bot,
+      ),
       routines: [
         {
           id: "routine-1",
@@ -1559,6 +1635,28 @@ describe("createChildRoutine", () => {
       botName: "Writer",
     });
     expect(prisma.routine.create).not.toHaveBeenCalled();
+  });
+
+  it("returns no routine details from a bot that keeps its routines", async () => {
+    const { prisma } = fakeFleet({
+      ...fleet,
+      routines: [
+        {
+          id: "routine-1",
+          name: "Daily",
+          crons: ["0 9 * * *"],
+          nextRunAt: new Date("2026-10-18T09:00:00Z"),
+        },
+      ],
+    });
+    const result = await createChildRoutine(writeDeps(prisma), run, canonical);
+    expect(result).toEqual({
+      ok: true,
+      routineId: "routine-1",
+      oneShot: false,
+      botId: "bot-writer",
+      botName: "Writer",
+    });
   });
 
   it("creates the routine in the child's thread and rolls it back if enqueueing fails", async () => {

@@ -106,6 +106,14 @@ function fakeBot(id: string, name: string): Bot {
     disabledBuiltinTools: [],
     webhookConfigured: false,
     fleetManagement: false,
+    peerVisibility: {
+      instructions: "owner",
+      description: "teammates",
+      memory: "owner",
+      routines: "owner",
+      model: "owner",
+      tools: "owner",
+    },
     spawnKey: null,
   };
 }

@@ -1,10 +1,12 @@
 import { runContinueJob } from "@rakazo/adapter-kit";
-import { MessageBlock } from "@rakazo/contracts";
+import { botPeerVisibility, MessageBlock } from "@rakazo/contracts";
 import {
   BOT_MESSAGE_MAX_LENGTH,
   botMessageContext,
   botMessageHopExhausted,
   nextBotMessageHop,
+  type PeerViewer,
+  peerVisibilityAllowsField,
   renderBotGroupDirectory,
   renderGroupMembersContext,
   resolveBotAddress,
@@ -245,6 +247,7 @@ export async function loadGroupContext(
   prisma: PrismaClient,
   groupId: string,
   self: { id: string; name: string },
+  viewer: PeerViewer,
 ): Promise<string | undefined> {
   const group = await prisma.chatGroup.findUnique({
     where: { id: groupId },
@@ -252,7 +255,9 @@ export async function loadGroupContext(
       members: {
         where: { bot: { archivedAt: null } },
         include: {
-          bot: { select: { id: true, name: true, description: true } },
+          bot: {
+            select: { id: true, name: true, description: true, peerVisibility: true },
+          },
         },
         orderBy: { createdAt: "asc" },
       },
@@ -261,10 +266,32 @@ export async function loadGroupContext(
   if (!group) return undefined;
   return renderGroupMembersContext(
     group.name,
-    group.members.map((member) => member.bot),
+    group.members.map((member) => sharedBotAddress(member.bot, viewer)),
     self,
     group.premise,
   );
+}
+
+/** Another bot as `viewer` may address it: its name, and the description it shares. */
+export function sharedBotAddress(
+  bot: {
+    id: string;
+    name: string;
+    description: string;
+    peerVisibility?: unknown;
+  },
+  viewer: PeerViewer,
+): { id: string; name: string; description?: string } {
+  const visible = peerVisibilityAllowsField(
+    botPeerVisibility(bot.peerVisibility),
+    "description",
+    viewer,
+  );
+  return {
+    id: bot.id,
+    name: bot.name,
+    ...(visible && bot.description ? { description: bot.description } : {}),
+  };
 }
 
 /** Only the current bot's active groups in the same owner/space are discoverable. */
