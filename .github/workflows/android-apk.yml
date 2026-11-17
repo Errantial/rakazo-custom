@@ -1,0 +1,121 @@
+name: android-apk
+
+# Builds the sideloaded Android APK on GitHub's runners, without EAS, for every release tag. The
+# rolling `android` release carries `rakazo.apk` and the `version.json` that Settings → Check for
+# updates reads (ANDROID_APK_URL and ANDROID_RELEASE_MANIFEST_URL in @rakazo/contracts).
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Builds publish to one rolling release, so an older tag must never finish after a newer one.
+  group: android-apk
+  cancel-in-progress: false
+
+env:
+  # Installs replace the existing app only when signed by the same key: React Native's debug
+  # keystore, which `expo prebuild` writes. A different signer fails the build before publishing.
+  APK_SIGNER_SHA256: fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c
+
+jobs:
+  build:
+    name: Build and publish the APK
+    if: github.repository == 'Errantial/rakazo-custom'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      - name: Version the build from the release tag
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+          if [[ "$RELEASE_REF_TYPE" != tag || ! "$RELEASE_TAG" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "APK builds run from a vMAJOR.MINOR.PATCH tag, including manual dispatches." >&2
+            exit 1
+          fi
+          major="${BASH_REMATCH[1]}" minor="${BASH_REMATCH[2]}" patch="${BASH_REMATCH[3]}"
+          if (( 10#$minor > 99 || 10#$patch > 99 )); then
+            echo "versionCode packs MINOR and PATCH into two digits each." >&2
+            exit 1
+          fi
+          version="$((10#$major)).$((10#$minor)).$((10#$patch))"
+          code=$(( 10#$major * 10000 + 10#$minor * 100 + 10#$patch ))
+          # Over-the-air updates belong to upstream's EAS project; this APK updates from releases.
+          VERSION="$version" CODE="$code" node -e '
+            const fs = require("node:fs");
+            const path = "apps/mobile/app.json";
+            const app = JSON.parse(fs.readFileSync(path, "utf8"));
+            app.expo.version = process.env.VERSION;
+            app.expo.android = { ...app.expo.android, versionCode: Number(process.env.CODE) };
+            app.expo.updates = { ...app.expo.updates, enabled: false };
+            fs.writeFileSync(path, `${JSON.stringify(app, null, 2)}\n`);
+          '
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: pnpm install --frozen-lockfile
+      - name: Generate the native Android project
+        working-directory: apps/mobile
+        run: |
+          pnpm exec expo prebuild --platform android --no-install
+          # R8 on a release build outgrows the template's Metaspace, as in mobile-android-screenshots.
+          sed -i 's/MaxMetaspaceSize=512m/MaxMetaspaceSize=1g/' android/gradle.properties
+      - name: Build the arm64 release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+      - name: Check the signer and version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          CODE: ${{ steps.version.outputs.code }}
+        run: |
+          set -euo pipefail
+          apk=apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          tools="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
+          signer="$("$tools/apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')"
+          if [[ "$signer" != "$APK_SIGNER_SHA256" ]]; then
+            echo "The APK is signed by $signer, so it would not install over the existing app." >&2
+            exit 1
+          fi
+          # The whole dump, not `| head`: under pipefail a closed pipe would fail the step at random.
+          badging="$("$tools/aapt2" dump badging "$apk")"
+          grep -Fq "versionCode='$CODE'" <<< "$badging"
+          grep -Fq "versionName='$VERSION'" <<< "$badging"
+          mkdir -p "$RUNNER_TEMP/android"
+          cp "$apk" "$RUNNER_TEMP/android/rakazo.apk"
+          printf '{"version":"%s","versionCode":%s}\n' "$VERSION" "$CODE" > "$RUNNER_TEMP/android/version.json"
+      - name: Publish to the rolling android release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          title="Rakazo for Android $VERSION"
+          if ! gh release view android -R "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release create android -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --latest=false \
+              --title "$title" --notes "Install rakazo.apk on your Android phone. Settings → Check for updates finds newer builds."
+          fi
+          # The APK goes first so the manifest never announces a build that is not downloadable.
+          gh release upload android -R "$GITHUB_REPOSITORY" "$RUNNER_TEMP/android/rakazo.apk" --clobber
+          gh release upload android -R "$GITHUB_REPOSITORY" "$RUNNER_TEMP/android/version.json" --clobber
+          # The `android` tag is left where it is: GITHUB_TOKEN may not move a ref across workflow
+          # changes, and the download URLs name the release, not a commit.
+          gh release edit android -R "$GITHUB_REPOSITORY" --title "$title" --latest=false

@@ -1,4 +1,8 @@
 export const ES_MESSAGES: Record<string, string> = {
+  "Check for updates": "Buscar actualizaciones",
+  "Update to {version}": "Actualizar a {version}",
+  "Up to date": "Al día",
+  "Could not check": "No se pudo comprobar",
   Description: "Descripción",
   "How other bots see it": "Cómo lo ven otros bots",
   "Share to": "Compartir en",

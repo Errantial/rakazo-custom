@@ -1,4 +1,8 @@
 export const DE_MESSAGES: Record<string, string> = {
+  "Check for updates": "Nach Updates suchen",
+  "Update to {version}": "Auf {version} aktualisieren",
+  "Up to date": "Aktuell",
+  "Could not check": "Prüfung fehlgeschlagen",
   "How other bots see it": "So sehen andere Bots ihn",
   "Share to": "Teilen mit",
   "{count} files": "{count} Dateien",

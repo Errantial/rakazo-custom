@@ -1,4 +1,8 @@
 export const JA_MESSAGES: Record<string, string> = {
+  "Check for updates": "アップデートを確認",
+  "Update to {version}": "{version} にアップデート",
+  "Up to date": "最新です",
+  "Could not check": "確認できませんでした",
   "How other bots see it": "他のボットからの見え方",
   "Share to": "共有先",
   "{count} files": "{count}個のファイル",

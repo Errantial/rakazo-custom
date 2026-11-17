@@ -72,8 +72,10 @@ The desktop-managed server moves to the same version on the next launch.
 
 Creating a fork does not copy signing credentials or publish a release. Configure
 the signing requirements above before running the release workflow; macOS builds
-still require signing and notarization. Never disable signature validation to
-make a custom release work.
+still require signing and notarization, so a repository without
+`DESKTOP_MAC_CSC_LINK` releases Linux and Windows only. Never disable signature
+validation to make a custom release work. A fork that deploys from a branch other
+than `main` sets the `DESKTOP_RELEASE_BRANCH` repository variable to it.
 
 1. Bump `version` in `apps/desktop/package.json` on `main`.
 2. Tag that commit `v<version>` and push the tag:

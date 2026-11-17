@@ -168,7 +168,7 @@ it("offers the existing Android download on Android", async () => {
     (link) => link.textContent === "Get the mobile app",
   )!;
   expect(mobile.href).toBe(
-    "https://github.com/elie222/rakazo/releases/download/android/rakazo.apk",
+    "https://github.com/Errantial/rakazo-custom/releases/download/android/rakazo.apk",
   );
 });
 
