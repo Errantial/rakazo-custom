@@ -1205,6 +1205,10 @@ msgstr "Parolayı değiştir"
 msgid "Changing…"
 msgstr "Değiştiriliyor…"
 
+#: src/pages/shell/agent-import.tsx
+msgid "Character card"
+msgstr "Karakter kartı"
+
 #: src/pages/shell/message-cards.tsx
 msgid "Chart failed to render: {error}"
 msgstr "Grafik çizilemedi: {error}"
@@ -1303,6 +1307,10 @@ msgstr ""
 #: src/pages/shell/agent-import.tsx
 msgid "Choose backup"
 msgstr "Yedek seç"
+
+#: src/pages/shell/agent-import.tsx
+msgid "Choose card"
+msgstr "Kart seç"
 
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
@@ -4019,6 +4027,10 @@ msgstr "Kimlik doğrulaması yok"
 msgid "No bots match"
 msgstr ""
 
+#: src/pages/shell/agent-import.tsx
+msgid "No character card found in this file"
+msgstr "Bu dosyada karakter kartı bulunamadı"
+
 #: src/components/AskCard.tsx
 msgid "No longer active"
 msgstr "Artık etkin değil"
@@ -4496,6 +4508,10 @@ msgstr ""
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Preferences"
 msgstr "Tercihler"
+
+#: src/pages/GroupPanel.tsx
+msgid "Premise"
+msgstr ""
 
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
@@ -5344,6 +5360,10 @@ msgstr "Ortak"
 #: src/pages/KnowledgeSection.tsx
 msgid "Shared memory"
 msgstr "Ortak hafıza"
+
+#: src/pages/GroupPanel.tsx
+msgid "Shared scene or world for every bot here"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Show"

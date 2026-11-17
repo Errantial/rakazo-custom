@@ -1205,6 +1205,10 @@ msgstr "Changer le mot de passe"
 msgid "Changing…"
 msgstr "Modification en cours…"
 
+#: src/pages/shell/agent-import.tsx
+msgid "Character card"
+msgstr "Fiche de personnage"
+
 #: src/pages/shell/message-cards.tsx
 msgid "Chart failed to render: {error}"
 msgstr "Le graphique n'a pas pu s'afficher : {error}"
@@ -1303,6 +1307,10 @@ msgstr ""
 #: src/pages/shell/agent-import.tsx
 msgid "Choose backup"
 msgstr "Choisir une sauvegarde"
+
+#: src/pages/shell/agent-import.tsx
+msgid "Choose card"
+msgstr "Choisir une fiche"
 
 #: src/pages/shell/agent-import.tsx
 #: src/pages/shell/avatar-studio-popover.tsx
@@ -4019,6 +4027,10 @@ msgstr "Aucune authentification"
 msgid "No bots match"
 msgstr "Aucun bot ne correspond"
 
+#: src/pages/shell/agent-import.tsx
+msgid "No character card found in this file"
+msgstr "Aucune fiche de personnage trouvée dans ce fichier"
+
 #: src/components/AskCard.tsx
 msgid "No longer active"
 msgstr "Plus actif"
@@ -4496,6 +4508,10 @@ msgstr "POST vers"
 #: src/pages/AccountSettingsOverlay.tsx
 msgid "Preferences"
 msgstr "Préférences"
+
+#: src/pages/GroupPanel.tsx
+msgid "Premise"
+msgstr ""
 
 #: src/components/ApprovalRulePreview.tsx
 #: src/components/ApprovalRulesSettings.tsx
@@ -5344,6 +5360,10 @@ msgstr "Partagé"
 #: src/pages/KnowledgeSection.tsx
 msgid "Shared memory"
 msgstr "Mémoire partagée"
+
+#: src/pages/GroupPanel.tsx
+msgid "Shared scene or world for every bot here"
+msgstr ""
 
 #: src/components/VaultSettings.tsx
 msgid "Show"

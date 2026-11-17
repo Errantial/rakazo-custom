@@ -3,6 +3,7 @@
 import { i18n } from "@lingui/core";
 import type { AgentImportPlan, Bot } from "@rakazo/contracts";
 import type * as Core from "@rakazo/core";
+import { CHARACTER_CARD_FILE_MAX_BYTES } from "@rakazo/core/bot-cards";
 import type { ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
@@ -18,11 +19,13 @@ vi.mock("@lingui/react/macro", () => {
 
 const importPreview = vi.fn();
 const importCreate = vi.fn();
+const createBot = vi.fn();
 vi.mock("../../lib/rpc", () => ({
   rpc: {
     bots: {
       importPreview: (input: unknown) => importPreview(input),
       importCreate: (input: unknown) => importCreate(input),
+      create: (input: unknown) => createBot(input),
     },
   },
 }));
@@ -47,6 +50,7 @@ let container: HTMLDivElement | null = null;
 beforeEach(() => {
   importPreview.mockReset();
   importCreate.mockReset();
+  createBot.mockReset();
   i18n.load("en", {});
   i18n.activate("en");
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -443,5 +447,153 @@ describe("creating a bot", () => {
     await act(async () => button("Back").click());
     expect(onClose).not.toHaveBeenCalled();
     expect(container!.querySelector('[data-testid="agent-import-preview"]')).toBeNull();
+  });
+});
+
+describe("a character card", () => {
+  function button(label: string) {
+    return [...container!.querySelectorAll("button")].find(
+      (item) => item.textContent === label || item.getAttribute("aria-label") === label,
+    ) as HTMLButtonElement;
+  }
+
+  function cardFile(content: string) {
+    const file = new File([content], "card.json", { type: "application/json" });
+    Object.defineProperty(file, "arrayBuffer", {
+      configurable: true,
+      value: async () => new TextEncoder().encode(content).buffer,
+    });
+    return file;
+  }
+
+  /** A minimal PNG carrying the card JSON base64-encoded in one `chara` tEXt chunk. */
+  function pngCardFile(card: unknown) {
+    const encode = (text: string) => new TextEncoder().encode(text);
+    const chunk = (type: string, data: Uint8Array) => {
+      const out = new Uint8Array(12 + data.length);
+      new DataView(out.buffer).setUint32(0, data.length);
+      out.set(encode(type), 4);
+      out.set(data, 8);
+      return out;
+    };
+    const json = JSON.stringify(card);
+    const base64 = btoa(String.fromCharCode(...encode(json)));
+    const parts = [
+      new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      chunk("IHDR", new Uint8Array(13)),
+      chunk("tEXt", encode(`chara\0${base64}`)),
+      chunk("IEND", new Uint8Array()),
+    ];
+    const bytes = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+    let offset = 0;
+    for (const part of parts) {
+      bytes.set(part, offset);
+      offset += part.length;
+    }
+    const file = new File([bytes], "card.png", { type: "image/png" });
+    Object.defineProperty(file, "arrayBuffer", { value: async () => bytes.buffer });
+    return file;
+  }
+
+  async function chooseCardFile(file: File) {
+    const onClose = vi.fn();
+    const onCreated = vi.fn();
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    await act(async () => {
+      root!.render(<AgentImportForm onClose={onClose} onCreated={onCreated} />);
+    });
+    const input = container.querySelector<HTMLInputElement>('[data-testid="agent-import-card"]')!;
+    await act(async () => {
+      Object.defineProperty(input, "files", { configurable: true, value: [file] });
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    return { onClose, onCreated };
+  }
+
+  async function chooseCard(content: string) {
+    return chooseCardFile(cardFile(content));
+  }
+
+  it("shows the card's name and creates the bot from the card", async () => {
+    const card = {
+      name: "Ada",
+      description: "A lighthouse keeper.",
+      first_mes: "The lamp is lit.",
+    };
+    const bot = { id: "bot-1" } as Bot;
+    createBot.mockResolvedValue(bot);
+    const { onCreated } = await chooseCard(JSON.stringify(card));
+
+    expect(container!.textContent).toContain("Ada");
+    expect(container!.textContent).toContain("A lighthouse keeper.");
+    await act(async () => button("Create").click());
+
+    expect(createBot).toHaveBeenCalledWith({
+      name: "Ada",
+      characterCard: card,
+      notifyOnFinish: true,
+      computerMode: "team",
+    });
+    expect(onCreated).toHaveBeenCalledWith(bot);
+  });
+
+  it("says a file holds no card and creates nothing", async () => {
+    await chooseCard(JSON.stringify({ hello: "world" }));
+
+    expect(container!.querySelector('[role="alert"]')?.textContent).toBe(
+      "No character card found in this file",
+    );
+    expect(createBot).not.toHaveBeenCalled();
+  });
+
+  it("reads a card from a PNG and creates the bot from it", async () => {
+    const card = {
+      name: "Ada",
+      description: "A lighthouse keeper.",
+      first_mes: "The lamp is lit.",
+    };
+    const bot = { id: "bot-1" } as Bot;
+    createBot.mockResolvedValue(bot);
+    const { onCreated } = await chooseCardFile(pngCardFile(card));
+
+    expect(container!.textContent).toContain("Ada");
+    await act(async () => button("Create").click());
+
+    expect(createBot).toHaveBeenCalledWith({
+      name: "Ada",
+      characterCard: card,
+      notifyOnFinish: true,
+      computerMode: "team",
+    });
+    expect(onCreated).toHaveBeenCalledWith(bot);
+  });
+
+  it("treats a file over the size limit as no card without reading it", async () => {
+    const read = vi.fn(async () => new ArrayBuffer(0));
+    const file = cardFile(JSON.stringify({ name: "Ada" }));
+    Object.defineProperty(file, "size", {
+      configurable: true,
+      value: CHARACTER_CARD_FILE_MAX_BYTES + 1,
+    });
+    Object.defineProperty(file, "arrayBuffer", { value: read });
+    await chooseCardFile(file);
+
+    expect(container!.querySelector('[role="alert"]')?.textContent).toBe(
+      "No character card found in this file",
+    );
+    expect(read).not.toHaveBeenCalled();
+    expect(createBot).not.toHaveBeenCalled();
+  });
+
+  it("shows a failed create and stays on the card confirmation", async () => {
+    createBot.mockRejectedValue(new Error("The space is full"));
+    await chooseCard(JSON.stringify({ name: "Ada", first_mes: "The lamp is lit." }));
+    await act(async () => button("Create").click());
+
+    expect(container!.querySelector('[role="alert"]')?.textContent).toBe("The space is full");
+    expect(container!.querySelector('[data-testid="agent-import-card-preview"]')).not.toBeNull();
+    expect(button("Create").disabled).toBe(false);
   });
 });

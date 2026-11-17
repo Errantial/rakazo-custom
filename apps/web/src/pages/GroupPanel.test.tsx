@@ -22,6 +22,7 @@ vi.mock("@rakazo/ui-web", async (importOriginal) => {
     BotAvatar: () => <span />,
     Button: (props: ComponentProps<"button">) => <button {...props} />,
     Input: (props: ComponentProps<"input">) => <input {...props} />,
+    Textarea: (props: ComponentProps<"textarea">) => <textarea {...props} />,
     AlertDialog: ({
       children,
       onOpenChange,
@@ -211,6 +212,26 @@ describe("GroupSettings", () => {
     expect(container.querySelector<HTMLInputElement>("input")!.value).toBe("My edit");
     await click("Save");
     expect(onSave).toHaveBeenCalledWith({ name: "My edit", botIds: undefined });
+  });
+
+  it("sends a changed premise and nothing else that did not change", async () => {
+    const onSave = vi.fn(async () => undefined);
+    await render({ onSave, group: { ...group, premise: "A harbour town." } });
+    const premise = container.querySelector<HTMLTextAreaElement>("textarea")!;
+    expect(premise.value).toBe("A harbour town.");
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value")?.set?.call(
+        premise,
+        "A stormy harbour town.",
+      );
+      premise.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await click("Save");
+    expect(onSave).toHaveBeenCalledWith({
+      name: undefined,
+      botIds: undefined,
+      premise: "A stormy harbour town.",
+    });
   });
 
   it("closes from the header button", async () => {

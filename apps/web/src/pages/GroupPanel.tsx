@@ -1,7 +1,12 @@
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Bot, Group } from "@rakazo/contracts";
-import { GROUP_MEMBER_MAX, GROUP_MEMBER_MIN, GROUP_NAME_MAX_LENGTH } from "@rakazo/contracts";
-import { BotAvatar, Button, Checkbox, Input } from "@rakazo/ui-web";
+import {
+  GROUP_MEMBER_MAX,
+  GROUP_MEMBER_MIN,
+  GROUP_NAME_MAX_LENGTH,
+  GROUP_PREMISE_MAX_LENGTH,
+} from "@rakazo/contracts";
+import { BotAvatar, Button, Checkbox, Input, Textarea } from "@rakazo/ui-web";
 import { X } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { errorText } from "../lib/user-error";
@@ -230,7 +235,7 @@ export function GroupSettings({
 }: {
   group: Group;
   bots: Bot[];
-  onSave: (input: { name?: string; botIds?: string[] }) => Promise<void>;
+  onSave: (input: { name?: string; botIds?: string[]; premise?: string }) => Promise<void>;
   onRemove: () => Promise<void>;
   onClose: () => void;
   onOpenBot?: (botId: string) => void;
@@ -239,14 +244,17 @@ export function GroupSettings({
 }) {
   const { t } = useLingui();
   const nameId = useId();
+  const premiseId = useId();
   const [name, setName] = useState(group.name);
+  const [premise, setPremise] = useState(group.premise ?? "");
   const [selected, setSelected] = useState(group.members.map((member) => member.botId));
   // The panel can open on a cached group. A refreshed one replaces whatever was not edited, so a
-  // save does not send the cached name or members back as a change.
+  // save does not send the cached name, premise or members back as a change.
   const [shownGroup, setShownGroup] = useState(group);
   if (group !== shownGroup) {
     setShownGroup(group);
     if (name === shownGroup.name) setName(group.name);
+    if (premise === (shownGroup.premise ?? "")) setPremise(group.premise ?? "");
     const shownMembers = shownGroup.members.map((member) => member.botId);
     if (sameMembers(selected, shownMembers)) {
       setSelected(group.members.map((member) => member.botId));
@@ -292,6 +300,7 @@ export function GroupSettings({
         )
           ? undefined
           : selected,
+        premise: premise.trim() !== (group.premise ?? "") ? premise.trim() : undefined,
       });
     } catch (cause) {
       setError(errorText(cause, t`Could not save group`));
@@ -332,6 +341,17 @@ export function GroupSettings({
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={GROUP_NAME_MAX_LENGTH}
+          className="mt-2"
+        />
+      </label>
+      <label htmlFor={premiseId} className="mt-4 block text-sm text-muted-foreground">
+        <Trans>Premise</Trans>
+        <Textarea
+          id={premiseId}
+          value={premise}
+          onChange={(e) => setPremise(e.target.value)}
+          maxLength={GROUP_PREMISE_MAX_LENGTH}
+          placeholder={t`Shared scene or world for every bot here`}
           className="mt-2"
         />
       </label>
