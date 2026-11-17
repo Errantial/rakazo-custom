@@ -119,7 +119,9 @@ test("bot creation, editing, and deletion persist", async ({ page }, testInfo) =
   ).toBeVisible();
   await expect(openWork).toHaveCount(0);
   await expect(settings.getByRole("button", { name: "Export", exact: true })).toBeVisible();
-  await expect(settings.locator('label[for$="-model"]')).toHaveClass("sr-only");
+  await expect(settings.locator('label[for$="-model"]:not([for*="-peer-"])')).toHaveClass(
+    "sr-only",
+  );
   await expect(modelSelect).toBeVisible();
   await captureScreenshot(page, testInfo, "bot-settings-sections-advanced");
   await rpc(page, "scratchpad/create", {

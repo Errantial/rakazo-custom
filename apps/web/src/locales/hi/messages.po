@@ -2529,6 +2529,7 @@ msgstr "अस्वीकार करें"
 
 #: src/pages/Board.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Description"
 msgstr "विवरण"
 
@@ -3291,6 +3292,7 @@ msgstr "निर्देशों का इतिहास"
 #: src/components/AskCard.tsx
 #: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Instructions"
 msgstr "निर्देश"
 
@@ -3569,6 +3571,10 @@ msgstr "MCP सर्वर प्रबंधित करें"
 msgid "Manage the bots it creates"
 msgstr "इसके बनाए बॉट प्रबंधित करें"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Managers"
+msgstr "प्रबंधक"
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Manual"
 msgstr ""
@@ -3658,6 +3664,7 @@ msgstr ""
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/settings-nav.ts
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Memory"
 msgstr "मेमोरी"
 
@@ -4234,6 +4241,10 @@ msgstr "एक बार"
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
 msgstr ""
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Only me"
+msgstr "केवल मैं"
 
 #: src/components/markdown-link-prompt.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
@@ -5723,6 +5734,10 @@ msgstr "टीम"
 msgid "Team Computer"
 msgstr "टीम कंप्यूटर"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Teammates"
+msgstr "टीम के साथी"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Teams message"
 msgstr ""
@@ -6457,6 +6472,30 @@ msgstr "कब उपयोग करें"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "बॉट कहां चलने चाहिए?"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the description"
+msgstr "विवरण कौन देख सकता है"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the instructions"
+msgstr "निर्देश कौन देख सकता है"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the memory"
+msgstr "मेमोरी कौन देख सकता है"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the model"
+msgstr "मॉडल कौन देख सकता है"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the routines"
+msgstr "रूटीन्स कौन देख सकता है"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the tools"
+msgstr "टूल्स कौन देख सकता है"
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"

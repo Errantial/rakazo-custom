@@ -2529,6 +2529,7 @@ msgstr "Deny"
 
 #: src/pages/Board.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Description"
 msgstr "Description"
 
@@ -3291,6 +3292,7 @@ msgstr "Instruction history"
 #: src/components/AskCard.tsx
 #: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Instructions"
 msgstr "Instructions"
 
@@ -3569,6 +3571,10 @@ msgstr "Manage MCP servers"
 msgid "Manage the bots it creates"
 msgstr "Manage the bots it creates"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Managers"
+msgstr "Managers"
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Manual"
 msgstr "Manual"
@@ -3658,6 +3664,7 @@ msgstr "Members ({0})"
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/settings-nav.ts
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Memory"
 msgstr "Memory"
 
@@ -4234,6 +4241,10 @@ msgstr "One-time"
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
 msgstr "One-time purchase. Credits do not expire."
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Only me"
+msgstr "Only me"
 
 #: src/components/markdown-link-prompt.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
@@ -5723,6 +5734,10 @@ msgstr "Team"
 msgid "Team Computer"
 msgstr "Team Computer"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Teammates"
+msgstr "Teammates"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Teams message"
 msgstr "Teams message"
@@ -6457,6 +6472,30 @@ msgstr "When to use"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "Where should bots run?"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the description"
+msgstr "Who can see the description"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the instructions"
+msgstr "Who can see the instructions"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the memory"
+msgstr "Who can see the memory"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the model"
+msgstr "Who can see the model"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the routines"
+msgstr "Who can see the routines"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the tools"
+msgstr "Who can see the tools"
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"

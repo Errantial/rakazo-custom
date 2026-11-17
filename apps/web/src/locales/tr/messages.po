@@ -2529,6 +2529,7 @@ msgstr "Reddet"
 
 #: src/pages/Board.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Description"
 msgstr "Açıklama"
 
@@ -3291,6 +3292,7 @@ msgstr "Talimat geçmişi"
 #: src/components/AskCard.tsx
 #: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Instructions"
 msgstr "Talimatlar"
 
@@ -3569,6 +3571,10 @@ msgstr "MCP sunucularını yönet"
 msgid "Manage the bots it creates"
 msgstr "Oluşturduğu botları yönet"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Managers"
+msgstr "Yöneticiler"
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Manual"
 msgstr ""
@@ -3658,6 +3664,7 @@ msgstr ""
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/settings-nav.ts
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Memory"
 msgstr "Hafıza"
 
@@ -4234,6 +4241,10 @@ msgstr "Tek seferlik"
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
 msgstr ""
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Only me"
+msgstr "Yalnızca ben"
 
 #: src/components/markdown-link-prompt.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
@@ -5723,6 +5734,10 @@ msgstr "Takım"
 msgid "Team Computer"
 msgstr "Takım Bilgisayarı"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Teammates"
+msgstr "Takım arkadaşları"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Teams message"
 msgstr ""
@@ -6457,6 +6472,30 @@ msgstr "Ne zaman kullanılır"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "Botlar nerede çalışsın?"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the description"
+msgstr "Açıklamayı kimler görebilir"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the instructions"
+msgstr "Talimatları kimler görebilir"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the memory"
+msgstr "Hafızayı kimler görebilir"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the model"
+msgstr "Modeli kimler görebilir"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the routines"
+msgstr "Rutinleri kimler görebilir"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the tools"
+msgstr "Araçları kimler görebilir"
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"

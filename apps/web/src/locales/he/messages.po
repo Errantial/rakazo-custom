@@ -2529,6 +2529,7 @@ msgstr "דחייה"
 
 #: src/pages/Board.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Description"
 msgstr "תיאור"
 
@@ -3291,6 +3292,7 @@ msgstr "היסטוריית הנחיות"
 #: src/components/AskCard.tsx
 #: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Instructions"
 msgstr "הנחיות"
 
@@ -3569,6 +3571,10 @@ msgstr "ניהול שרתי MCP"
 msgid "Manage the bots it creates"
 msgstr "ניהול הבוטים שהוא יוצר"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Managers"
+msgstr "מנהלים"
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Manual"
 msgstr "ידני"
@@ -3658,6 +3664,7 @@ msgstr ""
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/settings-nav.ts
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Memory"
 msgstr "זיכרון"
 
@@ -4234,6 +4241,10 @@ msgstr "חד-פעמי"
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
 msgstr ""
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Only me"
+msgstr "רק אני"
 
 #: src/components/markdown-link-prompt.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
@@ -5723,6 +5734,10 @@ msgstr "צוות"
 msgid "Team Computer"
 msgstr "מחשב הצוות"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Teammates"
+msgstr "חברי צוות"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Teams message"
 msgstr "הודעת Teams"
@@ -6457,6 +6472,30 @@ msgstr "מתי להשתמש"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "איפה הבוטים ירוצו?"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the description"
+msgstr "מי יכול לראות את התיאור"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the instructions"
+msgstr "מי יכול לראות את ההנחיות"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the memory"
+msgstr "מי יכול לראות את הזיכרון"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the model"
+msgstr "מי יכול לראות את המודל"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the routines"
+msgstr "מי יכול לראות את הרוטינות"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the tools"
+msgstr "מי יכול לראות את הכלים"
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"
