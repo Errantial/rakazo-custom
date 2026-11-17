@@ -2529,6 +2529,7 @@ msgstr "Запретить"
 
 #: src/pages/Board.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Description"
 msgstr "Описание"
 
@@ -3291,6 +3292,7 @@ msgstr "История инструкций"
 #: src/components/AskCard.tsx
 #: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Instructions"
 msgstr "Инструкции"
 
@@ -3569,6 +3571,10 @@ msgstr "Управление серверами MCP"
 msgid "Manage the bots it creates"
 msgstr "Управлять созданными им ботами"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Managers"
+msgstr "Менеджеры"
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Manual"
 msgstr "Вручную"
@@ -3658,6 +3664,7 @@ msgstr ""
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/settings-nav.ts
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Memory"
 msgstr "Память"
 
@@ -4234,6 +4241,10 @@ msgstr "Один раз"
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
 msgstr ""
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Only me"
+msgstr "Только я"
 
 #: src/components/markdown-link-prompt.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
@@ -5723,6 +5734,10 @@ msgstr "Команда"
 msgid "Team Computer"
 msgstr "Командный компьютер"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Teammates"
+msgstr "Участники команды"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Teams message"
 msgstr "Сообщение Teams"
@@ -6457,6 +6472,30 @@ msgstr "Когда использовать"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "Где должны работать боты?"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the description"
+msgstr "Кто видит описание"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the instructions"
+msgstr "Кто видит инструкции"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the memory"
+msgstr "Кто видит память"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the model"
+msgstr "Кто видит модель"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the routines"
+msgstr "Кто видит задачи"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the tools"
+msgstr "Кто видит инструменты"
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"

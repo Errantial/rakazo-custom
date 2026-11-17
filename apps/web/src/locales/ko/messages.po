@@ -2529,6 +2529,7 @@ msgstr "거부"
 
 #: src/pages/Board.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Description"
 msgstr "설명"
 
@@ -3291,6 +3292,7 @@ msgstr "지침 기록"
 #: src/components/AskCard.tsx
 #: src/components/InstructionSettings.tsx
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Instructions"
 msgstr "지침"
 
@@ -3569,6 +3571,10 @@ msgstr "MCP 서버 관리"
 msgid "Manage the bots it creates"
 msgstr "이 봇이 만든 봇 관리"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Managers"
+msgstr "관리자"
+
 #: src/pages/PluginsOverlay.tsx
 msgid "Manual"
 msgstr ""
@@ -3658,6 +3664,7 @@ msgstr ""
 #: src/pages/MemorySettingsOverlay.tsx
 #: src/pages/settings-nav.ts
 #: src/pages/shell/agent-import.tsx
+#: src/pages/shell/bot-panel.tsx
 msgid "Memory"
 msgstr "기억"
 
@@ -4234,6 +4241,10 @@ msgstr "한 번"
 #: src/components/ModelCredits.tsx
 msgid "One-time purchase. Credits do not expire."
 msgstr ""
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Only me"
+msgstr "나만"
 
 #: src/components/markdown-link-prompt.tsx
 #: src/pages/PaymentWalletSettingsPanel.tsx
@@ -5723,6 +5734,10 @@ msgstr "팀 공용"
 msgid "Team Computer"
 msgstr "팀 컴퓨터"
 
+#: src/pages/shell/bot-panel.tsx
+msgid "Teammates"
+msgstr "팀원"
+
 #: src/pages/RoutineEditor.tsx
 msgid "Teams message"
 msgstr "Teams 메시지"
@@ -6457,6 +6472,30 @@ msgstr "언제 사용할지"
 #: src/pages/HostComputerPrompt.tsx
 msgid "Where should bots run?"
 msgstr "Bot을 어디에서 실행할까요?"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the description"
+msgstr "설명을 볼 수 있는 사람"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the instructions"
+msgstr "지침을 볼 수 있는 사람"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the memory"
+msgstr "기억을 볼 수 있는 사람"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the model"
+msgstr "모델을 볼 수 있는 사람"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the routines"
+msgstr "자동 실행을 볼 수 있는 사람"
+
+#: src/pages/shell/bot-panel.tsx
+msgid "Who can see the tools"
+msgstr "도구를 볼 수 있는 사람"
 
 #: src/lib/ticket-status.ts
 msgid "Won't do"
