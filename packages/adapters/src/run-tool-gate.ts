@@ -77,7 +77,11 @@ import { USER_COMPUTER_TOOLS, userComputerGate } from "./run-tools-user-computer
 import { connectorTrustKeys } from "./run-trust.js";
 import { watchFromTool } from "./schedule-tools.js";
 
-const AUTO_APPROVED_ROUTINE_TOOLS = new Set(["schedule_create", "schedule_update", "create_child_routine"]);
+const AUTO_APPROVED_ROUTINE_TOOLS = new Set([
+  "schedule_create",
+  "schedule_update",
+  "create_child_routine",
+]);
 
 export type AppliedEffect = Awaited<ReturnType<typeof recordEffect>>;
 

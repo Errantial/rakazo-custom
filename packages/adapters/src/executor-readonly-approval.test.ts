@@ -1363,7 +1363,12 @@ describe("bot auto-approve", () => {
   });
 
   it("creates a routine without a card in a webhook run", async () => {
-    const f = fixture({ name: "schedule_create", builtin: true, trigger: "webhook", autoApprove: true });
+    const f = fixture({
+      name: "schedule_create",
+      builtin: true,
+      trigger: "webhook",
+      autoApprove: true,
+    });
     f.setCalls([
       {
         args: { name: "Daily", prompt: "Summarize the inbox", every: 1, unit: "days" },
@@ -1394,7 +1399,12 @@ describe("bot auto-approve", () => {
   });
 
   it("schedules a shell command watch without a card in a webhook run", async () => {
-    const f = fixture({ name: "schedule_create", builtin: true, trigger: "webhook", autoApprove: true });
+    const f = fixture({
+      name: "schedule_create",
+      builtin: true,
+      trigger: "webhook",
+      autoApprove: true,
+    });
     f.setCalls([
       {
         args: {
@@ -1409,7 +1419,6 @@ describe("bot auto-approve", () => {
     expect(f.pauseRunForInput).not.toHaveBeenCalled();
     expect(JSON.stringify(f.results[0] ?? null)).not.toContain("owner's approval");
   });
-
 
   it("refuses a webhook run's side effect instead of running or asking", async () => {
     const f = fixture({ name: "shell", trigger: "webhook", autoApprove: true });
